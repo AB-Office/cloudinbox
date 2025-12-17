@@ -2,12 +2,36 @@
  * purgeTrash - ゴミ箱完全削除のテスト
  */
 
+/// <reference types="jest" />
+
 import { executePurgeTrash } from '../purgeTrash';
 import * as admin from 'firebase-admin';
 import { MailMessageDoc } from '../types';
 
 // モック
 jest.mock('firebase-admin');
+jest.mock('firebase-functions', () => ({
+  region: jest.fn(() => ({
+    pubsub: {
+      schedule: jest.fn(() => ({
+        timeZone: jest.fn(() => ({
+          onRun: jest.fn((handler: any) => ({
+            run: async (data: any, context: any) => {
+              if (handler) {
+                return await handler(context);
+              }
+            },
+          })),
+        })),
+      })),
+    },
+  })),
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+}));
 
 describe('purgeTrash', () => {
   let mockFirestore: any;
@@ -102,6 +126,22 @@ describe('purgeTrash', () => {
 
       mockFirestore.batch = jest.fn(() => mockBatch);
 
+      const mockMailMessagesQuery = {
+        where: jest.fn().mockReturnThis(),
+        get: jest.fn().mockResolvedValue({
+          empty: true,
+          docs: [],
+        }),
+      };
+
+      const mockThreadRef = {
+        delete: jest.fn().mockResolvedValue(undefined),
+      };
+
+      const mockMailThreadsCollection = {
+        doc: jest.fn(() => mockThreadRef),
+      };
+
       const mockUserRef = {
         get: jest.fn().mockResolvedValue({
           exists: true,
@@ -111,6 +151,15 @@ describe('purgeTrash', () => {
           }),
         }),
         update: jest.fn().mockResolvedValue(undefined),
+        collection: jest.fn((path: string) => {
+          if (path === 'mailMessages') {
+            return mockMailMessagesQuery;
+          }
+          if (path === 'mailThreads') {
+            return mockMailThreadsCollection;
+          }
+          return mockMailMessagesQuery;
+        }),
       };
 
       mockFirestore.collection = jest.fn(() => ({
@@ -120,6 +169,7 @@ describe('purgeTrash', () => {
       const mockFile = {
         delete: jest.fn().mockResolvedValue(undefined),
         exists: jest.fn().mockResolvedValue([true]),
+        getMetadata: jest.fn().mockResolvedValue([{ size: '500' }]),
       };
 
       mockBucket.file = jest.fn(() => mockFile);
@@ -201,6 +251,22 @@ describe('purgeTrash', () => {
 
       mockFirestore.batch = jest.fn(() => mockBatch);
 
+      const mockMailMessagesQuery = {
+        where: jest.fn().mockReturnThis(),
+        get: jest.fn().mockResolvedValue({
+          empty: true,
+          docs: [],
+        }),
+      };
+
+      const mockThreadRef = {
+        delete: jest.fn().mockResolvedValue(undefined),
+      };
+
+      const mockMailThreadsCollection = {
+        doc: jest.fn(() => mockThreadRef),
+      };
+
       const mockUserRef = {
         get: jest.fn().mockResolvedValue({
           exists: true,
@@ -210,6 +276,15 @@ describe('purgeTrash', () => {
           }),
         }),
         update: jest.fn().mockResolvedValue(undefined),
+        collection: jest.fn((path: string) => {
+          if (path === 'mailMessages') {
+            return mockMailMessagesQuery;
+          }
+          if (path === 'mailThreads') {
+            return mockMailThreadsCollection;
+          }
+          return mockMailMessagesQuery;
+        }),
       };
 
       mockFirestore.collection = jest.fn(() => ({
@@ -284,6 +359,22 @@ describe('purgeTrash', () => {
 
       mockFirestore.batch = jest.fn(() => mockBatch);
 
+      const mockMailMessagesQuery = {
+        where: jest.fn().mockReturnThis(),
+        get: jest.fn().mockResolvedValue({
+          empty: true,
+          docs: [],
+        }),
+      };
+
+      const mockThreadRef = {
+        delete: jest.fn().mockResolvedValue(undefined),
+      };
+
+      const mockMailThreadsCollection = {
+        doc: jest.fn(() => mockThreadRef),
+      };
+
       const mockUserRef = {
         get: jest.fn().mockResolvedValue({
           exists: true,
@@ -293,6 +384,15 @@ describe('purgeTrash', () => {
           }),
         }),
         update: jest.fn().mockResolvedValue(undefined),
+        collection: jest.fn((path: string) => {
+          if (path === 'mailMessages') {
+            return mockMailMessagesQuery;
+          }
+          if (path === 'mailThreads') {
+            return mockMailThreadsCollection;
+          }
+          return mockMailMessagesQuery;
+        }),
       };
 
       mockFirestore.collection = jest.fn(() => ({
@@ -367,6 +467,22 @@ describe('purgeTrash', () => {
 
       mockFirestore.batch = jest.fn(() => mockBatch);
 
+      const mockMailMessagesQuery = {
+        where: jest.fn().mockReturnThis(),
+        get: jest.fn().mockResolvedValue({
+          empty: true,
+          docs: [],
+        }),
+      };
+
+      const mockThreadRef = {
+        delete: jest.fn().mockResolvedValue(undefined),
+      };
+
+      const mockMailThreadsCollection = {
+        doc: jest.fn(() => mockThreadRef),
+      };
+
       const mockUserRef = {
         get: jest.fn().mockResolvedValue({
           exists: true,
@@ -376,6 +492,15 @@ describe('purgeTrash', () => {
           }),
         }),
         update: jest.fn().mockResolvedValue(undefined),
+        collection: jest.fn((path: string) => {
+          if (path === 'mailMessages') {
+            return mockMailMessagesQuery;
+          }
+          if (path === 'mailThreads') {
+            return mockMailThreadsCollection;
+          }
+          return mockMailMessagesQuery;
+        }),
       };
 
       mockFirestore.collection = jest.fn(() => ({

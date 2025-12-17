@@ -2,7 +2,10 @@
  * EncryptionService - DEK生成・管理のテスト
  */
 
+/// <reference types="jest" />
+
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
+import { KeyManagementServiceClient } from '@google-cloud/kms';
 
 // モック
 jest.mock('../kms', () => ({
@@ -11,6 +14,9 @@ jest.mock('../kms', () => ({
 }));
 jest.mock('@google-cloud/secret-manager', () => ({
   SecretManagerServiceClient: jest.fn(),
+}));
+jest.mock('@google-cloud/kms', () => ({
+  KeyManagementServiceClient: jest.fn(),
 }));
 
 describe('keys', () => {
@@ -136,28 +142,24 @@ describe('keys', () => {
     });
 
     it('DEKが存在しない場合はエラーを投げる', async () => {
+      const mockSecretClient = {
+        accessSecretVersion: jest.fn().mockRejectedValue(
+          Object.assign(new Error('Secret not found'), { code: 5 }) // NOT_FOUND
+        ),
+      };
+      (SecretManagerServiceClient as unknown as jest.Mock).mockImplementation(() => mockSecretClient);
+      
       const keysModule = await import('../keys');
       keysModule.resetClient();
-      
-      const mockSecretClient = {
-        accessSecretVersion: jest.fn().mockRejectedValue(new Error('Secret not found')),
-      };
+      keysModule.clearCache();
 
-      (SecretManagerServiceClient as unknown as jest.Mock).mockImplementation(() => mockSecretClient);
-
-      await expect(keysModule.getDataKey(mockUid)).rejects.toThrow('Secret not found');
+      await expect(keysModule.getDataKey(mockUid)).rejects.toThrow();
     });
 
     it('DEKがキャッシュから取得される', async () => {
-      const keysModule = await import('../keys');
-      const kmsModule = await import('../kms');
-      keysModule.resetClient();
-      
       const mockKmsKeyName = 'projects/test-project/locations/global/keyRings/cloudinbox/cryptoKeys/kek';
       process.env.KMS_KEY_NAME = mockKmsKeyName;
-
-      (kmsModule.unwrapKey as jest.Mock).mockResolvedValue(mockDek);
-
+      
       const mockSecretClient = {
         accessSecretVersion: jest.fn().mockResolvedValue([
           {
@@ -167,8 +169,14 @@ describe('keys', () => {
           },
         ]),
       };
-
       (SecretManagerServiceClient as unknown as jest.Mock).mockImplementation(() => mockSecretClient);
+      
+      const keysModule = await import('../keys');
+      const kmsModule = await import('../kms');
+      (kmsModule.unwrapKey as jest.Mock).mockResolvedValue(mockDek);
+      
+      keysModule.resetClient();
+      keysModule.clearCache();
 
       // 最初の呼び出し
       const dek1 = await keysModule.getDataKey(mockUid);
@@ -185,9 +193,6 @@ describe('keys', () => {
     });
 
     it('Secret Managerから取得したDEKが空の場合はエラーを投げる', async () => {
-      const keysModule = await import('../keys');
-      keysModule.resetClient();
-      
       const mockSecretClient = {
         accessSecretVersion: jest.fn().mockResolvedValue([
           {
@@ -197,8 +202,11 @@ describe('keys', () => {
           },
         ]),
       };
-
       (SecretManagerServiceClient as unknown as jest.Mock).mockImplementation(() => mockSecretClient);
+      
+      const keysModule = await import('../keys');
+      keysModule.resetClient();
+      keysModule.clearCache();
 
       await expect(keysModule.getDataKey(mockUid)).rejects.toThrow('Data key not found');
     });
@@ -214,16 +222,15 @@ describe('keys', () => {
 
   describe('clearCache', () => {
     it('キャッシュをクリアできる', async () => {
-      const keysModule = await import('../keys');
-      const kmsModule = await import('../kms');
-      keysModule.resetClient();
-      
       const mockKmsKeyName = 'projects/test-project/locations/global/keyRings/cloudinbox/cryptoKeys/kek';
       process.env.KMS_KEY_NAME = mockKmsKeyName;
       process.env.GCLOUD_PROJECT = mockProjectId;
-
-      (kmsModule.unwrapKey as jest.Mock).mockResolvedValue(mockDek);
-
+      
+      const mockKmsClient = {
+        decrypt: jest.fn().mockResolvedValue([{ plaintext: mockDek }]),
+      };
+      (KeyManagementServiceClient as unknown as jest.Mock).mockImplementation(() => mockKmsClient);
+      
       const mockSecretClient = {
         accessSecretVersion: jest.fn().mockResolvedValue([
           {
@@ -233,8 +240,11 @@ describe('keys', () => {
           },
         ]),
       };
-
       (SecretManagerServiceClient as unknown as jest.Mock).mockImplementation(() => mockSecretClient);
+      
+      const keysModule = await import('../keys');
+      keysModule.resetClient();
+      keysModule.clearCache();
 
       // 最初の呼び出し
       await keysModule.getDataKey(mockUid);

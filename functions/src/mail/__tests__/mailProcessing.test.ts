@@ -60,7 +60,10 @@ describe('mailProcessing', () => {
       const parsed = {
         text: undefined,
         html: undefined,
-      } as MailParser.ParsedMail;
+        attachments: [],
+        headers: new Map(),
+        headerLines: [],
+      } as unknown as MailParser.ParsedMail;
 
       const preview = generateBodyPreview(parsed);
       expect(preview).toBe('');

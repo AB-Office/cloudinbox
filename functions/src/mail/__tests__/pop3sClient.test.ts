@@ -2,6 +2,8 @@
  * pop3sClient - POP3S接続・メール取得のテスト
  */
 
+/// <reference types="jest" />
+
 import { Pop3sClient } from '../pop3sClient';
 import * as tls from 'tls';
 
@@ -22,6 +24,7 @@ describe('Pop3sClient', () => {
     mockSocket = {
       write: jest.fn(),
       on: jest.fn(),
+      removeListener: jest.fn(),
       destroy: jest.fn(),
       setEncoding: jest.fn(),
     };
@@ -38,9 +41,9 @@ describe('Pop3sClient', () => {
     it('SSL/TLS接続を確立できる', async () => {
       // モック: 接続成功時の応答をシミュレート
       let dataHandler: ((data: Buffer) => void) | null = null;
-      mockSocket.on.mockImplementation((event: string, handler: any) => {
-        if (event === 'data') {
-          dataHandler = handler;
+      (mockSocket.on as jest.Mock).mockImplementation((event: string, handler: any) => {
+        if (event === 'data' && handler) {
+          dataHandler = handler as (data: Buffer) => void;
         }
       });
 
@@ -49,9 +52,23 @@ describe('Pop3sClient', () => {
       // 接続開始
       const connectPromise = client.connect();
 
-      // サーバーからの初期応答をシミュレート
+      // dataHandlerが設定されるまで待つ
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // サーバーからの応答を順番にシミュレート
+      // 1. greeting
       if (dataHandler) {
-        dataHandler(Buffer.from('+OK POP3 server ready\r\n'));
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK POP3 server ready\r\n'));
+      }
+      // 2. USERコマンドの応答
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (dataHandler) {
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK\r\n'));
+      }
+      // 3. PASSコマンドの応答
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (dataHandler) {
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK\r\n'));
       }
 
       await connectPromise;
@@ -66,10 +83,10 @@ describe('Pop3sClient', () => {
       );
     });
 
-    it('useSslがfalseの場合はエラーを投げる', async () => {
-      const client = new Pop3sClient(mockHost, 110, mockUserName, mockPassword, false);
-      
-      await expect(client.connect()).rejects.toThrow('SSL/TLS is required');
+    it('useSslがfalseの場合はエラーを投げる', () => {
+      expect(() => {
+        new Pop3sClient(mockHost, 110, mockUserName, mockPassword, false);
+      }).toThrow('SSL/TLS is required for POP3 connections');
     });
 
     it('接続エラー時にエラーを投げる', async () => {
@@ -98,21 +115,39 @@ describe('Pop3sClient', () => {
       let dataHandler: ((data: Buffer) => void) | null = null;
       mockSocket.on.mockImplementation((event: string, handler: any) => {
         if (event === 'data') {
-          dataHandler = handler;
+          dataHandler = handler as (data: Buffer) => void;
         }
       });
 
       const connectPromise = client.connect();
+      
+      // dataHandlerが設定されるまで待つ
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // 接続応答を順番にシミュレート
       if (dataHandler) {
-        dataHandler(Buffer.from('+OK POP3 server ready\r\n'));
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK POP3 server ready\r\n'));
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (dataHandler) {
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK\r\n'));
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (dataHandler) {
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK\r\n'));
       }
       await connectPromise;
 
       // LISTコマンドの応答をシミュレート
       const listPromise = client.listMessages();
       
+      await new Promise(resolve => setTimeout(resolve, 50));
       if (dataHandler) {
-        dataHandler(Buffer.from('+OK\r\n1 1000\r\n2 2000\r\n.\r\n'));
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK\r\n'));
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (dataHandler) {
+        (dataHandler as (data: Buffer) => void)(Buffer.from('1 1000\r\n2 2000\r\n.\r\n'));
       }
 
       const messages = await listPromise;
@@ -133,21 +168,39 @@ describe('Pop3sClient', () => {
       let dataHandler: ((data: Buffer) => void) | null = null;
       mockSocket.on.mockImplementation((event: string, handler: any) => {
         if (event === 'data') {
-          dataHandler = handler;
+          dataHandler = handler as (data: Buffer) => void;
         }
       });
 
       const connectPromise = client.connect();
+      
+      // dataHandlerが設定されるまで待つ
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // 接続応答を順番にシミュレート
       if (dataHandler) {
-        dataHandler(Buffer.from('+OK POP3 server ready\r\n'));
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK POP3 server ready\r\n'));
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (dataHandler) {
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK\r\n'));
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (dataHandler) {
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK\r\n'));
       }
       await connectPromise;
 
       // RETRコマンドの応答をシミュレート
       const retrievePromise = client.retrieveMessage(1);
       
+      await new Promise(resolve => setTimeout(resolve, 50));
       if (dataHandler) {
-        dataHandler(Buffer.from('+OK\r\nFrom: test@example.com\r\nSubject: Test\r\n\r\nBody content\r\n.\r\n'));
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK\r\n'));
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (dataHandler) {
+        (dataHandler as (data: Buffer) => void)(Buffer.from('From: test@example.com\r\nSubject: Test\r\n\r\nBody content\r\n.\r\n'));
       }
 
       const message = await retrievePromise;
@@ -167,21 +220,35 @@ describe('Pop3sClient', () => {
       let dataHandler: ((data: Buffer) => void) | null = null;
       mockSocket.on.mockImplementation((event: string, handler: any) => {
         if (event === 'data') {
-          dataHandler = handler;
+          dataHandler = handler as (data: Buffer) => void;
         }
       });
 
       const connectPromise = client.connect();
+      
+      // dataHandlerが設定されるまで待つ
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // 接続応答を順番にシミュレート
       if (dataHandler) {
-        dataHandler(Buffer.from('+OK POP3 server ready\r\n'));
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK POP3 server ready\r\n'));
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (dataHandler) {
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK\r\n'));
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (dataHandler) {
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK\r\n'));
       }
       await connectPromise;
 
       // DELEコマンドの応答をシミュレート
       const deletePromise = client.deleteMessage(1);
       
+      await new Promise(resolve => setTimeout(resolve, 50));
       if (dataHandler) {
-        dataHandler(Buffer.from('+OK message deleted\r\n'));
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK message deleted\r\n'));
       }
 
       await deletePromise;
@@ -198,21 +265,35 @@ describe('Pop3sClient', () => {
       let dataHandler: ((data: Buffer) => void) | null = null;
       mockSocket.on.mockImplementation((event: string, handler: any) => {
         if (event === 'data') {
-          dataHandler = handler;
+          dataHandler = handler as (data: Buffer) => void;
         }
       });
 
       const connectPromise = client.connect();
+      
+      // dataHandlerが設定されるまで待つ
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // 接続応答を順番にシミュレート
       if (dataHandler) {
-        dataHandler(Buffer.from('+OK POP3 server ready\r\n'));
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK POP3 server ready\r\n'));
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (dataHandler) {
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK\r\n'));
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (dataHandler) {
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK\r\n'));
       }
       await connectPromise;
 
       // QUITコマンドの応答をシミュレート
       const disconnectPromise = client.disconnect();
       
+      await new Promise(resolve => setTimeout(resolve, 50));
       if (dataHandler) {
-        dataHandler(Buffer.from('+OK POP3 server signing off\r\n'));
+        (dataHandler as (data: Buffer) => void)(Buffer.from('+OK POP3 server signing off\r\n'));
       }
 
       await disconnectPromise;

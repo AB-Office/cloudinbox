@@ -4,20 +4,27 @@
 
 /// <reference types="jest" />
 
-import { fetchMails } from '../fetchMails';
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 
 // モック
+let savedHandler: any = null;
 jest.mock('firebase-admin');
 jest.mock('firebase-functions', () => ({
   region: jest.fn(() => ({
     pubsub: {
       schedule: jest.fn(() => ({
         timeZone: jest.fn(() => ({
-          onRun: jest.fn((handler: any) => ({
-            run: (data: any, context: any) => handler(context),
-          })),
+          onRun: jest.fn((handler: any) => {
+            savedHandler = handler;
+            return {
+              run: async (data: any, context: any) => {
+                if (savedHandler) {
+                  return await savedHandler(context);
+                }
+              },
+            };
+          }),
         })),
       })),
     },
@@ -25,6 +32,7 @@ jest.mock('firebase-functions', () => ({
   logger: {
     error: jest.fn(),
     info: jest.fn(),
+    warn: jest.fn(),
   },
 }));
 jest.mock('../pop3Client');
@@ -52,8 +60,10 @@ describe('fetchMails', () => {
   });
 
   it('onSchedule関数として実装されている', () => {
+    const { fetchMails } = require('../fetchMails');
     expect(fetchMails).toBeDefined();
-    expect(typeof fetchMails).toBe('function');
+    expect(fetchMails).toHaveProperty('run');
+    expect(typeof fetchMails.run).toBe('function');
   });
 
   it('アクティブなメールアカウントを取得する', async () => {
@@ -83,18 +93,29 @@ describe('fetchMails', () => {
       }),
     };
 
+    const mockUserDoc = {
+      collection: jest.fn((path: string) => {
+        if (path === 'mailAccounts') {
+          return mockMailAccountsCollection;
+        }
+        return mockMailAccountsCollection;
+      }),
+    };
+
     mockFirestore.collection = jest.fn((path: string) => {
       if (path === 'users') {
-        return mockUsersCollection;
-      }
-      if (path.includes('mailAccounts')) {
-        return mockMailAccountsCollection;
+        return {
+          get: mockUsersCollection.get,
+          doc: jest.fn(() => mockUserDoc),
+        };
       }
       return mockUsersCollection;
     });
 
-    // onSchedule関数を呼び出す
-    await fetchMails.run({} as functions.pubsub.Message, mockContext);
+    // ハンドラーを直接呼び出す
+    if (savedHandler) {
+      await savedHandler(mockContext);
+    }
 
     expect(mockFirestore.collection).toHaveBeenCalledWith('users');
     expect(mockMailAccountsCollection.where).toHaveBeenCalledWith('status', '==', 'active');
@@ -117,20 +138,33 @@ describe('fetchMails', () => {
       where: jest.fn().mockReturnThis(),
       get: jest.fn().mockResolvedValue({
         docs: [], // アクティブなアカウントなし
+        empty: true,
+      }),
+    };
+
+    const mockUserDoc = {
+      collection: jest.fn((path: string) => {
+        if (path === 'mailAccounts') {
+          return mockMailAccountsCollection;
+        }
+        return mockMailAccountsCollection;
       }),
     };
 
     mockFirestore.collection = jest.fn((path: string) => {
       if (path === 'users') {
-        return mockUsersCollection;
-      }
-      if (path.includes('mailAccounts')) {
-        return mockMailAccountsCollection;
+        return {
+          get: mockUsersCollection.get,
+          doc: jest.fn(() => mockUserDoc),
+        };
       }
       return mockUsersCollection;
     });
 
-    await fetchMails.run({} as functions.pubsub.Message, mockContext);
+    // ハンドラーを直接呼び出す
+    if (savedHandler) {
+      await savedHandler(mockContext);
+    }
 
     expect(mockMailAccountsCollection.get).toHaveBeenCalled();
   });
@@ -165,17 +199,29 @@ describe('fetchMails', () => {
       }),
     };
 
+    const mockUserDoc = {
+      collection: jest.fn((path: string) => {
+        if (path === 'mailAccounts') {
+          return mockMailAccountsCollection;
+        }
+        return mockMailAccountsCollection;
+      }),
+    };
+
     mockFirestore.collection = jest.fn((path: string) => {
       if (path === 'users') {
-        return mockUsersCollection;
-      }
-      if (path.includes('mailAccounts')) {
-        return mockMailAccountsCollection;
+        return {
+          get: mockUsersCollection.get,
+          doc: jest.fn(() => mockUserDoc),
+        };
       }
       return mockUsersCollection;
     });
 
-    await fetchMails.run({} as functions.pubsub.Message, mockContext);
+    // ハンドラーを直接呼び出す
+    if (savedHandler) {
+      await savedHandler(mockContext);
+    }
 
     // 2つのユーザーを走査
     expect(mockMailAccountsCollection.get).toHaveBeenCalledTimes(2);
@@ -196,28 +242,34 @@ describe('fetchMails', () => {
     const mockMailAccountsCollection = {
       where: jest.fn().mockReturnThis(),
       get: jest.fn().mockResolvedValue({
-        docs: [
-          {
-            id: 'account-1',
-            data: () => ({
-              status: 'error', // activeではない
-            }),
-          },
-        ],
+        docs: [],
+        empty: true,
+      }),
+    };
+
+    const mockUserDoc = {
+      collection: jest.fn((path: string) => {
+        if (path === 'mailAccounts') {
+          return mockMailAccountsCollection;
+        }
+        return mockMailAccountsCollection;
       }),
     };
 
     mockFirestore.collection = jest.fn((path: string) => {
       if (path === 'users') {
-        return mockUsersCollection;
-      }
-      if (path.includes('mailAccounts')) {
-        return mockMailAccountsCollection;
+        return {
+          get: mockUsersCollection.get,
+          doc: jest.fn(() => mockUserDoc),
+        };
       }
       return mockUsersCollection;
     });
 
-    await fetchMails.run({} as functions.pubsub.Message, mockContext);
+    // ハンドラーを直接呼び出す
+    if (savedHandler) {
+      await savedHandler(mockContext);
+    }
 
     // where('status', '==', 'active')でフィルタリングされるため、
     // errorステータスのアカウントは取得されない

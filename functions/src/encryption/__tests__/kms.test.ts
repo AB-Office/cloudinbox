@@ -2,6 +2,8 @@
  * EncryptionService - KMS操作のテスト
  */
 
+/// <reference types="jest" />
+
 import { KeyManagementServiceClient } from '@google-cloud/kms';
 
 // モック
@@ -15,19 +17,13 @@ describe('kms', () => {
   const mockDek = Buffer.alloc(32, 0x42); // 32バイトの固定値
   const mockWrappedDek = Buffer.from('wrapped-dek-data', 'utf-8');
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.clearAllMocks();
-    // モジュールをリロードしてシングルトンをリセット
-    jest.resetModules();
-    const kmsModule = await import('../kms');
-    kmsModule.resetClient();
     process.env.KMS_KEY_NAME = mockKmsKeyName;
   });
 
   describe('wrapKey', () => {
     it('DEKをKMSでwrapする', async () => {
-      const kmsModule = await import('../kms');
-      
       const mockKmsClient = {
         encrypt: jest.fn().mockResolvedValue([
           {
@@ -37,6 +33,9 @@ describe('kms', () => {
       };
 
       (KeyManagementServiceClient as unknown as jest.Mock).mockImplementation(() => mockKmsClient);
+      
+      const kmsModule = await import('../kms');
+      kmsModule.resetClient();
 
       const wrapped = await kmsModule.wrapKey(mockDek);
 
@@ -57,8 +56,6 @@ describe('kms', () => {
 
   describe('unwrapKey', () => {
     it('wrapされたDEKをKMSでunwrapする', async () => {
-      const kmsModule = await import('../kms');
-      
       const mockKmsClient = {
         decrypt: jest.fn().mockResolvedValue([
           {
@@ -68,6 +65,9 @@ describe('kms', () => {
       };
 
       (KeyManagementServiceClient as unknown as jest.Mock).mockImplementation(() => mockKmsClient);
+      
+      const kmsModule = await import('../kms');
+      kmsModule.resetClient();
 
       const unwrapped = await kmsModule.unwrapKey(mockWrappedDek);
 
@@ -86,35 +86,32 @@ describe('kms', () => {
     });
 
     it('KMSのencryptが失敗した場合はエラーを投げる', async () => {
-      const kmsModule = await import('../kms');
-      kmsModule.resetClient();
-      
       const mockKmsClient = {
         encrypt: jest.fn().mockRejectedValue(new Error('KMS encrypt failed')),
       };
 
       (KeyManagementServiceClient as unknown as jest.Mock).mockImplementation(() => mockKmsClient);
+      
+      const kmsModule = await import('../kms');
+      kmsModule.resetClient();
 
       await expect(kmsModule.wrapKey(mockDek)).rejects.toThrow('KMS encrypt failed');
     });
 
     it('KMSのdecryptが失敗した場合はエラーを投げる', async () => {
-      const kmsModule = await import('../kms');
-      kmsModule.resetClient();
-      
       const mockKmsClient = {
         decrypt: jest.fn().mockRejectedValue(new Error('KMS decrypt failed')),
       };
 
       (KeyManagementServiceClient as unknown as jest.Mock).mockImplementation(() => mockKmsClient);
+      
+      const kmsModule = await import('../kms');
+      kmsModule.resetClient();
 
       await expect(kmsModule.unwrapKey(mockWrappedDek)).rejects.toThrow('KMS decrypt failed');
     });
 
     it('KMSのencryptが空のciphertextを返した場合はエラーを投げる', async () => {
-      const kmsModule = await import('../kms');
-      kmsModule.resetClient();
-      
       const mockKmsClient = {
         encrypt: jest.fn().mockResolvedValue([
           {
@@ -124,14 +121,14 @@ describe('kms', () => {
       };
 
       (KeyManagementServiceClient as unknown as jest.Mock).mockImplementation(() => mockKmsClient);
+      
+      const kmsModule = await import('../kms');
+      kmsModule.resetClient();
 
       await expect(kmsModule.wrapKey(mockDek)).rejects.toThrow('Failed to wrap key');
     });
 
     it('KMSのdecryptが空のplaintextを返した場合はエラーを投げる', async () => {
-      const kmsModule = await import('../kms');
-      kmsModule.resetClient();
-      
       const mockKmsClient = {
         decrypt: jest.fn().mockResolvedValue([
           {
@@ -141,6 +138,9 @@ describe('kms', () => {
       };
 
       (KeyManagementServiceClient as unknown as jest.Mock).mockImplementation(() => mockKmsClient);
+      
+      const kmsModule = await import('../kms');
+      kmsModule.resetClient();
 
       await expect(kmsModule.unwrapKey(mockWrappedDek)).rejects.toThrow('Failed to unwrap key');
     });
