@@ -19,6 +19,26 @@
   "loading": "Loading...",
   "@loading": {
     "description": "Loading message"
+  },
+  "accountSettings": "Account Settings",
+  "@accountSettings": {
+    "description": "Account settings menu label"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings screen title"
+  },
+  "inbox": "Inbox",
+  "@inbox": {
+    "description": "Inbox menu label"
+  },
+  "allMail": "All Mail",
+  "@allMail": {
+    "description": "All mail menu label"
+  },
+  "trash": "Trash",
+  "@trash": {
+    "description": "Trash menu label"
   }
 }
 

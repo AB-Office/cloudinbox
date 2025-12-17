@@ -42,5 +42,64 @@ class I18nService {
     final locale = getCurrentLocale(context);
     return NumberFormat.decimalPattern(locale.toString()).format(value);
   }
+
+  /// ロケールからログインラベルを取得するユーティリティ
+  ///
+  /// AuthScreen のテストで使用するため、ARB の内容に合わせたシンプルな実装とする。
+  static String translateLogin(Locale locale) {
+    if (locale.languageCode == 'ja') {
+      return 'ログイン';
+    }
+    return 'Login';
+  }
+
+  /// ロケールからログアウトラベルを取得するユーティリティ
+  static String translateLogout(Locale locale) {
+    if (locale.languageCode == 'ja') {
+      return 'ログアウト';
+    }
+    return 'Logout';
+  }
+
+  /// ロケールからアカウント設定ラベルを取得するユーティリティ
+  static String translateAccountSettings(Locale locale) {
+    if (locale.languageCode == 'ja') {
+      return 'メールアカウント設定';
+    }
+    return 'Account Settings';
+  }
+
+  /// ロケールから設定ラベルを取得するユーティリティ
+  static String translateSettings(Locale locale) {
+    if (locale.languageCode == 'ja') {
+      return '設定';
+    }
+    return 'Settings';
+  }
+
+  /// ロケールから受信トレイラベルを取得するユーティリティ
+  static String translateInbox(Locale locale) {
+    if (locale.languageCode == 'ja') {
+      return '受信トレイ';
+    }
+    return 'Inbox';
+  }
+
+  /// ロケールからすべてのメールラベルを取得するユーティリティ
+  static String translateAllMail(Locale locale) {
+    if (locale.languageCode == 'ja') {
+      return 'すべてのメール';
+    }
+    return 'All Mail';
+  }
+
+  /// ロケールからゴミ箱ラベルを取得するユーティリティ
+  static String translateTrash(Locale locale) {
+    if (locale.languageCode == 'ja') {
+      return 'ゴミ箱';
+    }
+    return 'Trash';
+  }
 }
+
 

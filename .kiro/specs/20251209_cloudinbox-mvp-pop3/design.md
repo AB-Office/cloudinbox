@@ -702,6 +702,37 @@ class AdService {
 - Validation: プラン情報の確認、広告読み込み状態の管理
 - Risks: 広告読み込みの遅延、広告プラットフォームのAPI変更
 
+#### NavigationDrawer
+
+| Field | Detail |
+|-------|--------|
+| Intent | ハンバーガーメニューによる画面遷移とプラン情報表示を提供する |
+| Requirements | 5.1-5.12, 7.8, 8.1-8.10, 12.1-12.9 |
+
+**Responsibilities & Constraints**
+- アプリ共通の`Scaffold`に`Drawer`（または`NavigationDrawer`）を統合し、受信トレイ／すべてのメール／ゴミ箱／設定へのメニュー項目を表示
+- 各メニュー項目にアイコンとラベル（I18nService経由）を表示
+- 受信トレイ選択時は MailListScreen に受信トレイ用フィルタ（`labels`に`inbox`を含み、`trash`を含まない）を渡して表示
+- すべてのメール選択時は MailListScreen にフィルタなしで表示
+- ゴミ箱選択時は MailListScreen に`labels`に`trash`を含むフィルタを渡して表示
+- 設定選択時は SettingsScreen へ遷移
+- Drawer 最下部に現在のプラン情報（`plan.label`）と使用量（`usage.storageBytes`）、残り使用可能量を表示（フォーマットは I18nService を利用）
+- Free プランの場合でも広告と競合しないようにレイアウトを調整
+
+**Dependencies**
+- Outbound: Firestore — ユーザープランおよび使用量取得 (P0)
+- Outbound: MailListScreen — ラベルフィルタ付きメール一覧表示 (P0)
+- Outbound: SettingsScreen — 設定画面遷移 (P0)
+- Outbound: I18nService — メニューラベルと数値フォーマット (P0)
+- External: Flutter Material Design — Drawer UIコンポーネント (P0)
+
+**Contracts**: State [✓]
+
+##### State Management
+- State model: `NavigationState { selectedItem: NavigationItem, isDrawerOpen: boolean }`
+- Persistence & consistency: 画面回転時も選択中メニューを維持
+- Concurrency strategy: 単一ナビゲーションフロー（タップ毎に1回のみ遷移）
+
 #### I18nService
 
 | Field | Detail |

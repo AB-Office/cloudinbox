@@ -121,6 +121,11 @@ CloudInbox MVPは、外部メールサーバ（POP3S、SSL/TLS必須）から受
 16. When メール詳細を表示する, CloudInbox shall Storageパス情報（`storage.attachmentsBasePath`）から添付ファイル一覧を取得・表示する
 17. When ユーザーがメールを開く, CloudInbox shall Flutterアプリ側でFirestoreを直接更新して、メールの未読状態を`isRead: true`に更新し、スレッドの`hasUnread`を更新する
 18. The CloudInbox shall 復号済みのメール本文をクライアント側でキャッシュしない（セキュリティ要件）
+19. When ユーザーがハンバーガーメニューを開く, CloudInbox shall 受信トレイ／すべてのメール／ゴミ箱／設定へのメニュー項目をアイコン付きで一覧表示し、その一番下に現在のプラン情報（`plan.label`）と使用量および残り使用可能量を表示する
+20. When ユーザーがハンバーガーメニューの「受信トレイ」をタップする, CloudInbox shall 受信トレイ用フィルタ（`labels`に`inbox`を含み、`trash`を含まない）を適用したメール一覧画面（MailListScreen）を表示する
+21. When ユーザーがハンバーガーメニューの「すべてのメール」をタップする, CloudInbox shall ラベルによるフィルタリングを行わない「すべてのメール」用フィルタを適用したメール一覧画面（MailListScreen）を表示する
+22. When ユーザーがハンバーガーメニューの「ゴミ箱」をタップする, CloudInbox shall `labels`に`trash`を含むスレッドのみを表示するメール一覧画面（MailListScreen）を表示する
+23. When ユーザーがハンバーガーメニューの「設定」をタップする, CloudInbox shall 設定画面を表示し、その画面で「メールアカウント設定」と「ログアウト」の2つのメニュー項目を一覧表示する
 
 ### Requirement 6: メールゴミ箱機能
 
