@@ -2,12 +2,31 @@
  * fetchMails - メール自動受信の基本構造のテスト
  */
 
+/// <reference types="jest" />
+
 import { fetchMails } from '../fetchMails';
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 
 // モック
 jest.mock('firebase-admin');
+jest.mock('firebase-functions', () => ({
+  region: jest.fn(() => ({
+    pubsub: {
+      schedule: jest.fn(() => ({
+        timeZone: jest.fn(() => ({
+          onRun: jest.fn((handler: any) => ({
+            run: (data: any, context: any) => handler(context),
+          })),
+        })),
+      })),
+    },
+  })),
+  logger: {
+    error: jest.fn(),
+    info: jest.fn(),
+  },
+}));
 jest.mock('../pop3Client');
 
 describe('fetchMails', () => {
@@ -29,7 +48,7 @@ describe('fetchMails', () => {
       collection: jest.fn(),
     };
 
-    (admin.firestore as jest.Mock).mockReturnValue(mockFirestore);
+    (admin.firestore as unknown as jest.Mock) = jest.fn(() => mockFirestore);
   });
 
   it('onSchedule関数として実装されている', () => {
