@@ -1,0 +1,24 @@
+{
+  "@@locale": "en",
+  "appTitle": "CloudInbox",
+  "@appTitle": {
+    "description": "Application title"
+  },
+  "login": "Login",
+  "@login": {
+    "description": "Login button label"
+  },
+  "logout": "Logout",
+  "@logout": {
+    "description": "Logout button label"
+  },
+  "error": "Error",
+  "@error": {
+    "description": "Error message title"
+  },
+  "loading": "Loading...",
+  "@loading": {
+    "description": "Loading message"
+  }
+}
+
