@@ -19,7 +19,7 @@ import { saveMail } from './saveMail';
  * 
  * Cloud Schedulerから定期実行される（15-30分間隔）
  */
-export const fetchMails = functions.pubsub
+export const fetchMails = functions.region('asia-northeast1').pubsub
   .schedule('every 15 minutes')
   .timeZone('Asia/Tokyo')
   .onRun(async (context) => {

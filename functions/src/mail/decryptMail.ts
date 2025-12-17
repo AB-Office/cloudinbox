@@ -89,7 +89,7 @@ export async function executeDecryptMail(
  *
  * テストコードから直接呼び出しやすくするため、型はanyとしてエクスポートする
  */
-export const decryptMail: any = functions.https.onCall(
+export const decryptMail: any = functions.region('asia-northeast1').https.onCall(
   async (
     data: DecryptMailRequest,
     context: functions.https.CallableContext

@@ -79,7 +79,7 @@ async function initializeUser(user: admin.auth.UserRecord): Promise<void> {
 /**
  * Firebase Authトリガー: ユーザー作成時
  */
-export const onUserCreate = functions.auth.user().onCreate(async (user) => {
+export const onUserCreate = functions.region('asia-northeast1').auth.user().onCreate(async (user) => {
   try {
     await initializeUser(user);
     functions.logger.info(`User initialized: ${user.uid}`);

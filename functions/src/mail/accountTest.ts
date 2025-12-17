@@ -35,7 +35,7 @@ interface AccountTestResponse {
 /**
  * POP3S接続テストを実行するHTTP Callable Function
  */
-export const accountTest = functions.https.onCall(
+export const accountTest = functions.region('asia-northeast1').https.onCall(
   async (data: AccountTestRequest, context: functions.https.CallableContext): Promise<AccountTestResponse> => {
     // 認証チェック
     if (!context.auth) {

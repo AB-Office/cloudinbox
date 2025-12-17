@@ -77,7 +77,7 @@ export async function executePurgeTrash(
  * 
  * Cloud Schedulerから定期実行される（1日1回推奨）
  */
-export const purgeTrash = functions.pubsub
+export const purgeTrash = functions.region('asia-northeast1').pubsub
   .schedule('0 2 * * *') // 毎日午前2時（UTC）
   .timeZone('Asia/Tokyo')
   .onRun(async (context) => {
