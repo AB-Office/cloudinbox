@@ -543,7 +543,7 @@
 
 ### 4. インフラ・設定
 
-#### - [ ] 4.1: Firestore セキュリティルール
+#### - [x] 4.1: Firestore セキュリティルール
 - **目的**: ユーザー単位のアクセス制御
 - **作業内容**:
   - `infra/firebase/firestore.rules`の作成
@@ -556,7 +556,7 @@
 - **要件カバー**: 1.12, 5.1
 - **見積もり**: 2時間
 
-#### - [ ] 4.2: Storage セキュリティルール
+#### - [x] 4.2: Storage セキュリティルール
 - **目的**: ユーザー単位のファイルアクセス制御
 - **作業内容**:
   - `infra/firebase/storage.rules`の作成
@@ -568,7 +568,7 @@
 - **要件カバー**: 1.12
 - **見積もり**: 2時間
 
-#### - [ ] 4.3: Firestore インデックス定義
+#### - [x] 4.3: Firestore インデックス定義
 - **目的**: メールスレッド・メッセージクエリのパフォーマンス最適化
 - **作業内容**:
   - `infra/firebase/firestore.indexes.json`の作成
@@ -582,7 +582,7 @@
 - **要件カバー**: 5.1-5.2, 6.7
 - **見積もり**: 2時間
 
-#### - [ ] 4.4: Cloud Scheduler 設定
+#### - [x] 4.4: Cloud Scheduler 設定
 - **目的**: 定期メール受信とゴミ箱完全削除のスケジュール設定
 - **作業内容**:
   - Cloud Schedulerジョブの作成（cron形式、15-30分間隔）
@@ -595,7 +595,7 @@
 - **要件カバー**: 3.1, 6.7
 - **見積もり**: 2時間
 
-#### - [ ] 4.5: Google Cloud KMS 設定
+#### - [x] 4.5: Google Cloud KMS 設定
 - **目的**: 暗号化基盤のKMS鍵リングと鍵の作成
 - **作業内容**:
   - Google Cloud ConsoleでKMS鍵リング（Key Ring）を作成
@@ -608,7 +608,7 @@
 - **要件カバー**: 9.1-9.2
 - **見積もり**: 2時間
 
-#### - [ ] 4.6: Secret Manager 設定（DEK保存用）
+#### - [x] 4.6: Secret Manager 設定（DEK保存用）
 - **目的**: DEK（Data Encryption Key）の保存先としてSecret Managerを設定
 - **作業内容**:
   - Cloud FunctionsのIAMロール設定（Secret Manager Secret Accessor）

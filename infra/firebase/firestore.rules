@@ -1,0 +1,40 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ユーザードキュメント: 認証ユーザーのみ読み書き可能
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      
+      // メールアカウントサブコレクション: 認証ユーザーのみ読み書き可能
+      match /mailAccounts/{accountId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+      
+      // メールスレッドサブコレクション: 認証ユーザーのみ読み書き可能
+      match /mailThreads/{threadId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+      
+      // メールメッセージサブコレクション: 認証ユーザーのみ読み書き可能
+      match /mailMessages/{messageId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+    
+    // collectionGroupクエリ用: mailMessagesコレクション全体を横断検索する場合
+    // 各ドキュメントにuidフィールドが含まれていることを前提とする
+    match /{path=**}/mailMessages/{messageId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
+      allow write: if request.auth != null && request.auth.uid == request.resource.data.uid;
+    }
+    
+    // collectionGroupクエリ用: mailThreadsコレクション全体を横断検索する場合
+    // 各ドキュメントにuidフィールドが含まれていることを前提とする
+    match /{path=**}/mailThreads/{threadId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
+      allow write: if request.auth != null && request.auth.uid == request.resource.data.uid;
+    }
+  }
+}
+
