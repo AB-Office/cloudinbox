@@ -4,16 +4,34 @@
 
 import { accountTest } from '../accountTest';
 import * as admin from 'firebase-admin';
-import * as functions from 'firebase-functions';
 import * as encryption from '../../encryption';
 
 // モック
 jest.mock('firebase-admin');
 jest.mock('../../encryption');
+jest.mock('firebase-functions', () => ({
+  region: jest.fn(() => ({
+    https: {
+      onCall: jest.fn((handler: any) => handler),
+    },
+  })),
+  logger: {
+    error: jest.fn(),
+  },
+  https: {
+    HttpsError: class HttpsError extends Error {
+      constructor(public code: string, public message: string) {
+        super(message);
+        this.name = 'HttpsError';
+      }
+    },
+  },
+}));
 jest.mock('../pop3Client', () => ({
   testPop3Connection: jest.fn(),
 }));
 
+import * as functions from 'firebase-functions';
 import { testPop3Connection } from '../pop3Client';
 
 describe('accountTest', () => {
@@ -140,7 +158,7 @@ describe('accountTest', () => {
         })),
       };
 
-      (admin.firestore as jest.Mock).mockReturnValue(mockFirestore);
+      (admin.firestore as unknown as jest.Mock) = jest.fn(() => mockFirestore);
 
       const data = {
         accountId: mockAccountId,
@@ -180,7 +198,7 @@ describe('accountTest', () => {
         })),
       };
 
-      (admin.firestore as jest.Mock).mockReturnValue(mockFirestore);
+      (admin.firestore as unknown as jest.Mock) = jest.fn(() => mockFirestore);
 
       const data = {
         accountId: mockAccountId,

@@ -12,6 +12,15 @@ jest.mock('../pop3Client');
 
 describe('fetchMails', () => {
   let mockFirestore: any;
+  const mockContext = {
+    eventId: 'test-event-id',
+    timestamp: '2023-01-01T00:00:00Z',
+    eventType: 'google.pubsub.topic.publish',
+    resource: {
+      service: 'pubsub.googleapis.com',
+      name: 'projects/test-project/topics/test-topic',
+    },
+  } as functions.EventContext;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -66,7 +75,7 @@ describe('fetchMails', () => {
     });
 
     // onSchedule関数を呼び出す
-    await fetchMails.run({} as functions.pubsub.Message);
+    await fetchMails.run({} as functions.pubsub.Message, mockContext);
 
     expect(mockFirestore.collection).toHaveBeenCalledWith('users');
     expect(mockMailAccountsCollection.where).toHaveBeenCalledWith('status', '==', 'active');
@@ -102,7 +111,7 @@ describe('fetchMails', () => {
       return mockUsersCollection;
     });
 
-    await fetchMails.run({} as functions.pubsub.Message);
+    await fetchMails.run({} as functions.pubsub.Message, mockContext);
 
     expect(mockMailAccountsCollection.get).toHaveBeenCalled();
   });
@@ -147,7 +156,7 @@ describe('fetchMails', () => {
       return mockUsersCollection;
     });
 
-    await fetchMails.run({} as functions.pubsub.Message);
+    await fetchMails.run({} as functions.pubsub.Message, mockContext);
 
     // 2つのユーザーを走査
     expect(mockMailAccountsCollection.get).toHaveBeenCalledTimes(2);
@@ -189,7 +198,7 @@ describe('fetchMails', () => {
       return mockUsersCollection;
     });
 
-    await fetchMails.run({} as functions.pubsub.Message);
+    await fetchMails.run({} as functions.pubsub.Message, mockContext);
 
     // where('status', '==', 'active')でフィルタリングされるため、
     // errorステータスのアカウントは取得されない

@@ -2,14 +2,33 @@
  * decryptMail - メール本文復号のテスト
  */
 
-import { executeDecryptMail } from '../decryptMail';
+import { executeDecryptMail, decryptMail } from '../decryptMail';
 import * as admin from 'firebase-admin';
 import * as encryption from '../../encryption';
+import * as functions from 'firebase-functions';
 import { EncryptedData } from '../../mail/types';
 
 // モック
 jest.mock('firebase-admin');
 jest.mock('../../encryption');
+jest.mock('firebase-functions', () => ({
+  region: jest.fn(() => ({
+    https: {
+      onCall: jest.fn((handler: any) => handler),
+    },
+  })),
+  logger: {
+    error: jest.fn(),
+  },
+  https: {
+    HttpsError: class HttpsError extends Error {
+      constructor(public code: string, public message: string) {
+        super(message);
+        this.name = 'HttpsError';
+      }
+    },
+  },
+}));
 
 describe('decryptMail', () => {
   const mockUid = 'test-user-123';
@@ -186,5 +205,319 @@ describe('decryptMail', () => {
     });
   });
 
-  // 認証チェックはCloud Functionsラッパー側（decryptMail）で実施する
+  describe('エラーハンドリング', () => {
+    it('メッセージが存在しない場合はエラーを投げる', async () => {
+      const messageId = 'non-existent-message';
+
+      const mockMessageDoc = {
+        exists: false,
+      };
+
+      const mockMessageRef = {
+        get: jest.fn().mockResolvedValue(mockMessageDoc),
+      };
+
+      const mockUserCollection = {
+        doc: jest.fn(() => ({
+          collection: jest.fn((subPath: string) => {
+            if (subPath === 'mailMessages') {
+              return {
+                doc: jest.fn(() => mockMessageRef),
+              };
+            }
+            return { doc: jest.fn() };
+          }),
+        })),
+      };
+
+      mockFirestore.collection = jest.fn((path: string) => {
+        if (path === 'users') {
+          return mockUserCollection;
+        }
+        return { doc: jest.fn() };
+      });
+
+      await expect(
+        executeDecryptMail(mockUid, messageId, mockFirestore, mockStorage)
+      ).rejects.toThrow('Message not found');
+    });
+
+    it('hasLargeBodyがfalseでbodyTextEncryptedが存在しない場合はエラーを投げる', async () => {
+      const messageId = 'message-123';
+
+      const mockMessageDoc = {
+        exists: true,
+        data: () => ({
+          messageId,
+          hasLargeBody: false,
+          bodyTextEncrypted: undefined,
+          storage: {
+            rawMimePath: 'mail-data/user/message/raw.eml.enc',
+          },
+        }),
+      };
+
+      const mockMessageRef = {
+        get: jest.fn().mockResolvedValue(mockMessageDoc),
+      };
+
+      const mockUserCollection = {
+        doc: jest.fn(() => ({
+          collection: jest.fn((subPath: string) => {
+            if (subPath === 'mailMessages') {
+              return {
+                doc: jest.fn(() => mockMessageRef),
+              };
+            }
+            return { doc: jest.fn() };
+          }),
+        })),
+      };
+
+      mockFirestore.collection = jest.fn((path: string) => {
+        if (path === 'users') {
+          return mockUserCollection;
+        }
+        return { doc: jest.fn() };
+      });
+
+      await expect(
+        executeDecryptMail(mockUid, messageId, mockFirestore, mockStorage)
+      ).rejects.toThrow('Encrypted bodyText not found');
+    });
+
+    it('hasLargeBodyがtrueでlargeBodyPathが存在しない場合はエラーを投げる', async () => {
+      const messageId = 'message-456';
+
+      const mockMessageDoc = {
+        exists: true,
+        data: () => ({
+          messageId,
+          hasLargeBody: true,
+          storage: {
+            rawMimePath: 'mail-data/user/message/raw.eml.enc',
+            largeBodyPath: undefined,
+          },
+        }),
+      };
+
+      const mockMessageRef = {
+        get: jest.fn().mockResolvedValue(mockMessageDoc),
+      };
+
+      const mockUserCollection = {
+        doc: jest.fn(() => ({
+          collection: jest.fn((subPath: string) => {
+            if (subPath === 'mailMessages') {
+              return {
+                doc: jest.fn(() => mockMessageRef),
+              };
+            }
+            return { doc: jest.fn() };
+          }),
+        })),
+      };
+
+      mockFirestore.collection = jest.fn((path: string) => {
+        if (path === 'users') {
+          return mockUserCollection;
+        }
+        return { doc: jest.fn() };
+      });
+
+      await expect(
+        executeDecryptMail(mockUid, messageId, mockFirestore, mockStorage)
+      ).rejects.toThrow('Large body path not found');
+    });
+
+    it('復号処理が失敗した場合はエラーを投げる', async () => {
+      const messageId = 'message-123';
+
+      const encryptedBody: EncryptedData = {
+        ciphertext: 'cipher',
+        nonce: 'nonce',
+        tag: 'tag',
+      };
+
+      const mockMessageDoc = {
+        exists: true,
+        data: () => ({
+          messageId,
+          hasLargeBody: false,
+          bodyTextEncrypted: encryptedBody,
+          storage: {
+            rawMimePath: 'mail-data/user/message/raw.eml.enc',
+          },
+        }),
+      };
+
+      const mockMessageRef = {
+        get: jest.fn().mockResolvedValue(mockMessageDoc),
+      };
+
+      const mockUserCollection = {
+        doc: jest.fn(() => ({
+          collection: jest.fn((subPath: string) => {
+            if (subPath === 'mailMessages') {
+              return {
+                doc: jest.fn(() => mockMessageRef),
+              };
+            }
+            return { doc: jest.fn() };
+          }),
+        })),
+      };
+
+      mockFirestore.collection = jest.fn((path: string) => {
+        if (path === 'users') {
+          return mockUserCollection;
+        }
+        return { doc: jest.fn() };
+      });
+
+      (encryption.decryptForUser as jest.Mock).mockRejectedValue(
+        new Error('Decryption failed')
+      );
+
+      await expect(
+        executeDecryptMail(mockUid, messageId, mockFirestore, mockStorage)
+      ).rejects.toThrow('Decryption failed');
+    });
+  });
+
+  describe('認証検証', () => {
+    it('認証されていない場合はエラーを投げる', async () => {
+      const context = {
+        auth: undefined,
+      } as functions.https.CallableContext;
+
+      const data = {
+        messageId: 'message-123',
+      };
+
+      await expect(decryptMail(data, context)).rejects.toThrow('User must be authenticated');
+    });
+
+    it('messageIdが提供されていない場合はエラーを投げる', async () => {
+      const context = {
+        auth: {
+          uid: mockUid,
+        },
+      } as functions.https.CallableContext;
+
+      const data = {};
+
+      await expect(decryptMail(data, context)).rejects.toThrow('messageId is required');
+    });
+
+    it('認証されたユーザーは復号を実行できる', async () => {
+      const messageId = 'message-123';
+
+      const encryptedBody: EncryptedData = {
+        ciphertext: 'cipher',
+        nonce: 'nonce',
+        tag: 'tag',
+      };
+
+      const mockMessageDoc = {
+        exists: true,
+        data: () => ({
+          messageId,
+          hasLargeBody: false,
+          bodyTextEncrypted: encryptedBody,
+          storage: {
+            rawMimePath: 'mail-data/user/message/raw.eml.enc',
+          },
+        }),
+      };
+
+      const mockMessageRef = {
+        get: jest.fn().mockResolvedValue(mockMessageDoc),
+      };
+
+      const mockUserCollection = {
+        doc: jest.fn(() => ({
+          collection: jest.fn((subPath: string) => {
+            if (subPath === 'mailMessages') {
+              return {
+                doc: jest.fn(() => mockMessageRef),
+              };
+            }
+            return { doc: jest.fn() };
+          }),
+        })),
+      };
+
+      mockFirestore.collection = jest.fn((path: string) => {
+        if (path === 'users') {
+          return mockUserCollection;
+        }
+        return { doc: jest.fn() };
+      });
+
+      (encryption.decryptForUser as jest.Mock).mockResolvedValue(
+        Buffer.from('Decrypted body text', 'utf-8')
+      );
+
+      const context = {
+        auth: {
+          uid: mockUid,
+        },
+      } as functions.https.CallableContext;
+
+      const data = {
+        messageId,
+      };
+
+      const result = await decryptMail(data, context);
+
+      expect(result).toEqual({
+        bodyText: 'Decrypted body text',
+      });
+    });
+
+    it('復号処理が失敗した場合はHttpsErrorを投げる', async () => {
+      const messageId = 'message-123';
+
+      const mockMessageDoc = {
+        exists: false,
+      };
+
+      const mockMessageRef = {
+        get: jest.fn().mockResolvedValue(mockMessageDoc),
+      };
+
+      const mockUserCollection = {
+        doc: jest.fn(() => ({
+          collection: jest.fn((subPath: string) => {
+            if (subPath === 'mailMessages') {
+              return {
+                doc: jest.fn(() => mockMessageRef),
+              };
+            }
+            return { doc: jest.fn() };
+          }),
+        })),
+      };
+
+      mockFirestore.collection = jest.fn((path: string) => {
+        if (path === 'users') {
+          return mockUserCollection;
+        }
+        return { doc: jest.fn() };
+      });
+
+      const context = {
+        auth: {
+          uid: mockUid,
+        },
+      } as functions.https.CallableContext;
+
+      const data = {
+        messageId,
+      };
+
+      await expect(decryptMail(data, context)).rejects.toThrow('Failed to decrypt message body');
+    });
+  });
 });

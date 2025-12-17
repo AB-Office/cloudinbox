@@ -7,8 +7,26 @@ import * as admin from 'firebase-admin';
 import * as encryption from '../../encryption';
 
 // モック
-jest.mock('firebase-admin');
+jest.mock('firebase-admin', () => ({
+  firestore: jest.fn(),
+  auth: {
+    UserRecord: jest.fn(),
+  },
+}));
 jest.mock('../../encryption');
+jest.mock('firebase-functions', () => ({
+  region: jest.fn(() => ({
+    auth: {
+      user: jest.fn(() => ({
+        onCreate: jest.fn((handler: any) => handler),
+      })),
+    },
+  })),
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+  },
+}));
 
 describe('onUserCreate', () => {
   const mockUid = 'test-user-123';
@@ -16,26 +34,50 @@ describe('onUserCreate', () => {
     uid: mockUid,
     email: 'test@example.com',
     displayName: 'Test User',
-  };
+  } as admin.auth.UserRecord;
 
   let mockFirestore: any;
   let mockTransaction: any;
+  let mockTimestamp: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
+    mockTimestamp = {
+      now: jest.fn(() => ({
+        seconds: Math.floor(Date.now() / 1000),
+        nanoseconds: 0,
+      })),
+    };
+
     mockTransaction = {
       get: jest.fn(),
       set: jest.fn(),
-      commit: jest.fn().mockResolvedValue(undefined),
+    };
+
+    const mockUserRef = {
+      doc: jest.fn((uid: string) => ({
+        get: jest.fn(),
+        set: jest.fn(),
+      })),
     };
 
     mockFirestore = {
-      collection: jest.fn(),
-      runTransaction: jest.fn((callback: any) => callback(mockTransaction)),
+      collection: jest.fn((path: string) => ({
+        doc: jest.fn((uid: string) => mockUserRef),
+      })),
+      runTransaction: jest.fn(async (callback: any) => {
+        const transaction = {
+          get: mockTransaction.get,
+          set: mockTransaction.set,
+        };
+        return await callback(transaction);
+      }),
     };
 
-    (admin.firestore as jest.Mock).mockReturnValue(mockFirestore);
+    // admin.firestore()が返すオブジェクトにTimestampを追加
+    (admin.firestore as unknown as jest.Mock).mockReturnValue(mockFirestore);
+    (admin.firestore as any).Timestamp = mockTimestamp;
     (encryption.createDataKeyForUser as jest.Mock).mockResolvedValue(undefined);
   });
 
@@ -44,14 +86,16 @@ describe('onUserCreate', () => {
       exists: false,
     };
 
-    mockTransaction.get.mockResolvedValue(mockUserDoc);
+    const mockUserRef = {
+      doc: jest.fn(),
+    };
 
-    // onUserCreateはFirebase Functionsのトリガー関数を返す
-    // テストでは内部のinitializeUser関数を直接テストするか、
-    // トリガー関数を呼び出す必要がある
-    // ここではトリガー関数を呼び出す方法でテスト
-    const trigger = onUserCreate;
-    await trigger(mockUser as admin.auth.UserRecord);
+    mockTransaction.get.mockResolvedValue(mockUserDoc);
+    mockFirestore.collection = jest.fn(() => ({
+      doc: jest.fn(() => mockUserRef),
+    }));
+
+    await onUserCreate(mockUser);
 
     expect(mockFirestore.collection).toHaveBeenCalledWith('users');
     expect(mockTransaction.set).toHaveBeenCalledWith(
@@ -71,7 +115,7 @@ describe('onUserCreate', () => {
         updatedAt: expect.anything(),
       })
     );
-    expect(mockTransaction.commit).toHaveBeenCalled();
+    expect(mockFirestore.runTransaction).toHaveBeenCalled();
   });
 
   it('使用量を0で初期化する', async () => {
@@ -79,14 +123,16 @@ describe('onUserCreate', () => {
       exists: false,
     };
 
-    mockTransaction.get.mockResolvedValue(mockUserDoc);
+    const mockUserRef = {
+      doc: jest.fn(),
+    };
 
-    // onUserCreateはFirebase Functionsのトリガー関数を返す
-    // テストでは内部のinitializeUser関数を直接テストするか、
-    // トリガー関数を呼び出す必要がある
-    // ここではトリガー関数を呼び出す方法でテスト
-    const trigger = onUserCreate;
-    await trigger(mockUser as admin.auth.UserRecord);
+    mockTransaction.get.mockResolvedValue(mockUserDoc);
+    mockFirestore.collection = jest.fn(() => ({
+      doc: jest.fn(() => mockUserRef),
+    }));
+
+    await onUserCreate(mockUser);
 
     const setCall = mockTransaction.set.mock.calls[0];
     const userData = setCall[1];
@@ -99,14 +145,16 @@ describe('onUserCreate', () => {
       exists: false,
     };
 
-    mockTransaction.get.mockResolvedValue(mockUserDoc);
+    const mockUserRef = {
+      doc: jest.fn(),
+    };
 
-    // onUserCreateはFirebase Functionsのトリガー関数を返す
-    // テストでは内部のinitializeUser関数を直接テストするか、
-    // トリガー関数を呼び出す必要がある
-    // ここではトリガー関数を呼び出す方法でテスト
-    const trigger = onUserCreate;
-    await trigger(mockUser as admin.auth.UserRecord);
+    mockTransaction.get.mockResolvedValue(mockUserDoc);
+    mockFirestore.collection = jest.fn(() => ({
+      doc: jest.fn(() => mockUserRef),
+    }));
+
+    await onUserCreate(mockUser);
 
     expect(encryption.createDataKeyForUser).toHaveBeenCalledWith(mockUid);
   });
@@ -116,14 +164,16 @@ describe('onUserCreate', () => {
       exists: true,
     };
 
-    mockTransaction.get.mockResolvedValue(mockUserDoc);
+    const mockUserRef = {
+      doc: jest.fn(),
+    };
 
-    // onUserCreateはFirebase Functionsのトリガー関数を返す
-    // テストでは内部のinitializeUser関数を直接テストするか、
-    // トリガー関数を呼び出す必要がある
-    // ここではトリガー関数を呼び出す方法でテスト
-    const trigger = onUserCreate;
-    await trigger(mockUser as admin.auth.UserRecord);
+    mockTransaction.get.mockResolvedValue(mockUserDoc);
+    mockFirestore.collection = jest.fn(() => ({
+      doc: jest.fn(() => mockUserRef),
+    }));
+
+    await onUserCreate(mockUser);
 
     expect(mockTransaction.set).not.toHaveBeenCalled();
     expect(encryption.createDataKeyForUser).not.toHaveBeenCalled();
@@ -134,8 +184,7 @@ describe('onUserCreate', () => {
       uid: '',
     } as admin.auth.UserRecord;
 
-    const handler = onUserCreate();
-    await expect(handler(invalidUser)).rejects.toThrow();
+    await expect(onUserCreate(invalidUser)).rejects.toThrow();
   });
 
   it('createdAtとupdatedAtを設定する', async () => {
@@ -143,14 +192,16 @@ describe('onUserCreate', () => {
       exists: false,
     };
 
-    mockTransaction.get.mockResolvedValue(mockUserDoc);
+    const mockUserRef = {
+      doc: jest.fn(),
+    };
 
-    // onUserCreateはFirebase Functionsのトリガー関数を返す
-    // テストでは内部のinitializeUser関数を直接テストするか、
-    // トリガー関数を呼び出す必要がある
-    // ここではトリガー関数を呼び出す方法でテスト
-    const trigger = onUserCreate;
-    await trigger(mockUser as admin.auth.UserRecord);
+    mockTransaction.get.mockResolvedValue(mockUserDoc);
+    mockFirestore.collection = jest.fn(() => ({
+      doc: jest.fn(() => mockUserRef),
+    }));
+
+    await onUserCreate(mockUser);
 
     const setCall = mockTransaction.set.mock.calls[0];
     const userData = setCall[1];
@@ -163,17 +214,18 @@ describe('onUserCreate', () => {
       exists: false,
     };
 
-    mockTransaction.get.mockResolvedValue(mockUserDoc);
+    const mockUserRef = {
+      doc: jest.fn(),
+    };
 
-    // onUserCreateはFirebase Functionsのトリガー関数を返す
-    // テストでは内部のinitializeUser関数を直接テストするか、
-    // トリガー関数を呼び出す必要がある
-    // ここではトリガー関数を呼び出す方法でテスト
-    const trigger = onUserCreate;
-    await trigger(mockUser as admin.auth.UserRecord);
+    mockTransaction.get.mockResolvedValue(mockUserDoc);
+    mockFirestore.collection = jest.fn(() => ({
+      doc: jest.fn(() => mockUserRef),
+    }));
+
+    await onUserCreate(mockUser);
 
     expect(mockFirestore.runTransaction).toHaveBeenCalled();
-    expect(mockTransaction.commit).toHaveBeenCalled();
   });
 });
 

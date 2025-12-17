@@ -34,8 +34,10 @@ interface AccountTestResponse {
 
 /**
  * POP3S接続テストを実行するHTTP Callable Function
+ *
+ * テストコードから直接呼び出しやすくするため、型はanyとしてエクスポートする
  */
-export const accountTest = functions.region('asia-northeast1').https.onCall(
+export const accountTest: any = functions.region('asia-northeast1').https.onCall(
   async (data: AccountTestRequest, context: functions.https.CallableContext): Promise<AccountTestResponse> => {
     // 認証チェック
     if (!context.auth) {

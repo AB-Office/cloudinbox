@@ -11,7 +11,8 @@ jest.mock('../kms');
 
 describe('encryptForUser', () => {
   const mockUid = 'test-user-123';
-  const mockDek = Buffer.from('test-dek-key-32-bytes-long-enough!!', 'utf-8');
+  // AES-256-GCMには32バイト（256ビット）の鍵が必要
+  const mockDek = Buffer.alloc(32, 0x42); // 32バイトの固定値
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -66,6 +67,41 @@ describe('encryptForUser', () => {
     await encryptForUser(mockUid, plaintext);
 
     expect(keys.getDataKey).toHaveBeenCalledWith(mockUid);
+  });
+
+  it('空の文字列を暗号化できる', async () => {
+    const plaintext = '';
+    const result = await encryptForUser(mockUid, plaintext);
+
+    expect(result).toHaveProperty('ciphertext');
+    expect(result).toHaveProperty('nonce');
+    expect(result).toHaveProperty('tag');
+  });
+
+  it('大きなデータを暗号化できる', async () => {
+    const plaintext = 'A'.repeat(10000); // 10KBのデータ
+    const result = await encryptForUser(mockUid, plaintext);
+
+    expect(result).toHaveProperty('ciphertext');
+    expect(result).toHaveProperty('nonce');
+    expect(result).toHaveProperty('tag');
+    expect(result.ciphertext.length).toBeGreaterThan(0);
+  });
+
+  it('tagはbase64エンコードされている', async () => {
+    const plaintext = 'Test data';
+    const result = await encryptForUser(mockUid, plaintext);
+
+    // base64文字列の検証（英数字、+、/、=のみ）
+    expect(result.tag).toMatch(/^[A-Za-z0-9+/=]+$/);
+  });
+
+  it('ciphertextはbase64エンコードされている', async () => {
+    const plaintext = 'Test data';
+    const result = await encryptForUser(mockUid, plaintext);
+
+    // base64文字列の検証（英数字、+、/、=のみ）
+    expect(result.ciphertext).toMatch(/^[A-Za-z0-9+/=]+$/);
   });
 });
 

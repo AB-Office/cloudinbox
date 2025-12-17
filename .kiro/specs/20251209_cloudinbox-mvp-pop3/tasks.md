@@ -621,7 +621,7 @@
 
 ### 5. テスト
 
-#### - [ ] 5.1: EncryptionService 単体テスト
+#### - [x] 5.1: EncryptionService 単体テスト
 - **目的**: 暗号化・復号化の正確性とKMS/DEK管理を検証
 - **作業内容**:
   - `functions/src/encryption/__tests__/encrypt.test.ts`の作成
@@ -638,7 +638,7 @@
 - **依存関係**: T2.1, T4.5, T4.6
 - **見積もり**: 4時間
 
-#### - [ ] 5.2: PlanValidator 単体テスト
+#### - [x] 5.2: PlanValidator 単体テスト
 - **目的**: プラン制限チェックロジックを検証
 - **作業内容**:
   - `functions/src/shared/__tests__/planValidator.test.ts`の作成
@@ -649,7 +649,7 @@
 - **依存関係**: T2.2
 - **見積もり**: 2時間
 
-#### - [ ] 5.3: onUserCreate 統合テスト
+#### - [x] 5.3: onUserCreate 統合テスト
 - **目的**: ユーザー初期化フローとDEK生成の検証
 - **作業内容**:
   - `functions/src/users/__tests__/onUserCreate.test.ts`の作成
@@ -663,7 +663,7 @@
 - **依存関係**: T2.3
 - **見積もり**: 3時間
 
-#### - [ ] 5.4: fetchMails 統合テスト
+#### - [x] 5.4: fetchMails 統合テスト
 - **目的**: メール受信・MIMEパース・暗号化保存フローの検証
 - **作業内容**:
   - `functions/src/mail/__tests__/fetchMails.test.ts`の作成
@@ -685,7 +685,7 @@
 - **依存関係**: T2.8
 - **見積もり**: 6時間
 
-#### - [ ] 5.5: decryptMail 統合テスト
+#### - [x] 5.5: decryptMail 統合テスト
 - **目的**: メール本文復号フローの検証
 - **作業内容**:
   - `functions/src/mail/__tests__/decryptMail.test.ts`の作成
@@ -700,7 +700,7 @@
 - **依存関係**: T2.14
 - **見積もり**: 3時間
 
-#### - [ ] 5.6: ゴミ箱・アーカイブ機能 統合テスト
+#### - [x] 5.6: ゴミ箱・アーカイブ機能 統合テスト
 - **目的**: ゴミ箱移動、復元、完全削除、アーカイブ機能の検証
 - **作業内容**:
   - `functions/src/mail/__tests__/purgeTrash.test.ts`の作成（完全削除のみFunctions側で実装）
@@ -714,7 +714,7 @@
 - **依存関係**: T2.11（purgeTrashのみ）、T3.5（Flutter側実装）
 - **見積もり**: 4時間
 
-#### - [ ] 5.7: Flutter Widget テスト
+#### - [x] 5.7: Flutter Widget テスト
 - **目的**: UIコンポーネントの動作検証
 - **作業内容**:
   - AuthScreenのWidgetテスト
@@ -726,7 +726,7 @@
 - **依存関係**: T3.1-T3.6
 - **見積もり**: 6時間
 
-#### - [ ] 5.8: E2E テスト（オプション）
+#### - [x] 5.8: E2E テスト（オプション）
 - **目的**: エンドツーエンドのフロー検証
 - **作業内容**:
   - Google Sign-In → ユーザー初期化 → ホーム画面遷移

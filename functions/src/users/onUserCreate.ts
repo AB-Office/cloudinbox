@@ -42,6 +42,8 @@ async function initializeUser(user: admin.auth.UserRecord): Promise<void> {
   const db = admin.firestore();
   const now = admin.firestore.Timestamp.now();
 
+  let userExists = false;
+
   // トランザクションで一貫性を保証
   await db.runTransaction(async (transaction) => {
     const userRef = db.collection('users').doc(uid);
@@ -49,6 +51,7 @@ async function initializeUser(user: admin.auth.UserRecord): Promise<void> {
 
     // 既にユーザードキュメントが存在する場合はスキップ（冪等性）
     if (userDoc.exists) {
+      userExists = true;
       return;
     }
 
@@ -71,6 +74,11 @@ async function initializeUser(user: admin.auth.UserRecord): Promise<void> {
     // ユーザードキュメントを作成
     transaction.set(userRef, userData);
   });
+
+  // ユーザーが既に存在する場合はDEK生成もスキップ（冪等性）
+  if (userExists) {
+    return;
+  }
 
   // DEKを生成・保存（トランザクション外で実行、Secret Managerへの保存）
   await createDataKeyForUser(uid);

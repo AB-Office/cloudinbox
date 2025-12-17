@@ -24,6 +24,13 @@ function getSecretClient(): SecretManagerServiceClient {
 }
 
 /**
+ * Secret Managerクライアントをリセットする（テスト用）
+ */
+export function resetClient(): void {
+  secretClient = null;
+}
+
+/**
  * プロジェクトIDを取得する
  */
 function getProjectId(): string {

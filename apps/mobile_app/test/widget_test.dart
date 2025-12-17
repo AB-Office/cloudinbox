@@ -1,30 +1,21 @@
-// This is a basic Flutter widget test.
+// CloudInbox MVP - Widget Test Suite
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// 各画面のWidgetテストは個別のテストファイルに実装されています：
+// - test/auth_screen_test.dart: AuthScreenのテスト
+// - test/inbox_screen_test.dart: InboxScreen（MailListScreen）のテスト
+// - test/detail_screen_test.dart: DetailScreenのテスト
+// - test/account_screen_test.dart: AccountScreenのテスト
+//
+// Firebase SDKのモックはRepositoryパターンを使用して実装されています。
+// 各画面は抽象Repositoryインターフェースに依存しており、
+// テストではFakeRepositoryを実装して使用しています。
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:cloudinbox_mobile_app/main.dart';
-
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
-
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  test('Widget test suite placeholder', () {
+    // このファイルは各画面のテストが個別ファイルに実装されているため、
+    // ここではプレースホルダーとして残しています。
+    expect(true, isTrue);
   });
 }

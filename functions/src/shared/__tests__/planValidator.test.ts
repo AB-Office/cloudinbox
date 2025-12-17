@@ -3,7 +3,6 @@
  */
 
 import { canAddAccount, canStoreMail } from '../planValidator';
-import * as admin from 'firebase-admin';
 
 // Firebase Admin SDKのモック
 const mockFirestore = {

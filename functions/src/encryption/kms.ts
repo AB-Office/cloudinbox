@@ -22,6 +22,13 @@ function getKmsClient(): KeyManagementServiceClient {
 }
 
 /**
+ * KMSクライアントをリセットする（テスト用）
+ */
+export function resetClient(): void {
+  kmsClient = null;
+}
+
+/**
  * KMS鍵名を取得する
  */
 function getKmsKeyName(): string {
