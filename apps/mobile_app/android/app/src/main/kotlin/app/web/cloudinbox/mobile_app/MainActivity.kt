@@ -1,4 +1,4 @@
-package com.example.cloudinbox_mobile_app
+package app.web.cloudinbox.mobile_app
 
 import io.flutter.embedding.android.FlutterActivity
 
