@@ -1,8 +1,15 @@
 import 'package:cloudinbox_mobile_app/screens/auth_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloudinbox_mobile_app/firebase_options_dev.dart';
 
-void main() {
+Future<void> main() async {
+  if (const String.fromEnvironment('FLAVOR') == 'prod') {
+    //await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  } else {
+    await Firebase.initializeApp(options: DefaultFirebaseOptionsDev.currentPlatform);
+  }
   runApp(const MyApp());
 }
 
