@@ -24,13 +24,15 @@ jobs:
           fetch-depth: 0
 
       - name: PR-Agent Review
-        uses: Codium-ai/pr-agent@main
+        uses: qodo-ai/pr-agent@main
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_KEY: ${{ secrets.OPENAI_API_KEY }}   # ← secret名はそのままでOK（環境変数名はOPENAI_KEY推奨）
           GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}
-          GITHUB_ACTION.AUTO_REVIEW: true
-          GITHUB_ACTION.AUTO_DESCRIBE: true
-          GITHUB_ACTION.AUTO_IMPROVE: true
-          PR_REVIEWER.EXTRA_INSTRUCTIONS: 'Please use Japanese in descriptions.'
-          PR_DESCRIPTION.EXTRA_INSTRUCTIONS: 'Please use Japanese in descriptions. Titles should have prefix of commitlint pattern such as `feat:`, `chore:`, `test:`, `fix:`, `ci:`, `docs:` etc'
+          github_action_config.auto_review: "true"
+          github_action_config.auto_describe: "true"
+          github_action_config.auto_improve: "true"
+          github_action_config.pr_actions: '["opened","synchronize","reopened","ready_for_review"]'
+          PR_REVIEWER.EXTRA_INSTRUCTIONS: "Please use Japanese in descriptions."
+          PR_DESCRIPTION.EXTRA_INSTRUCTIONS: "Please use Japanese in descriptions. Titles should have prefix of commitlint pattern such as `feat:`, `chore:`, `test:`, `fix:`, `ci:`, `docs:` etc"
           PR_CODE_SUGGESTIONS.EXTRA_INSTRUCTIONS: "answer in Japanese"
+  
