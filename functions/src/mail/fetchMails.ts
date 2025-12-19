@@ -14,20 +14,35 @@ import * as MailParser from 'mailparser';
 import { generateThreadId } from './mailProcessing';
 import { saveMail } from './saveMail';
 
+// Firebase Admin SDKの初期化（確実に初期化されるように）
+if (!admin.apps || admin.apps.length === 0) {
+  admin.initializeApp();
+}
+
 /**
  * メール自動受信を実行する
  * 
- * Cloud Schedulerから定期実行される（15-30分間隔）
+ * Cloud Schedulerから定期実行される（毎時0分、10分、、20分、30分、40分、50分）
+ * タイムアウト: 9分（540秒）- メール取得処理に時間がかかるため
  */
-export const fetchMails = functions.region('asia-northeast1').pubsub
-  .schedule('every 15 minutes')
+export const fetchMails = functions
+  .region('asia-northeast1')
+  .runWith({
+    timeoutSeconds: 540, // 9分（最大値）
+    memory: '512MB',
+  })
+  .pubsub.schedule('0,10,20,30,40,50 * * * *') // 毎時0分、10分、20分、30分、40分、50分
   .timeZone('Asia/Tokyo')
   .onRun(async (context) => {
+    const functionStartTime = Date.now();
     try {
       const db = admin.firestore();
       
       // すべてのユーザーを取得
+      const usersStartTime = Date.now();
       const usersSnapshot = await db.collection('users').get();
+      const usersTime = Date.now() - usersStartTime;
+      functions.logger.info(`Fetched users (took ${usersTime}ms, found ${usersSnapshot.size} users)`);
       
       if (usersSnapshot.empty) {
         functions.logger.info('No users found');
@@ -40,15 +55,36 @@ export const fetchMails = functions.region('asia-northeast1').pubsub
         
         try {
           // アクティブなメールアカウントを取得
+          const accountsStartTime = Date.now();
+          // statusが'active'または未設定（デフォルトでactiveとみなす）のアカウントを取得
           const accountsSnapshot = await db
             .collection('users')
             .doc(uid)
             .collection('mailAccounts')
-            .where('status', '==', 'active')
             .get();
+          const accountsTime = Date.now() - accountsStartTime;
+          
+          // statusが'active'、'error'、または未設定のアカウントをフィルタリング
+          // 'error'状態のアカウントも再試行する（前回のエラーが一時的な可能性があるため）
+          const activeAccounts = accountsSnapshot.docs.filter(doc => {
+            const data = doc.data();
+            const status = data.status;
+            // statusが'active'、'error'、または未設定（undefined/null）の場合は処理対象とする
+            // 'inactive'（論理削除）と'disabled'は除外
+            return !status || status === 'active' || status === 'error';
+          });
+          
+          functions.logger.info(`Fetched accounts for user ${uid} (took ${accountsTime}ms, found ${accountsSnapshot.size} total, ${activeAccounts.length} active)`);
 
-          if (accountsSnapshot.empty) {
+          if (activeAccounts.length === 0) {
             functions.logger.info(`No active accounts for user: ${uid}`);
+            // デバッグ用: すべてのアカウントの状態をログに記録
+            if (accountsSnapshot.size > 0) {
+              accountsSnapshot.docs.forEach(doc => {
+                const data = doc.data();
+                functions.logger.info(`Account ${doc.id} status: ${data.status || 'undefined'}, label: ${data.label || 'N/A'}`);
+              });
+            }
             continue;
           }
 
@@ -74,9 +110,11 @@ export const fetchMails = functions.region('asia-northeast1').pubsub
         }
       }
 
-      functions.logger.info('fetchMails completed');
+      const functionTime = Date.now() - functionStartTime;
+      functions.logger.info(`fetchMails completed (total time: ${functionTime}ms)`);
     } catch (error: any) {
-      functions.logger.error('fetchMails failed:', error);
+      const functionTime = Date.now() - functionStartTime;
+      functions.logger.error(`fetchMails failed after ${functionTime}ms:`, error);
       throw error;
     }
   });
@@ -103,7 +141,10 @@ export async function processAccount(
   }
 
   // パスワードを復号化
+  const decryptStartTime = Date.now();
   const password = await decryptPassword(uid, pop3Config.passwordEnc);
+  const decryptTime = Date.now() - decryptStartTime;
+  functions.logger.info(`Decrypted password for account: ${accountId} (took ${decryptTime}ms)`);
 
   let client: Pop3sClient | null = null;
 
@@ -117,18 +158,34 @@ export async function processAccount(
       pop3Config.useSsl
     );
 
+    const connectStartTime = Date.now();
     await client.connect();
-    functions.logger.info(`Connected to POP3S server for account: ${accountId}`);
+    const connectTime = Date.now() - connectStartTime;
+    functions.logger.info(`Connected to POP3S server for account: ${accountId} (took ${connectTime}ms)`);
 
     // メール一覧を取得
+    const listStartTime = Date.now();
     const messages = await client.listMessages();
-    functions.logger.info(`Found ${messages.length} messages for account: ${accountId}`);
+    const listTime = Date.now() - listStartTime;
+    functions.logger.info(`Found ${messages.length} messages for account: ${accountId} (took ${listTime}ms)`);
+
+    if (messages.length === 0) {
+      functions.logger.info(`No messages to fetch for account: ${accountId}`);
+      return;
+    }
 
     // 各メールを処理
     const storage = admin.storage();
     let shouldStopFetching = false;
+    let processedCount = 0;
+    const maxMessagesPerRun = 50; // 1回の実行で処理する最大メール数（タイムアウトを避けるため）
 
     for (const message of messages) {
+      // タイムアウトを避けるため、1回の実行で処理するメール数を制限
+      if (processedCount >= maxMessagesPerRun) {
+        functions.logger.info(`Processed ${processedCount} messages, stopping to avoid timeout for account: ${accountId}`);
+        break;
+      }
       try {
         // 容量超過で受信停止する場合はループを抜ける
         if (shouldStopFetching) {
@@ -137,12 +194,34 @@ export async function processAccount(
         }
 
         // メール本文を取得
-        const rawMessage = await client.retrieveMessage(message.number);
+        const retrieveStartTime = Date.now();
+        let rawMessage = await client.retrieveMessage(message.number);
+        const retrieveTime = Date.now() - retrieveStartTime;
+        
+        // POP3サーバーからのレスポンス行（+OK ...）を除去
+        // MIMEメッセージの最初の行が+OKで始まる場合は除去
+        if (rawMessage.startsWith('+OK')) {
+          const firstNewline = rawMessage.indexOf('\n');
+          if (firstNewline !== -1) {
+            rawMessage = rawMessage.substring(firstNewline + 1);
+            functions.logger.info(`Removed POP3 response line from retrieved message ${message.number} for account: ${accountId}`);
+          }
+        }
+        
+        functions.logger.info(`Retrieved message ${message.number} for account: ${accountId} (took ${retrieveTime}ms, size: ${rawMessage.length} bytes)`);
         
         // MIMEパース
+        const parseStartTime = Date.now();
         const parsed = await MailParser.simpleParser(rawMessage);
+        const parseTime = Date.now() - parseStartTime;
+        const parsedTextLength = typeof parsed.text === 'string' ? parsed.text.length : 0;
+        const parsedHtmlLength = typeof parsed.html === 'string' ? parsed.html.length : 0;
+        functions.logger.info(`Parsed message ${message.number} for account: ${accountId} (took ${parseTime}ms), parsed.text length=${parsedTextLength}, parsed.html length=${parsedHtmlLength}, hasAttachments=${!!parsed.attachments && parsed.attachments.length > 0}`);
         
-        functions.logger.info(`Parsed message ${message.number} for account: ${accountId}`);
+        // 本文が空の場合は警告
+        if (parsedTextLength === 0 && parsedHtmlLength === 0) {
+          functions.logger.warn(`WARNING: Message ${message.number} has no text or HTML body. parsed.text=${!!parsed.text}, parsed.html=${!!parsed.html}, rawMessage length=${rawMessage.length}`);
+        }
         
         // スレッドID生成
         const threadId = generateThreadId(parsed);
@@ -154,19 +233,24 @@ export async function processAccount(
         
         try {
           // メールを保存（暗号化保存、mailThreads/mailMessages更新、使用量更新）
+          const saveStartTime = Date.now();
           await saveMail(uid, messageId, threadId, rawMessage, parsed, db, storage);
-          
+          const saveTime = Date.now() - saveStartTime;
           functions.logger.info(
-            `Saved message ${message.number}: messageId=${messageId}, threadId=${threadId}`
+            `Saved message ${message.number}: messageId=${messageId}, threadId=${threadId} (took ${saveTime}ms)`
           );
           
           // 保存成功後、POP3Sサーバから削除（deleteAfterFetch: trueの場合）
           const deleteAfterFetch = accountData.deleteAfterFetch !== false; // デフォルトはtrue
           
           if (deleteAfterFetch && client) {
+            const deleteStartTime = Date.now();
             await client.deleteMessage(message.number);
-            functions.logger.info(`Deleted message ${message.number} from POP3S server`);
+            const deleteTime = Date.now() - deleteStartTime;
+            functions.logger.info(`Deleted message ${message.number} from POP3S server (took ${deleteTime}ms)`);
           }
+          
+          processedCount++;
         } catch (error: any) {
           // 容量超過エラーの場合は受信を停止
           if (error.message === 'Storage limit exceeded') {
@@ -201,7 +285,7 @@ export async function processAccount(
       lastErrorMessage: null,
     });
 
-    functions.logger.info(`Completed processing account: ${accountId}`);
+    functions.logger.info(`Completed processing account: ${accountId}, processed ${processedCount} messages`);
   } catch (error: any) {
     functions.logger.error(`Error processing account ${accountId}:`, error);
 

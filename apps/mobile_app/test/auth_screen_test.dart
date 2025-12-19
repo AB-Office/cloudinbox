@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:cloudinbox_mobile_app/services/i18n_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cloudinbox_mobile_app/screens/auth_screen.dart';
@@ -10,6 +10,7 @@ import 'package:cloudinbox_mobile_app/screens/auth_screen.dart';
 class _FakeAuthRepository implements AuthRepository {
   final StreamController<bool> _controller = StreamController<bool>.broadcast();
   bool signInCalled = false;
+  bool signInWithAppleCalled = false;
 
   @override
   Stream<bool> authStateChanges() => _controller.stream;
@@ -17,6 +18,11 @@ class _FakeAuthRepository implements AuthRepository {
   @override
   Future<void> signInWithGoogle() async {
     signInCalled = true;
+  }
+
+  @override
+  Future<void> signInWithApple() async {
+    signInWithAppleCalled = true;
   }
 
   void emitAuthState(bool authed) {
@@ -30,12 +36,21 @@ class _FakeAuthRepository implements AuthRepository {
 
 void main() {
   group('AuthScreen', () {
-    testWidgets('ログイン用のボタンが表示される', (tester) async {
+    testWidgets('Googleログイン用のボタンが表示される', (tester) async {
       final repo = _FakeAuthRepository();
 
       await tester.pumpWidget(
         MaterialApp(
           locale: const Locale('ja'),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ja'),
+            Locale('en'),
+          ],
           home: AuthScreen(
             repository: repo,
             onSignedIn: () {},
@@ -43,8 +58,12 @@ void main() {
         ),
       );
 
-      // ログインアクション用のボタンが 1 つ表示されること
-      expect(find.byType(ElevatedButton), findsOneWidget);
+      await tester.pumpAndSettle();
+
+      // Googleログインボタンのラベルが表示されること
+      expect(find.textContaining('Google'), findsOneWidget);
+      // Appleログインボタンは非表示
+      expect(find.textContaining('Apple'), findsNothing);
 
       repo.dispose();
     });
@@ -55,6 +74,15 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           locale: const Locale('ja'),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ja'),
+            Locale('en'),
+          ],
           home: AuthScreen(
             repository: repo,
             onSignedIn: () {},
@@ -62,21 +90,36 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byType(ElevatedButton));
+      await tester.pumpAndSettle();
+      // Googleログインボタンをタップ
+      await tester.tap(find.textContaining('Google'));
       await tester.pump();
+      // Future.delayedを処理
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump(); // 追加のpumpでコールバックを処理
 
       expect(repo.signInCalled, isTrue);
+      expect(repo.signInWithAppleCalled, isFalse);
 
       repo.dispose();
     });
 
-    testWidgets('認証状態が true になったら onSignedIn が呼ばれる', (tester) async {
+    testWidgets('認証成功後に onSignedIn が呼ばれる', (tester) async {
       final repo = _FakeAuthRepository();
       var signedInCalled = false;
 
       await tester.pumpWidget(
         MaterialApp(
           locale: const Locale('ja'),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ja'),
+            Locale('en'),
+          ],
           home: AuthScreen(
             repository: repo,
             onSignedIn: () {
@@ -86,8 +129,13 @@ void main() {
         ),
       );
 
-      repo.emitAuthState(true);
+      await tester.pumpAndSettle();
+      // Googleログインボタンをタップ
+      await tester.tap(find.textContaining('Google'));
       await tester.pump();
+      // Future.delayedを処理
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump(); // 追加のpumpでコールバックを処理
 
       expect(signedInCalled, isTrue);
 

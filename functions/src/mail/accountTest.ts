@@ -9,6 +9,11 @@ import * as admin from 'firebase-admin';
 import { decryptPassword } from '../encryption';
 import { testPop3Connection } from './pop3Client';
 
+// Firebase Admin SDKの初期化（確実に初期化されるように）
+if (!admin.apps || admin.apps.length === 0) {
+  admin.initializeApp();
+}
+
 /**
  * 接続テストリクエストの型定義
  */

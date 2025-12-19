@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +12,7 @@ class _FakeSettingsRepository implements SettingsRepository {
   final SettingsData data;
   final bool shouldThrow;
   bool loadCalled = false;
+  final StreamController<SettingsData> _controller = StreamController<SettingsData>.broadcast();
 
   @override
   Future<SettingsData> loadSettings() async {
@@ -19,14 +22,51 @@ class _FakeSettingsRepository implements SettingsRepository {
     }
     return data;
   }
+
+  @override
+  Stream<SettingsData> watchSettings() {
+    if (shouldThrow) {
+      return Stream.error(Exception('load error'));
+    }
+    _controller.add(data);
+    return _controller.stream;
+  }
+
+  void dispose() {
+    _controller.close();
+  }
 }
 
 class _FakeAccountRepository implements AccountRepository {
   @override
-  Future<void> testConnection(AccountFormData data) async {}
+  Future<AccountTestResult> testConnection(AccountFormData data) async {
+    return const AccountTestResult(success: true);
+  }
 
   @override
   Future<void> createAccount(AccountFormData data) async {}
+
+  @override
+  Future<List<MailAccount>> listAccounts({bool includeInactive = false}) async {
+    return [];
+  }
+
+  @override
+  Future<MailAccount?> getAccount(String accountId) async {
+    return null;
+  }
+
+  @override
+  Future<void> updateAccount(String accountId, AccountFormData data) async {}
+
+  @override
+  Future<void> deleteAccount(String accountId) async {}
+
+  @override
+  Future<void> restoreAccount(String accountId) async {}
+
+  @override
+  Future<void> permanentlyDeleteAccount(String accountId) async {}
 }
 
 bool _signOutCalled = false;
@@ -68,9 +108,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Free'), findsOneWidget);
-      expect(find.textContaining('2147483648'), findsOneWidget);
-      expect(find.textContaining('1073741824'), findsOneWidget);
-      expect(repo.loadCalled, isTrue);
+      // formatBytesを使った表示を確認（GB、MBなど）
+      expect(find.textContaining('GB'), findsWidgets);
+      // 利用率（％）が表示されることを確認
+      expect(find.textContaining('%'), findsOneWidget);
+      
+      repo.dispose();
     });
 
     testWidgets('読み込みエラー時にエラーメッセージを表示する', (tester) async {
@@ -108,6 +151,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('error'), findsOneWidget);
+      
+      repo.dispose();
     });
 
     testWidgets('メールアカウント設定メニュー項目が表示される', (tester) async {
@@ -144,6 +189,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('メールアカウント設定'), findsOneWidget);
+      
+      repo.dispose();
     });
 
     testWidgets('ログアウトメニュー項目が表示される', (tester) async {
@@ -180,6 +227,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('ログアウト'), findsOneWidget);
+      
+      repo.dispose();
     });
 
     testWidgets('メールアカウント設定タップ時にAccountScreenへ遷移する', (tester) async {
@@ -220,6 +269,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(AccountScreen), findsOneWidget);
+      
+      repo.dispose();
     });
 
     testWidgets('ログアウトタップ時にonLogoutコールバックが呼ばれる', (tester) async {
@@ -259,6 +310,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(_signOutCalled, isTrue);
+      
+      repo.dispose();
     });
   });
 }

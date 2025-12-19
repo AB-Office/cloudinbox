@@ -8,6 +8,11 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { MailMessageDoc } from './types';
 
+// Firebase Admin SDKの初期化（確実に初期化されるように）
+if (!admin.apps || admin.apps.length === 0) {
+  admin.initializeApp();
+}
+
 /**
  * ゴミ箱完全削除を実行する（内部ロジック）
  * 

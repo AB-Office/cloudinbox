@@ -1,22 +1,10 @@
-import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
-import 'package:cloudinbox_mobile_app/screens/mail_list_screen.dart';
+import 'dart:async';
+
 import 'package:cloudinbox_mobile_app/screens/settings_screen.dart';
 import 'package:cloudinbox_mobile_app/widgets/navigation_drawer.dart' as app_drawer;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-class _FakeInboxRepository implements InboxRepository {
-  @override
-  Future<InboxPage> loadFirstPage(int limit) async {
-    return const InboxPage(threads: [], hasMore: false);
-  }
-
-  @override
-  Future<InboxPage> loadNextPage(int limit) async {
-    return const InboxPage(threads: [], hasMore: false);
-  }
-}
 
 class _FakeSettingsRepository implements SettingsRepository {
   _FakeSettingsRepository(this.data);
@@ -25,14 +13,16 @@ class _FakeSettingsRepository implements SettingsRepository {
 
   @override
   Future<SettingsData> loadSettings() async => data;
-}
-
-class _FakeAccountRepository implements AccountRepository {
-  @override
-  Future<void> testConnection(AccountFormData data) async {}
 
   @override
-  Future<void> createAccount(AccountFormData data) async {}
+  Stream<SettingsData> watchSettings() {
+    // Stream.valueを使って即座にデータを返す
+    return Stream.value(data);
+  }
+
+  void dispose() {
+    // Stream.valueを使う場合は何もしない
+  }
 }
 
 void main() {
@@ -227,9 +217,17 @@ void main() {
 
       final scaffoldState = tester.state<ScaffoldState>(find.byType(Scaffold));
       scaffoldState.openDrawer();
-      await tester.pumpAndSettle();
+      await tester.pump(); // Drawerを開く
+      await tester.pump(); // StreamBuilderがデータを受け取るのを待つ
+      await tester.pump(); // 追加のpumpでStreamBuilderの更新を確実に処理
 
       expect(find.textContaining('Free'), findsOneWidget);
+      // formatBytesを使った表示を確認
+      expect(find.textContaining('GB'), findsWidgets);
+      // 利用率（％）が表示されることを確認
+      expect(find.textContaining('%'), findsOneWidget);
+      
+      settingsRepo.dispose();
     });
 
     testWidgets('受信トレイタップ時にonNavigateが呼ばれる', (tester) async {
@@ -316,6 +314,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(navigatedRoute, '/settings');
+      
+      settingsRepo.dispose();
     });
   });
 }

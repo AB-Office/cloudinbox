@@ -12,7 +12,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   firebase_core: ^2.32.0
-  firebase_auth: ^4.15.0
+  firebase_auth: ^4.16.0
   google_sign_in: ^6.1.6
   cloud_firestore: ^4.13.0
   firebase_storage: ^11.5.0
@@ -29,6 +29,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
 
 flutter_launcher_icons:
   android: true

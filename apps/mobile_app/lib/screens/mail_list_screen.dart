@@ -1,4 +1,10 @@
 import 'package:cloudinbox_mobile_app/services/ad_service.dart';
+import 'package:cloudinbox_mobile_app/widgets/navigation_drawer.dart' as app;
+import 'package:cloudinbox_mobile_app/screens/settings_screen.dart';
+import 'package:cloudinbox_mobile_app/screens/detail_screen.dart';
+import 'package:cloudinbox_mobile_app/main.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 /// メール一覧に表示するスレッド情報
@@ -33,7 +39,9 @@ class InboxPage {
 
 /// スレッド一覧取得の抽象リポジトリ（メール一覧共通画面用）
 abstract class InboxRepository {
-  Future<InboxPage> loadFirstPage(int limit);
+  /// 最初のページを取得（リアルタイム更新を監視）
+  Stream<InboxPage> watchFirstPage(int limit);
+  /// 次のページを取得（手動読み込み）
   Future<InboxPage> loadNextPage(int limit);
 }
 
@@ -45,21 +53,27 @@ class MailListScreen extends StatefulWidget {
     this.adService = const AdService(),
     this.planId,
     this.title = 'Inbox',
+    this.settingsRepository,
+    this.onNavigate,
+    this.currentRoute = '/inbox',
   });
 
   final InboxRepository repository;
   final AdService adService;
   final String? planId;
   final String title;
+  final SettingsRepository? settingsRepository;
+  final void Function(String route)? onNavigate;
+  final String currentRoute;
 
   @override
   State<MailListScreen> createState() => _MailListScreenState();
 }
 
 class _MailListScreenState extends State<MailListScreen> {
-  final List<InboxThread> _threads = [];
-  bool _isLoading = false;
-  bool _hasMore = true;
+  final List<InboxThread> _additionalThreads = []; // 追加読み込み分
+  bool _isLoadingMore = false;
+  bool _hasMoreAdditional = true; // 追加読み込み用のhasMore
   String? _errorMessage;
 
   static const int _defaultPageSize = 20;
@@ -70,7 +84,6 @@ class _MailListScreenState extends State<MailListScreen> {
     super.didChangeDependencies();
     if (_pageSize == null) {
       _pageSize = _calculatePageSize(context);
-      _loadFirstPage();
     }
   }
 
@@ -84,45 +97,18 @@ class _MailListScreenState extends State<MailListScreen> {
     return estimated.clamp(minItems, maxItems);
   }
 
-  Future<void> _loadFirstPage() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    try {
-      final page =
-          await widget.repository.loadFirstPage(_pageSize ?? _defaultPageSize);
-      setState(() {
-        _threads
-          ..clear()
-          ..addAll(page.threads);
-        _hasMore = page.hasMore;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'error: $e';
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
   Future<void> _loadMore() async {
-    if (_isLoading || !_hasMore) return;
+    if (_isLoadingMore || !_hasMoreAdditional) return;
     setState(() {
-      _isLoading = true;
+      _isLoadingMore = true;
       _errorMessage = null;
     });
     try {
       final page =
           await widget.repository.loadNextPage(_pageSize ?? _defaultPageSize);
       setState(() {
-        _threads.addAll(page.threads);
-        _hasMore = page.hasMore;
+        _additionalThreads.addAll(page.threads);
+        _hasMoreAdditional = page.hasMore;
       });
     } catch (e) {
       setState(() {
@@ -131,7 +117,7 @@ class _MailListScreenState extends State<MailListScreen> {
     } finally {
       if (mounted) {
         setState(() {
-          _isLoading = false;
+          _isLoadingMore = false;
         });
       }
     }
@@ -145,6 +131,13 @@ class _MailListScreenState extends State<MailListScreen> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
+      drawer: widget.settingsRepository != null && widget.onNavigate != null
+          ? app.NavigationDrawer(
+              settingsRepository: widget.settingsRepository!,
+              currentRoute: widget.currentRoute,
+              onNavigate: widget.onNavigate!,
+            )
+          : null,
       body: Column(
         children: [
           if (_errorMessage != null)
@@ -156,34 +149,133 @@ class _MailListScreenState extends State<MailListScreen> {
               ),
             ),
           Expanded(
-            child: _isLoading && _threads.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    itemCount: _threads.length,
+            child: StreamBuilder<InboxPage>(
+              stream: widget.repository.watchFirstPage(_pageSize ?? _defaultPageSize),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'Error: ${snapshot.error}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                }
+                
+                final firstPageThreads = snapshot.data?.threads ?? [];
+                final allThreads = [...firstPageThreads, ..._additionalThreads];
+                
+                if (allThreads.isEmpty) {
+                  return const Center(child: Text('メールがありません'));
+                }
+                
+                return ListView.separated(
+                    itemCount: allThreads.length,
+                    separatorBuilder: (context, index) => const Divider(
+                      height: 1,
+                      thickness: 1,
+                    ),
                     itemBuilder: (context, index) {
-                      final thread = _threads[index];
+                      final thread = allThreads[index];
+                      // プレビューの改行をスペースに変換し、長い場合は省略
+                      final previewText = thread.preview
+                          .replaceAll('\r\n', ' ')
+                          .replaceAll('\n', ' ')
+                          .replaceAll('\r', ' ')
+                          .trim();
+                      
                       return ListTile(
-                        title: Text(thread.subject),
-                        subtitle: Text(thread.preview),
+                        title: Text(
+                          thread.subject,
+                          style: TextStyle(
+                            fontWeight: thread.hasUnread ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          previewText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         leading: Icon(
                           thread.hasUnread
                               ? Icons.mark_email_unread
-                              : Icons.email,
+                              : Icons.mark_email_read,
                         ),
                         trailing: Text(thread.lastMessageAt),
+                        onTap: () async {
+                          // スレッドから最新メッセージIDを取得
+                          final user = FirebaseAuth.instance.currentUser;
+                          if (user == null) return;
+
+                          try {
+                            final threadDoc = await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .collection('mailThreads')
+                                .doc(thread.id)
+                                .get();
+
+                            if (!threadDoc.exists) return;
+
+                            final threadData = threadDoc.data() as Map<String, dynamic>;
+                            final messageId = threadData['latestMessageId'] as String?;
+                            
+                            if (messageId == null) return;
+
+                            // DetailScreenに遷移
+                            final detailRepository = FirebaseDetailRepository();
+                            if (context.mounted) {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DetailScreen(
+                                    messageId: messageId,
+                                    repository: detailRepository,
+                                    planId: widget.planId,
+                                  ),
+                                ),
+                              );
+                              // StreamBuilderが自動的に更新を反映するため、再読み込みは不要
+                            }
+                          } catch (e) {
+                            debugPrint('Error navigating to detail: $e');
+                          }
+                        },
                       );
                     },
-                  ),
-          ),
-          if (_hasMore)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                key: const Key('button_load_more'),
-                onPressed: _isLoading ? null : _loadMore,
-                child: const Text('Load more'),
-              ),
+                  );
+              },
             ),
+          ),
+          StreamBuilder<InboxPage>(
+            stream: widget.repository.watchFirstPage(_pageSize ?? _defaultPageSize),
+            builder: (context, snapshot) {
+              final firstPageHasMore = snapshot.data?.hasMore ?? false;
+              final hasMore = firstPageHasMore || _hasMoreAdditional;
+              if (!hasMore) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedButton(
+                  key: const Key('button_load_more'),
+                  onPressed: _isLoadingMore ? null : _loadMore,
+                  child: _isLoadingMore
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Load more'),
+                ),
+              );
+            },
+          ),
           if (adBanner != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 8.0),

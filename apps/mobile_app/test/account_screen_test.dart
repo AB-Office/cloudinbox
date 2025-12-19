@@ -14,10 +14,11 @@ class _FakeAccountRepository implements AccountRepository {
       StreamController<AccountTestResult>.broadcast();
 
   @override
-  Future<void> testConnection(AccountFormData data) async {
+  Future<AccountTestResult> testConnection(AccountFormData data) async {
     testConnectionCalled = true;
     lastTestData = data;
-    // 呼び出し側が別途 emitTestResult を使って結果を流す
+    // デフォルトで成功を返す
+    return const AccountTestResult(success: true);
   }
 
   @override
@@ -25,6 +26,28 @@ class _FakeAccountRepository implements AccountRepository {
     createAccountCalled = true;
     lastCreateData = data;
   }
+
+  @override
+  Future<List<MailAccount>> listAccounts({bool includeInactive = false}) async {
+    return [];
+  }
+
+  @override
+  Future<MailAccount?> getAccount(String accountId) async {
+    return null;
+  }
+
+  @override
+  Future<void> updateAccount(String accountId, AccountFormData data) async {}
+
+  @override
+  Future<void> deleteAccount(String accountId) async {}
+
+  @override
+  Future<void> restoreAccount(String accountId) async {}
+
+  @override
+  Future<void> permanentlyDeleteAccount(String accountId) async {}
 
   Stream<AccountTestResult> get testResults =>
       _testResultController.stream;
@@ -136,7 +159,31 @@ class _TestOnlyRepositoryStub implements AccountRepository {
   Future<void> createAccount(AccountFormData data) async {}
 
   @override
-  Future<void> testConnection(AccountFormData data) async {}
+  Future<AccountTestResult> testConnection(AccountFormData data) async {
+    return const AccountTestResult(success: true);
+  }
+
+  @override
+  Future<List<MailAccount>> listAccounts({bool includeInactive = false}) async {
+    return [];
+  }
+
+  @override
+  Future<MailAccount?> getAccount(String accountId) async {
+    return null;
+  }
+
+  @override
+  Future<void> updateAccount(String accountId, AccountFormData data) async {}
+
+  @override
+  Future<void> deleteAccount(String accountId) async {}
+
+  @override
+  Future<void> restoreAccount(String accountId) async {}
+
+  @override
+  Future<void> permanentlyDeleteAccount(String accountId) async {}
 }
 
 

@@ -109,6 +109,52 @@ class _DetailScreenState extends State<DetailScreen> {
       appBar: AppBar(
         title: Text(_message?.subject ?? 'Mail Detail'),
       ),
+      bottomNavigationBar: _message == null
+          ? null
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4.0,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    IconButton(
+                      key: const Key('button_move_to_trash'),
+                      onPressed: _handleMoveToTrash,
+                      icon: const Icon(Icons.delete),
+                      tooltip: 'ゴミ箱に移動',
+                    ),
+                    IconButton(
+                      key: const Key('button_archive'),
+                      onPressed: _handleArchive,
+                      icon: const Icon(Icons.archive),
+                      tooltip: 'アーカイブ',
+                    ),
+                    IconButton(
+                      key: const Key('button_restore_from_trash'),
+                      onPressed: _handleRestoreFromTrash,
+                      icon: const Icon(Icons.restore),
+                      tooltip: 'ゴミ箱から復元',
+                    ),
+                    IconButton(
+                      key: const Key('button_unarchive'),
+                      onPressed: _handleUnarchive,
+                      icon: const Icon(Icons.unarchive),
+                      tooltip: 'アーカイブから復元',
+                    ),
+                  ],
+                ),
+              ),
+            ),
       body: _isLoading && _message == null
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
@@ -137,43 +183,23 @@ class _DetailScreenState extends State<DetailScreen> {
                                 Text('To: ${_message!.to.join(', ')}'),
                                 Text('Date: ${_message!.sentAt}'),
                                 const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    ElevatedButton(
-                                      key: const Key('button_move_to_trash'),
-                                      onPressed: _handleMoveToTrash,
-                                      child: const Text('Move to trash'),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    ElevatedButton(
-                                      key: const Key('button_archive'),
-                                      onPressed: _handleArchive,
-                                      child: const Text('Archive'),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    ElevatedButton(
-                                      key:
-                                          const Key('button_restore_from_trash'),
-                                      onPressed: _handleRestoreFromTrash,
-                                      child: const Text('Restore from trash'),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    ElevatedButton(
-                                      key: const Key('button_unarchive'),
-                                      onPressed: _handleUnarchive,
-                                      child: const Text('Unarchive'),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
                                 Expanded(
-                                  child: SingleChildScrollView(
-                                    child: Text(_message!.bodyText),
-                                  ),
+                                  child: _message!.bodyText.isEmpty
+                                      ? const Center(
+                                          child: Text(
+                                            'メール本文がありません',
+                                            style: TextStyle(color: Colors.grey),
+                                          ),
+                                        )
+                                      : SingleChildScrollView(
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: SelectableText(
+                                              _message!.bodyText,
+                                              style: const TextStyle(fontSize: 16),
+                                            ),
+                                          ),
+                                        ),
                                 ),
                               ],
                             ),

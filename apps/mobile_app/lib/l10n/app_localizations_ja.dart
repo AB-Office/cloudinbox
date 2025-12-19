@@ -1,0 +1,185 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Japanese (`ja`).
+class AppLocalizationsJa extends AppLocalizations {
+  AppLocalizationsJa([String locale = 'ja']) : super(locale);
+
+  @override
+  String get appTitle => 'CloudInbox';
+
+  @override
+  String get login => 'ログイン';
+
+  @override
+  String get loginWithGoogle => 'Googleでログイン';
+
+  @override
+  String get loginWithApple => 'Appleでログイン';
+
+  @override
+  String get logout => 'ログアウト';
+
+  @override
+  String get error => 'エラー';
+
+  @override
+  String get loading => '読み込み中...';
+
+  @override
+  String get accountSettings => 'メールアカウント設定';
+
+  @override
+  String get settings => '設定';
+
+  @override
+  String get inbox => '受信トレイ';
+
+  @override
+  String get allMail => 'すべてのメール';
+
+  @override
+  String get trash => 'ゴミ箱';
+
+  @override
+  String get account => 'アカウント';
+
+  @override
+  String get label => 'ラベル';
+
+  @override
+  String get email => 'メールアドレス';
+
+  @override
+  String get pop3Host => 'POP3ホスト';
+
+  @override
+  String get pop3Port => 'POP3ポート';
+
+  @override
+  String get pop3Username => 'POP3ユーザー名';
+
+  @override
+  String get pop3Password => 'POP3パスワード';
+
+  @override
+  String get testConnection => '接続テスト';
+
+  @override
+  String get createAccount => 'アカウント作成';
+
+  @override
+  String get pop3PasswordHint => '変更する場合のみ入力してください';
+
+  @override
+  String get updateAccount => 'アカウント更新';
+
+  @override
+  String get deleteAccount => 'アカウント削除';
+
+  @override
+  String get deleteAccountConfirm => 'このアカウントを削除しますか？';
+
+  @override
+  String get deleteAccountConfirmTitle => 'アカウント削除';
+
+  @override
+  String get cancel => 'キャンセル';
+
+  @override
+  String get delete => '削除';
+
+  @override
+  String get accountDeleted => 'アカウントを削除しました';
+
+  @override
+  String get deleteAccountTypeTitle => '削除方法を選択';
+
+  @override
+  String get softDelete => '一時的に削除（復元可能）';
+
+  @override
+  String get permanentDelete => '完全に削除（復元不可）';
+
+  @override
+  String get permanentDeleteConfirm => 'このアカウントを完全に削除しますか？\nこの操作は取り消せません。';
+
+  @override
+  String get permanentDeleteConfirmTitle => '完全削除の確認';
+
+  @override
+  String get accountRestored => 'アカウントを復元しました';
+
+  @override
+  String get accountPermanentlyDeleted => 'アカウントを完全に削除しました';
+
+  @override
+  String get plan => 'プラン';
+
+  @override
+  String get used => '使用済み';
+
+  @override
+  String get available => '利用可能';
+
+  @override
+  String get maxStorage => '最大ストレージ（バイト）';
+
+  @override
+  String get usedStorage => '使用済みストレージ（バイト）';
+
+  @override
+  String get usageRate => '利用率（％）';
+
+  @override
+  String get mailAccounts => 'メールアカウント';
+
+  @override
+  String get restore => '復元';
+
+  @override
+  String logoutError(String error) {
+    return 'ログアウトエラー: $error';
+  }
+
+  @override
+  String get noMailAccounts => 'メールアカウントがありません';
+
+  @override
+  String get addAccountFromSettings => '下の「メールアカウント設定」から追加してください';
+
+  @override
+  String get restoreAccountConfirm => 'このアカウントを復元しますか？';
+
+  @override
+  String connectionTestError(String error) {
+    return '接続テストエラー: $error';
+  }
+
+  @override
+  String get accountUpdated => 'アカウントを更新しました';
+
+  @override
+  String get accountCreated => 'アカウントを作成しました';
+
+  @override
+  String accountUpdateError(String error) {
+    return 'アカウント更新エラー: $error';
+  }
+
+  @override
+  String accountCreationError(String error) {
+    return 'アカウント作成エラー: $error';
+  }
+
+  @override
+  String accountDeletionError(String error) {
+    return 'アカウント削除エラー: $error';
+  }
+
+  @override
+  String get connectionTestSucceeded => '接続テスト成功';
+}

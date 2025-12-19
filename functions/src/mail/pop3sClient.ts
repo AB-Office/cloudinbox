@@ -26,6 +26,13 @@ export class Pop3sClient {
     reject: (error: Error) => void;
   }> = new Map();
   private commandId: number = 0;
+  private multilineMode: boolean = false; // マルチライン応答モード
+  private multilineLines: string[] = []; // マルチライン応答の行を蓄積
+  private multilineResolver: {
+    resolve: (value: string[]) => void;
+    reject: (error: Error) => void;
+  } | null = null;
+  private multilineTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private host: string,
@@ -139,15 +146,20 @@ export class Pop3sClient {
       throw new Error('Not connected');
     }
 
-    const response = await this.sendCommand('LIST');
+    console.log('[Pop3sClient] Sending LIST command...');
     
-    if (!response.startsWith('+OK')) {
-      throw new Error(`LIST command failed: ${response}`);
-    }
-
-    // マルチライン応答を取得
-    const lines = await this.readMultilineResponse();
+    // LISTコマンドは特殊：+OKの後にマルチライン応答が続く
+    // sendCommand()を使わず、直接コマンドを送信してマルチライン応答を処理する
+    const commandId = `cmd_${this.commandId++}`;
+    const command = 'LIST';
     
+    return new Promise((resolve, reject) => {
+      // マルチライン応答モードを先に有効化
+      this.multilineMode = true;
+      this.multilineLines = [];
+      this.multilineResolver = {
+        resolve: (lines: string[]) => {
+          console.log('[Pop3sClient] Multiline response received, lines count:', lines.length);
     const messages: MailListItem[] = [];
     for (const line of lines) {
       if (line === '.' || line.trim() === '') {
@@ -163,8 +175,78 @@ export class Pop3sClient {
         }
       }
     }
+          resolve(messages);
+        },
+        reject: (error: Error) => {
+          reject(error);
+        }
+      };
 
-    return messages;
+      // タイムアウト設定
+      const timeout = 120000;
+      this.multilineTimeoutId = setTimeout(() => {
+        if (this.multilineResolver) {
+          this.multilineMode = false;
+          const resolver = this.multilineResolver;
+          const linesCount = this.multilineLines.length;
+          this.multilineResolver = null;
+          this.multilineLines = [];
+          this.multilineTimeoutId = null;
+          resolver.reject(new Error(`Multiline response timeout (${timeout}ms), received ${linesCount} lines, buffer length: ${this.responseBuffer.length}`));
+        }
+      }, timeout);
+
+      // コマンドを送信
+      if (!this.socket) {
+        this.multilineMode = false;
+        this.multilineResolver = null;
+        this.multilineLines = [];
+        if (this.multilineTimeoutId) {
+          clearTimeout(this.multilineTimeoutId);
+          this.multilineTimeoutId = null;
+        }
+        reject(new Error('Not connected'));
+        return;
+      }
+
+      // +OK応答を待つ（通常モードで処理）
+      const okResolver = {
+        resolve: (line: string) => {
+          if (!line.startsWith('+OK')) {
+            this.multilineMode = false;
+            const resolver = this.multilineResolver;
+            this.multilineResolver = null;
+            this.multilineLines = [];
+            if (this.multilineTimeoutId) {
+              clearTimeout(this.multilineTimeoutId);
+              this.multilineTimeoutId = null;
+            }
+            resolver?.reject(new Error(`LIST command failed: ${line}`));
+          } else {
+            console.log('[Pop3sClient] LIST command +OK received:', line);
+            // +OKを受け取った後、バッファに残っているデータを処理
+            if (this.responseBuffer.includes('\r\n')) {
+              console.log('[Pop3sClient] Processing remaining buffer data');
+              // setupDataHandlerが自動的に処理する
+            }
+          }
+        },
+        reject: (error: Error) => {
+          this.multilineMode = false;
+          const resolver = this.multilineResolver;
+          this.multilineResolver = null;
+          this.multilineLines = [];
+          if (this.multilineTimeoutId) {
+            clearTimeout(this.multilineTimeoutId);
+            this.multilineTimeoutId = null;
+          }
+          resolver?.reject(error);
+        }
+      };
+      
+      this.responseResolvers.set(commandId, okResolver);
+      this.socket.write(`${command}\r\n`);
+    });
   }
 
   /**
@@ -175,16 +257,100 @@ export class Pop3sClient {
       throw new Error('Not connected');
     }
 
-    const response = await this.sendCommand('RETR', messageNumber.toString());
+    console.log('[Pop3sClient] Sending RETR command for message:', messageNumber);
     
-    if (!response.startsWith('+OK')) {
-      throw new Error(`RETR command failed: ${response}`);
-    }
+    // RETRコマンドは特殊：+OKの後にマルチライン応答が続く
+    // sendCommand()を使わず、直接コマンドを送信してマルチライン応答を処理する
+    const commandId = `cmd_${this.commandId++}`;
+    const command = `RETR ${messageNumber}`;
+    
+    return new Promise((resolve, reject) => {
+      // マルチライン応答モードを先に有効化
+      this.multilineMode = true;
+      this.multilineLines = [];
+      this.multilineResolver = {
+        resolve: (lines: string[]) => {
+          console.log('[Pop3sClient] RETR multiline response received, lines count:', lines.length);
+          
+          // +OKで始まる行を除去（POP3サーバーのレスポンス行）
+          const filteredLines = lines.filter(line => !line.trim().startsWith('+OK'));
+          
+          // メッセージを結合
+          const message = filteredLines.join('\r\n');
+          console.log('[Pop3sClient] RETR message after filtering (removed +OK lines):', message.length, 'bytes');
+          
+          resolve(message);
+        },
+        reject: (error: Error) => {
+          reject(error);
+        }
+      };
 
-    // マルチライン応答を取得
-    const lines = await this.readMultilineResponse();
-    
-    return lines.join('\r\n');
+      // タイムアウト設定
+      const timeout = 120000;
+      this.multilineTimeoutId = setTimeout(() => {
+        if (this.multilineResolver) {
+          this.multilineMode = false;
+          const resolver = this.multilineResolver;
+          const linesCount = this.multilineLines.length;
+          this.multilineResolver = null;
+          this.multilineLines = [];
+          this.multilineTimeoutId = null;
+          resolver.reject(new Error(`RETR multiline response timeout (${timeout}ms), received ${linesCount} lines, buffer length: ${this.responseBuffer.length}`));
+        }
+      }, timeout);
+
+      // コマンドを送信
+      if (!this.socket) {
+        this.multilineMode = false;
+        this.multilineResolver = null;
+        this.multilineLines = [];
+        if (this.multilineTimeoutId) {
+          clearTimeout(this.multilineTimeoutId);
+          this.multilineTimeoutId = null;
+        }
+        reject(new Error('Not connected'));
+        return;
+      }
+
+      // +OK応答を待つ（通常モードで処理）
+      const okResolver = {
+        resolve: (line: string) => {
+          if (!line.startsWith('+OK')) {
+            this.multilineMode = false;
+            const resolver = this.multilineResolver;
+            this.multilineResolver = null;
+            this.multilineLines = [];
+            if (this.multilineTimeoutId) {
+              clearTimeout(this.multilineTimeoutId);
+              this.multilineTimeoutId = null;
+            }
+            resolver?.reject(new Error(`RETR command failed: ${line}`));
+          } else {
+            console.log('[Pop3sClient] RETR command +OK received:', line);
+            // +OKを受け取った後、バッファに残っているデータを処理
+            if (this.responseBuffer.includes('\r\n')) {
+              console.log('[Pop3sClient] Processing remaining buffer data for RETR');
+              // setupDataHandlerが自動的に処理する
+            }
+          }
+        },
+        reject: (error: Error) => {
+          this.multilineMode = false;
+          const resolver = this.multilineResolver;
+          this.multilineResolver = null;
+          this.multilineLines = [];
+          if (this.multilineTimeoutId) {
+            clearTimeout(this.multilineTimeoutId);
+            this.multilineTimeoutId = null;
+          }
+          resolver?.reject(error);
+        }
+      };
+      
+      this.responseResolvers.set(commandId, okResolver);
+      this.socket.write(`${command}\r\n`);
+    });
   }
 
   /**
@@ -231,13 +397,87 @@ export class Pop3sClient {
     }
 
     this.socket.on('data', (data: Buffer) => {
-      this.responseBuffer += data.toString('utf8');
+      const text = data.toString('utf8');
+      console.log('[Pop3sClient] Received data:', text.substring(0, 100), '... (length:', text.length, ')');
+      this.responseBuffer += text;
+      console.log('[Pop3sClient] Buffer length after append:', this.responseBuffer.length, 'multilineMode:', this.multilineMode);
       
-      // 完全な行が来たら処理
+      // マルチライン応答モードの場合
+      if (this.multilineMode && this.multilineResolver) {
+        console.log('[Pop3sClient] Processing multiline response, current lines:', this.multilineLines.length);
+        // 完全な行を処理
+        while (this.responseBuffer.includes('\r\n')) {
+          const lineEnd = this.responseBuffer.indexOf('\r\n');
+          const line = this.responseBuffer.substring(0, lineEnd);
+          this.responseBuffer = this.responseBuffer.substring(lineEnd + 2);
+
+          // 空行はスキップしない（MIMEメッセージのヘッダーと本文の間の空行を保持するため）
+          // 終了マーカー（.）のみをチェック
+          if (line === '.') {
+            console.log('[Pop3sClient] End marker detected, resolving with', this.multilineLines.length, 'lines');
+            this.multilineMode = false;
+            const resolver = this.multilineResolver;
+            const multilineLines = this.multilineLines;
+            this.multilineResolver = null;
+            this.multilineLines = [];
+            if (this.multilineTimeoutId) {
+              clearTimeout(this.multilineTimeoutId);
+              this.multilineTimeoutId = null;
+            }
+            resolver.resolve(multilineLines); // 終了マーカーを除く（既に追加していない）
+            return;
+          }
+
+          console.log('[Pop3sClient] Multiline line received:', line);
+      
+          // 行を蓄積（空行も含む）
+          this.multilineLines.push(line);
+        }
+        return;
+      }
+      
+      // 通常モード: 完全な行が来たら処理
       while (this.responseBuffer.includes('\r\n')) {
         const lineEnd = this.responseBuffer.indexOf('\r\n');
         const line = this.responseBuffer.substring(0, lineEnd);
         this.responseBuffer = this.responseBuffer.substring(lineEnd + 2);
+
+        console.log('[Pop3sClient] Normal mode line received:', line, 'waiting resolvers:', this.responseResolvers.size, 'multilineMode:', this.multilineMode);
+
+        // マルチライン応答モードが有効な場合、+OK以外の行はマルチライン応答として処理
+        if (this.multilineMode && this.multilineResolver) {
+          if (line.startsWith('+OK')) {
+            // +OK行は通常モードのリゾルバーに渡す
+            for (const [key, resolver] of this.responseResolvers.entries()) {
+              resolver.resolve(line);
+              this.responseResolvers.delete(key);
+              break;
+            }
+          } else {
+            // +OK以外の行はマルチライン応答として処理
+            console.log('[Pop3sClient] Treating as multiline line:', line);
+            
+            // 終了マーカー（.）を検出
+            if (line === '.') {
+              console.log('[Pop3sClient] End marker detected, resolving with', this.multilineLines.length, 'lines');
+              this.multilineMode = false;
+              const resolver = this.multilineResolver;
+              const multilineLines = this.multilineLines;
+              this.multilineResolver = null;
+              this.multilineLines = [];
+              if (this.multilineTimeoutId) {
+                clearTimeout(this.multilineTimeoutId);
+                this.multilineTimeoutId = null;
+              }
+              resolver.resolve(multilineLines);
+              continue;
+            }
+
+            // 行を蓄積
+            this.multilineLines.push(line);
+          }
+          continue;
+        }
 
         // 待機中のレスポンスリゾルバーを探す
         for (const [key, resolver] of this.responseResolvers.entries()) {
@@ -292,50 +532,5 @@ export class Pop3sClient {
     });
   }
 
-  /**
-   * マルチライン応答を読み取る
-   */
-  private async readMultilineResponse(): Promise<string[]> {
-    if (!this.socket) {
-      throw new Error('Not connected');
-    }
-
-    const lines: string[] = [];
-    
-    return new Promise((resolve, reject) => {
-      const timeout = 60000; // 60秒のタイムアウト
-      let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-      const dataHandler = (data: Buffer) => {
-        const text = data.toString('utf8');
-        const newLines = text.split('\r\n');
-        
-        for (const line of newLines) {
-          if (line.trim() === '') {
-            continue;
-          }
-          
-          lines.push(line);
-          
-          // 終了マーカー（.）を検出
-          if (line === '.') {
-            if (timeoutId) {
-              clearTimeout(timeoutId);
-            }
-            this.socket!.removeListener('data', dataHandler);
-            resolve(lines.slice(0, -1)); // 終了マーカーを除く
-            return;
-          }
-        }
-      };
-
-      this.socket!.on('data', dataHandler);
-
-      timeoutId = setTimeout(() => {
-        this.socket!.removeListener('data', dataHandler);
-        reject(new Error('Multiline response timeout'));
-      }, timeout);
-    });
-  }
 }
 

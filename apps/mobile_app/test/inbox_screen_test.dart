@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloudinbox_mobile_app/screens/mail_list_screen.dart';
 import 'package:cloudinbox_mobile_app/services/ad_service.dart';
 import 'package:flutter/material.dart';
@@ -17,12 +19,11 @@ class _FakeInboxRepository implements InboxRepository {
   int? nextPageLimit;
 
   @override
-  Future<InboxPage> loadFirstPage(int limit) async {
-    loadCount++;
+  Stream<InboxPage> watchFirstPage(int limit) {
     firstPageLimit = limit;
     final items = pages.isNotEmpty ? pages[0] : <InboxThread>[];
     final hasMore = pages.length > 1;
-    return InboxPage(threads: items, hasMore: hasMore);
+    return Stream.value(InboxPage(threads: items, hasMore: hasMore));
   }
 
   @override

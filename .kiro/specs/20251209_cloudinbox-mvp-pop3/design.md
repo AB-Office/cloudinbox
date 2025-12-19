@@ -235,6 +235,7 @@ sequenceDiagram
 - MIMEパース、bodyPreview生成、本文サイズ判定
 - 小さい本文はFirestoreに、大きい本文・MIME原本・添付はStorageに暗号化保存
 - mailThreadsとmailMessagesの両方を更新
+- メールスレッドの`hasUnread: true`を設定し、`sentAt`フィールドに最新メッセージの送信日時を設定
 - 使用量を正確に追跡し、上限超過時は受信停止
 
 **Dependencies**
@@ -594,7 +595,7 @@ interface PlanValidator {
 - FirestoreからmailMessageを直接取得
 - Cloud Functions経由で暗号化されたメール本文を復号して表示（decryptMail Function、hasLargeBodyに応じてFirestoreまたはStorageから取得）
 - 添付ファイル一覧を表示（Storageパス情報から）
-- メールを開いた際に未読状態をFlutter側でFirestoreを直接更新（mailMessageの`isRead: true`、mailThreadの`hasUnread`を計算して更新）
+- メールを開いた際に未読状態をFlutter側でFirestoreを直接更新（mailMessageの`isRead: true`、mailThreadの`hasUnread`をスレッド内のすべてのメッセージを確認して再計算）
 - Freeプランの場合、画面下部に広告を表示
 
 **Dependencies**
@@ -939,6 +940,7 @@ interface GetMailMessageService {
   - `hasUnread`: boolean
   - `labels`: string[]
   - `lastMessageAt`: Timestamp
+  - `sentAt`: Timestamp（最新メッセージの送信日時）
   - `createdAt`: Timestamp
   - `updatedAt`: Timestamp
 - `mailMessages/{messageId}`:

@@ -11,6 +11,8 @@ import { saveMail } from '../saveMail';
 
 // モック
 jest.mock('firebase-admin', () => ({
+  apps: [],
+  initializeApp: jest.fn(),
   firestore: jest.fn(),
   storage: jest.fn(),
   auth: {
@@ -23,13 +25,15 @@ jest.mock('mailparser');
 jest.mock('../saveMail');
 jest.mock('firebase-functions', () => ({
   region: jest.fn(() => ({
-    pubsub: {
-      schedule: jest.fn(() => ({
-        timeZone: jest.fn(() => ({
-          onRun: jest.fn((handler: any) => handler),
+    runWith: jest.fn(() => ({
+      pubsub: {
+        schedule: jest.fn(() => ({
+          timeZone: jest.fn(() => ({
+            onRun: jest.fn((handler: any) => handler),
+          })),
         })),
-      })),
-    },
+      },
+    })),
   })),
   logger: {
     info: jest.fn(),

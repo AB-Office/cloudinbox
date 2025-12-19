@@ -39,6 +39,7 @@ async function initializeUser(user: admin.auth.UserRecord): Promise<void> {
     throw new Error('User UID is required');
   }
 
+  functions.logger.info(`Initializing user: ${uid}`);
   const db = admin.firestore();
   const now = admin.firestore.Timestamp.now();
 
@@ -73,24 +74,29 @@ async function initializeUser(user: admin.auth.UserRecord): Promise<void> {
 
     // ユーザードキュメントを作成
     transaction.set(userRef, userData);
+    functions.logger.info(`User document created in transaction: ${uid}`);
   });
 
   // ユーザーが既に存在する場合はDEK生成もスキップ（冪等性）
   if (userExists) {
+    functions.logger.info(`User document already exists, skipping DEK creation: ${uid}`);
     return;
   }
 
   // DEKを生成・保存（トランザクション外で実行、Secret Managerへの保存）
+  functions.logger.info(`Creating DEK for user: ${uid}`);
   await createDataKeyForUser(uid);
+  functions.logger.info(`DEK created successfully for user: ${uid}`);
 }
 
 /**
  * Firebase Authトリガー: ユーザー作成時
  */
 export const onUserCreate = functions.region('asia-northeast1').auth.user().onCreate(async (user) => {
+  functions.logger.info(`onUserCreate triggered for user: ${user.uid}`);
   try {
     await initializeUser(user);
-    functions.logger.info(`User initialized: ${user.uid}`);
+    functions.logger.info(`User initialized successfully: ${user.uid}`);
   } catch (error) {
     functions.logger.error(`Failed to initialize user ${user.uid}:`, error);
     throw error;

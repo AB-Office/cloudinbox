@@ -20,27 +20,6 @@ class NavigationDrawer extends StatefulWidget {
 }
 
 class _NavigationDrawerState extends State<NavigationDrawer> {
-  SettingsData? _settingsData;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    try {
-      final data = await widget.settingsRepository.loadSettings();
-      if (mounted) {
-        setState(() {
-          _settingsData = data;
-        });
-      }
-    } catch (e) {
-      // エラーは無視（プラン情報が表示されないだけ）
-    }
-  }
-
   void _onMenuItemTap(String route) {
     Navigator.of(context).pop();
     widget.onNavigate(route);
@@ -55,58 +34,85 @@ class _NavigationDrawerState extends State<NavigationDrawer> {
     final settingsLabel = I18nService.translateSettings(locale);
 
     return Drawer(
-      child: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.inbox),
-                  title: Text(inboxLabel),
-                  selected: widget.currentRoute == '/inbox',
-                  onTap: () => _onMenuItemTap('/inbox'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.email),
-                  title: Text(allMailLabel),
-                  selected: widget.currentRoute == '/all',
-                  onTap: () => _onMenuItemTap('/all'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.delete),
-                  title: Text(trashLabel),
-                  selected: widget.currentRoute == '/trash',
-                  onTap: () => _onMenuItemTap('/trash'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.settings),
-                  title: Text(settingsLabel),
-                  selected: widget.currentRoute == '/settings',
-                  onTap: () => _onMenuItemTap('/settings'),
-                ),
-              ],
-            ),
-          ),
-          if (_settingsData != null)
+      child: SafeArea(
+        child: Column(
+          children: [
+            // ヘッダー: CloudInboxの文字と水平線
             Container(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Plan: ${_settingsData!.planLabel}'),
-                  const SizedBox(height: 4),
                   Text(
-                    'Used: ${I18nService.formatBytes(_settingsData!.usedStorageBytes, context)} / ${I18nService.formatBytes(_settingsData!.maxStorageBytes, context)}',
+                    'CloudInbox',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Available: ${I18nService.formatBytes(_settingsData!.maxStorageBytes - _settingsData!.usedStorageBytes, context)}',
+                  const Divider(),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.inbox),
+                    title: Text(inboxLabel),
+                    selected: widget.currentRoute == '/inbox',
+                    onTap: () => _onMenuItemTap('/inbox'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.email),
+                    title: Text(allMailLabel),
+                    selected: widget.currentRoute == '/all',
+                    onTap: () => _onMenuItemTap('/all'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.delete),
+                    title: Text(trashLabel),
+                    selected: widget.currentRoute == '/trash',
+                    onTap: () => _onMenuItemTap('/trash'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.settings),
+                    title: Text(settingsLabel),
+                    selected: widget.currentRoute == '/settings',
+                    onTap: () => _onMenuItemTap('/settings'),
                   ),
                 ],
               ),
             ),
-        ],
+            // StreamBuilderでリアルタイム更新
+            StreamBuilder<SettingsData>(
+              stream: widget.settingsRepository.watchSettings(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const SizedBox.shrink();
+                }
+                final settingsData = snapshot.data!;
+                return Container(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${I18nService.translatePlan(locale)}: ${settingsData.planLabel}'),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${I18nService.translateUsed(locale)}: ${I18nService.formatBytes(settingsData.usedStorageBytes, context)} / ${I18nService.formatBytes(settingsData.maxStorageBytes, context)} (${(settingsData.usedStorageBytes / settingsData.maxStorageBytes * 100).toStringAsFixed(1)}%)',
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${I18nService.translateAvailable(locale)}: ${I18nService.formatBytes(settingsData.maxStorageBytes - settingsData.usedStorageBytes, context)}',
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

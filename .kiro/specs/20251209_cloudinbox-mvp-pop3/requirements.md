@@ -89,9 +89,9 @@ CloudInbox MVPは、外部メールサーバ（POP3S、SSL/TLS必須）から受
 7. When メールに添付ファイルがある, CloudInbox shall ユーザー専用のDEKを使用して各添付ファイルをAES-256-GCMで暗号化し、Storageの`mail-data/{uid}/{messageId}/attachments/{filename}.enc`に保存する
 8. When メール本文を暗号化して保存する, CloudInbox shall Firestoreドキュメントに暗号化形式（`ciphertext`, `nonce`, `tag`）を記録する
 9. When メールが保存される, CloudInbox shall Storageパス情報（`storage.rawMimePath`, `storage.largeBodyPath`, `storage.attachmentsBasePath`）をFirestoreの`mailMessages`に記録する
-10. When メールが保存される, CloudInbox shall メールの基本状態（`isRead: false`, `labels: ["inbox"]`, `deletedAt: null`）を初期化する
+10. When メールが保存される, CloudInbox shall メールの基本状態（`isRead: false`, `labels: ["inbox"]`, `deletedAt: null`）を初期化する。また、メールスレッドの`hasUnread: true`を設定する。
 11. When メールが保存される, CloudInbox shall メッセージID（`messageId`）とスレッドID（`threadId`）を記録する
-12. When メールが保存される, CloudInbox shall 保存日時（`createdAt`）と更新日時（`updatedAt`）を記録する
+12. When メールが保存される, CloudInbox shall 保存日時（`createdAt`）と更新日時（`updatedAt`）を記録する。また、メールスレッドの`sentAt`フィールドに最新メッセージの送信日時（`sentAt`）を設定する。
 13. When メールが保存される, CloudInbox shall 実際に保存されたファイルサイズの合計を計算し、ユーザーの使用量（`usage.storageBytes`）に加算する
 14. The CloudInbox shall 暗号化前のメール本文をメモリに保持しない
 15. The CloudInbox shall 暗号化処理をCloud Functions内で実行し、クライアント側には暗号鍵を送信しない
@@ -105,7 +105,7 @@ CloudInbox MVPは、外部メールサーバ（POP3S、SSL/TLS必須）から受
 #### Acceptance Criteria
 1. When ユーザーが受信トレイを開く, CloudInbox shall Firestoreの`users/{uid}/mailThreads`コレクションをクエリして、`labels`に`inbox`を含み、`trash`を含まないメールスレッド一覧を取得する
 2. When メール一覧を表示する, CloudInbox shall メールスレッドを`lastMessageAt`の降順でソートする
-3. When メール一覧を表示する, CloudInbox shall 件名（`subject`）、送信者（`from`）、プレビュー（`preview`）、日時（`lastMessageAt`）、未読状態（`hasUnread`）、ラベル（`labels`）を表示する
+3. When メール一覧を表示する, CloudInbox shall 件名（`subject`）、送信者（`from`）、プレビュー（`preview`）、日時（`sentAt`：メールの送信日時）、未読状態（`hasUnread`）、ラベル（`labels`）を表示する。未読メール（`hasUnread: true`）の件名は太字で表示する。
 4. When メール一覧を表示する, CloudInbox shall Storageアクセスを発生させない（Firestoreのみで一覧表示）
 5. When メール一覧を初期表示する, CloudInbox shall 画面サイズに応じて表示可能な件数を計算し、その件数分を取得して表示する（画面に収まる件数 + 若干の余裕分）
 6. When ユーザーがメール一覧をスクロールして末尾に到達する, CloudInbox shall 次のN件（画面サイズに応じた件数）を取得して一覧に追加表示する（追加読み込み）
@@ -119,7 +119,7 @@ CloudInbox MVPは、外部メールサーバ（POP3S、SSL/TLS必須）から受
 14. When メール本文が大きい場合（`hasLargeBody: true`）, CloudInbox shall Cloud Functions経由でStorageの`body.html.enc`を取得・復号し、クライアントに送信する
 15. When メール本文を復号する, CloudInbox shall ユーザー専用のDEKを使用してAES-256-GCMで復号を実行する
 16. When メール詳細を表示する, CloudInbox shall Storageパス情報（`storage.attachmentsBasePath`）から添付ファイル一覧を取得・表示する
-17. When ユーザーがメールを開く, CloudInbox shall Flutterアプリ側でFirestoreを直接更新して、メールの未読状態を`isRead: true`に更新し、スレッドの`hasUnread`を更新する
+17. When ユーザーがメールを開く, CloudInbox shall Flutterアプリ側でFirestoreを直接更新して、メールの未読状態を`isRead: true`に更新し、スレッド内のすべてのメッセージを確認して`hasUnread`を再計算する（スレッド内に未読メッセージが1つでもあれば`hasUnread: true`、すべて既読なら`hasUnread: false`）
 18. The CloudInbox shall 復号済みのメール本文をクライアント側でキャッシュしない（セキュリティ要件）
 19. When ユーザーがハンバーガーメニューを開く, CloudInbox shall 受信トレイ／すべてのメール／ゴミ箱／設定へのメニュー項目をアイコン付きで一覧表示し、その一番下に現在のプラン情報（`plan.label`）と使用量および残り使用可能量を表示する
 20. When ユーザーがハンバーガーメニューの「受信トレイ」をタップする, CloudInbox shall 受信トレイ用フィルタ（`labels`に`inbox`を含み、`trash`を含まない）を適用したメール一覧画面（MailListScreen）を表示する

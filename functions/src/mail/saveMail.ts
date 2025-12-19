@@ -5,6 +5,7 @@
  */
 
 import * as admin from 'firebase-admin';
+import * as functions from 'firebase-functions';
 import * as MailParser from 'mailparser';
 import { encryptForUser } from '../encryption';
 import { canStoreMail } from '../shared/planValidator';
@@ -13,7 +14,7 @@ import {
   getBodyHtmlPath,
   getAttachmentPath,
 } from './storagePaths';
-import { MailMessageDoc, MailThreadDoc } from './types';
+import { MailMessageDoc, MailThreadDoc, StoragePaths } from './types';
 import { generateBodyPreview } from './mailProcessing';
 
 /**
@@ -39,8 +40,45 @@ export async function saveMail(
 ): Promise<number> {
   // メールサイズを推定（暗号化後のサイズを考慮）
   const rawMessageSize = Buffer.byteLength(rawMessage, 'utf8');
-  const bodyText = parsed.text || parsed.html || '';
+  
+  // mailparserの結果を詳細にログ出力
+  functions.logger.info(`Parsed mail properties for message: ${messageId}, text=${!!parsed.text}, html=${!!parsed.html}, textAsHtml=${!!parsed.textAsHtml}`);
+  
+  // 本文を取得（text優先、なければhtml、それもなければhtmlからテキストを抽出）
+  let bodyText = '';
+  if (parsed.text) {
+    bodyText = parsed.text;
+  } else if (parsed.html) {
+    // HTMLからテキストを抽出（簡易版）
+    bodyText = parsed.html
+      .replace(/<[^>]+>/g, '')  // HTMLタグを削除
+      .replace(/&nbsp;/g, ' ')   // &nbsp;をスペースに
+      .replace(/&[a-z]+;/gi, '') // その他のエンティティを削除
+      .trim();
+  } else if (parsed.textAsHtml) {
+    // textAsHtmlからテキストを抽出
+    bodyText = parsed.textAsHtml
+      .replace(/<[^>]+>/g, '')  // HTMLタグを削除
+      .replace(/&nbsp;/g, ' ')   // &nbsp;をスペースに
+      .replace(/&[a-z]+;/gi, '') // その他のエンティティを削除
+      .trim();
+  }
+  
+  // bodyTextが空の場合は警告を出す（StorageにMIME原本が保存されているので、decryptMail.tsで再パース可能）
+  if (bodyText.length === 0) {
+    functions.logger.warn(`WARNING: bodyText is empty for message: ${messageId}. parsed.text=${!!parsed.text}, parsed.html=${!!parsed.html}, rawMessage length=${rawMessage.length}. MIME original will be saved to Storage and can be re-parsed in decryptMail.`);
+  }
+  
   const bodySize = Buffer.byteLength(bodyText, 'utf8');
+  
+  const parsedTextLength = typeof parsed.text === 'string' ? parsed.text.length : 0;
+  const parsedHtmlLength = typeof parsed.html === 'string' ? parsed.html.length : 0;
+  functions.logger.info(`Saving mail: messageId=${messageId}, parsed.text length=${parsedTextLength}, parsed.html length=${parsedHtmlLength}, bodyText length=${bodyText.length}, bodySize=${bodySize} bytes, hasLargeBody=${bodySize >= 1024 * 1024}`);
+  
+  // bodyTextが空の場合は警告を出す
+  if (bodyText.length === 0) {
+    functions.logger.warn(`WARNING: bodyText is still empty for message: ${messageId}. parsed.text=${!!parsed.text}, parsed.html=${!!parsed.html}, rawMessage length=${rawMessage.length}`);
+  }
   
   // 暗号化によるオーバーヘッドを考慮（約33%増加: nonce + tag）
   const estimatedSize = Math.ceil(rawMessageSize * 1.33) + Math.ceil(bodySize * 1.33);
@@ -81,6 +119,8 @@ export async function saveMail(
   if (hasLargeBody) {
     // 大きい本文を暗号化してStorageに保存
     largeBodyPath = getBodyHtmlPath(uid, messageId);
+    functions.logger.info(`Saving large body to Storage: path=${largeBodyPath}, bodySize=${bodySize} bytes for message: ${messageId}`);
+    
     const bodyEncrypted = await encryptForUser(uid, Buffer.from(bodyText, 'utf8'));
     const bodyBuffer = Buffer.from(JSON.stringify(bodyEncrypted), 'utf8');
     
@@ -91,15 +131,18 @@ export async function saveMail(
       },
     });
     
+    functions.logger.info(`Saved large body to Storage: path=${largeBodyPath}, bufferSize=${bodyBuffer.length} bytes for message: ${messageId}`);
     totalSavedSize += bodyBuffer.length;
   } else {
     // 小さい本文を暗号化してFirestoreに保存
+    functions.logger.info(`Saving small body to Firestore: bodySize=${bodySize} bytes for message: ${messageId}`);
     bodyTextEncrypted = await encryptForUser(uid, bodyText);
     // Firestoreに保存するサイズを計算（JSON形式）
     const bodyJsonSize = Buffer.byteLength(
       JSON.stringify(bodyTextEncrypted),
       'utf8'
     );
+    functions.logger.info(`Saved small body to Firestore: encryptedSize=${bodyJsonSize} bytes for message: ${messageId}`);
     totalSavedSize += bodyJsonSize;
   }
 
@@ -146,8 +189,8 @@ export async function saveMail(
   
   const from = extractFrom(parsed.from);
   const to = extractAddresses(parsed.to);
-  const cc = parsed.cc ? extractAddresses(parsed.cc) : undefined;
-  const bcc = parsed.bcc ? extractAddresses(parsed.bcc) : undefined;
+  const cc = parsed.cc ? extractAddresses(parsed.cc) : [];
+  const bcc = parsed.bcc ? extractAddresses(parsed.bcc) : [];
 
   // 日時情報を取得
   const sentAt = parsed.date ? admin.firestore.Timestamp.fromDate(parsed.date) : now;
@@ -169,6 +212,7 @@ export async function saveMail(
       preview: bodyPreview,
       hasUnread: true,
       lastMessageAt: receivedAt,
+      sentAt: sentAt, // 最新メッセージの送信日時を更新
       updatedAt: now,
     });
   } else {
@@ -183,6 +227,7 @@ export async function saveMail(
       hasUnread: true,
       labels: ['inbox'],
       lastMessageAt: receivedAt,
+      sentAt: sentAt, // 最新メッセージの送信日時
       createdAt: now,
       updatedAt: now,
     };
@@ -197,7 +242,38 @@ export async function saveMail(
     .collection('mailMessages')
     .doc(messageId);
 
-  const messageData: MailMessageDoc = {
+  // storageオブジェクトを作成（undefinedのフィールドは除外）
+  // スプレッド演算子を使って、undefined/null/空文字列の場合はプロパティを追加しない
+  const storageData: StoragePaths = {
+    rawMimePath,
+    ...(largeBodyPath !== undefined && largeBodyPath !== null && largeBodyPath !== '' ? { largeBodyPath } : {}),
+    ...(attachmentsBasePath !== undefined && attachmentsBasePath !== null && attachmentsBasePath !== '' ? { attachmentsBasePath } : {}),
+  };
+  
+  // デバッグ: storageDataの内容を確認
+  functions.logger.debug(`storageData keys: ${Object.keys(storageData).join(', ')}, hasLargeBody: ${hasLargeBody}, largeBodyPath type: ${typeof largeBodyPath}, largeBodyPath value: ${largeBodyPath}`);
+
+  // messageDataを作成（undefinedのフィールドは除外）
+  const messageData: Partial<MailMessageDoc> & {
+    messageId: string;
+    threadId: string;
+    from: string;
+    to: string[];
+    cc: string[];
+    bcc: string[];
+    subject: string;
+    sentAt: admin.firestore.Timestamp;
+    receivedAt: admin.firestore.Timestamp;
+    bodyPreview: string;
+    hasLargeBody: boolean;
+    hasAttachments: boolean;
+    storage: StoragePaths;
+    isRead: boolean;
+    labels: string[];
+    deletedAt: admin.firestore.Timestamp | null;
+    createdAt: admin.firestore.Timestamp;
+    updatedAt: admin.firestore.Timestamp;
+  } = {
     messageId,
     threadId,
     from,
@@ -208,20 +284,20 @@ export async function saveMail(
     sentAt,
     receivedAt,
     bodyPreview,
-    bodyTextEncrypted,
     hasLargeBody,
     hasAttachments: parsed.attachments && parsed.attachments.length > 0,
-    storage: {
-      rawMimePath,
-      largeBodyPath,
-      attachmentsBasePath,
-    },
+    storage: storageData,
     isRead: false,
     labels: ['inbox'],
     deletedAt: null,
     createdAt: now,
     updatedAt: now,
   };
+  
+  // bodyTextEncryptedが存在する場合のみ追加
+  if (bodyTextEncrypted !== undefined) {
+    messageData.bodyTextEncrypted = bodyTextEncrypted;
+  }
 
   await messageRef.set(messageData);
 

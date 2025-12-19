@@ -5,6 +5,7 @@
  */
 
 import * as tls from 'tls';
+import * as functions from 'firebase-functions';
 
 /**
  * POP3S接続テストの結果
@@ -38,6 +39,8 @@ export async function testPop3Connection(
     };
   }
 
+  functions.logger.info(`testPop3Connection: Connecting to ${host}:${port}`);
+
   return new Promise((resolve) => {
     const timeout = 10000; // 10秒のタイムアウト
     let socket: tls.TLSSocket | null = null;
@@ -53,6 +56,7 @@ export async function testPop3Connection(
     };
 
     const onError = (error: Error) => {
+      functions.logger.error(`testPop3Connection error for ${host}:${port}:`, error);
       cleanup();
       resolve({
         success: false,
@@ -85,7 +89,10 @@ export async function testPop3Connection(
             return;
           }
 
+          functions.logger.info(`testPop3Connection: TLS connection established to ${host}:${port}`);
+
           let responseBuffer = '';
+          let authState: 'greeting' | 'user' | 'pass' | 'done' = 'greeting';
 
           const onData = (data: Buffer) => {
             responseBuffer += data.toString();
@@ -93,40 +100,63 @@ export async function testPop3Connection(
             // POP3サーバーの応答を処理
             if (responseBuffer.includes('\r\n')) {
               const lines = responseBuffer.split('\r\n');
-              const firstLine = lines[0];
+              const firstLine = lines[0].trim();
+              responseBuffer = responseBuffer.substring(responseBuffer.indexOf('\r\n') + 2);
 
-              // +OK応答を確認
+              if (authState === 'greeting') {
+                // 初期応答（+OK greeting message）
               if (firstLine.startsWith('+OK')) {
                 // USERコマンドを送信
                 socket!.write(`USER ${userName}\r\n`);
-                responseBuffer = '';
-              } else if (firstLine.startsWith('+')) {
+                  authState = 'user';
+                } else if (firstLine.startsWith('-ERR')) {
+                  cleanup();
+                  resolve({
+                    success: false,
+                    errorMessage: firstLine.substring(4).trim() || 'Server error',
+                  });
+                }
+              } else if (authState === 'user') {
+                // USERコマンドの応答
+                if (firstLine.startsWith('+OK')) {
                 // PASSコマンドを送信
                 socket!.write(`PASS ${password}\r\n`);
-                responseBuffer = '';
-              } else if (firstLine.startsWith('+OK') && lines.length > 1) {
+                  authState = 'pass';
+                } else if (firstLine.startsWith('-ERR')) {
+                  cleanup();
+                  resolve({
+                    success: false,
+                    errorMessage: firstLine.substring(4).trim() || 'User authentication failed',
+                  });
+                }
+              } else if (authState === 'pass') {
+                // PASSコマンドの応答
+                if (firstLine.startsWith('+OK')) {
                 // 認証成功
+                  functions.logger.info(`testPop3Connection: Authentication successful for ${host}:${port}`);
                 cleanup();
                 resolve({ success: true });
+                  authState = 'done';
               } else if (firstLine.startsWith('-ERR')) {
-                // エラー応答
                 cleanup();
                 resolve({
                   success: false,
-                  errorMessage: firstLine.substring(4).trim() || 'Authentication failed',
+                    errorMessage: firstLine.substring(4).trim() || 'Password authentication failed',
                 });
+                }
               }
             }
           };
 
           socket.on('data', onData);
-          socket.on('error', onError);
+          socket.setEncoding('utf8');
 
           // タイムアウトを設定
           timeoutId = setTimeout(onTimeout, timeout);
         }
       );
 
+      // 接続確立前のエラー（DNS解決エラーなど）をキャッチ
       socket.on('error', onError);
     } catch (error: any) {
       cleanup();

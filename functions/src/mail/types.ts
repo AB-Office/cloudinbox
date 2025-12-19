@@ -37,6 +37,7 @@ export interface MailThreadDoc {
   hasUnread: boolean;
   labels: string[];                        // ["inbox"], ["archive"], ["trash"] など
   lastMessageAt: admin.firestore.Timestamp;
+  sentAt: admin.firestore.Timestamp;       // 最新メッセージの送信日時
   createdAt: admin.firestore.Timestamp;
   updatedAt: admin.firestore.Timestamp;
 }
