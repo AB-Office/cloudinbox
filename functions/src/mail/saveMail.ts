@@ -136,7 +136,7 @@ export async function saveMail(
   } else {
     // 小さい本文を暗号化してFirestoreに保存
     functions.logger.info(`Saving small body to Firestore: bodySize=${bodySize} bytes for message: ${messageId}`);
-    bodyTextEncrypted = await encryptForUser(uid, bodyText);
+    bodyTextEncrypted = await encryptForUser(uid, Buffer.from(bodyText, 'utf8'));
     // Firestoreに保存するサイズを計算（JSON形式）
     const bodyJsonSize = Buffer.byteLength(
       JSON.stringify(bodyTextEncrypted),

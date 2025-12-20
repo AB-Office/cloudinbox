@@ -119,9 +119,24 @@ export class Pop3sClient {
           }
         );
 
-      this.socket.on('error', (error: Error) => {
+      this.socket.on('error', (error: any) => {
         cleanup();
-        reject(error);
+        // エラー分類（証明書/タイムアウト/接続拒否など）
+        if (error && typeof error.code === 'string') {
+          if (error.code === 'CERT_HAS_EXPIRED' || error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
+            reject(new Error(`TLS certificate error: ${error.code}`));
+            return;
+          }
+          if (error.code === 'ETIMEDOUT') {
+            reject(new Error('Connection timeout'));
+            return;
+          }
+          if (error.code === 'ECONNREFUSED') {
+            reject(new Error('Connection refused'));
+            return;
+          }
+        }
+        reject(error instanceof Error ? error : new Error(String(error)));
       });
 
         timeoutId = setTimeout(() => {
@@ -431,7 +446,9 @@ export class Pop3sClient {
           console.log('[Pop3sClient] Multiline line received:', line);
       
           // 行を蓄積（空行も含む）
-          this.multilineLines.push(line);
+          // ドットスタッフィング解除（行頭の ".." は "." に変換
+          const destuffed = line.startsWith('..') ? line.slice(1) : line;
+          this.multilineLines.push(destuffed);
         }
         return;
       }

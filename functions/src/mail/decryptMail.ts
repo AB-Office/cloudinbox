@@ -151,10 +151,37 @@ export async function executeDecryptMail(
       return { bodyText: bodyText || '' };
     } catch (error: any) {
       functions.logger.error(`Failed to decrypt bodyText for message: ${messageId}`, error);
-      functions.logger.error(`Error details: ${JSON.stringify(error)}`);
-      functions.logger.error(`Error stack: ${error.stack}`);
-      // エラーが発生しても空文字列を返す（エラーをthrowしない）
-      functions.logger.warn(`Returning empty bodyText due to decryption error for message: ${messageId}`);
+      // フォールバック: StorageのMIME原本を取得して本文を抽出
+      const rawMimePath = messageData.storage?.rawMimePath;
+      if (rawMimePath) {
+        try {
+          const bucket = storage.bucket();
+          const file = bucket.file(rawMimePath);
+          const [exists] = await file.exists();
+          if (exists) {
+            const [buffer] = await file.download();
+            const enc = JSON.parse(buffer.toString('utf-8')) as EncryptedData;
+            const rawMimeBuffer = await decryptForUser(uid, enc);
+            const rawMime = rawMimeBuffer.toString('utf-8');
+            try {
+              const parsed = await MailParser.simpleParser(rawMime);
+              let fallbackText = '';
+              if (parsed.text) {
+                fallbackText = parsed.text;
+              } else if (parsed.html) {
+                fallbackText = parsed.html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&[a-z]+;/gi, '').trim();
+              } else if (parsed.textAsHtml) {
+                fallbackText = parsed.textAsHtml.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&[a-z]+;/gi, '').trim();
+              }
+              return { bodyText: fallbackText || '' };
+            } catch {
+              return { bodyText: rawMime }
+            }
+          }
+        } catch (e) {
+          functions.logger.error(`Failed to parse MIME for message: ${messageId}`, e);
+        }
+      }
       return { bodyText: '' };
     }
   }

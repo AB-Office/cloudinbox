@@ -89,7 +89,7 @@ export const fetchMails = functions
           }
 
           // 各アカウントを走査
-          for (const accountDoc of accountsSnapshot.docs) {
+          for (const accountDoc of activeAccounts) {
             const accountId = accountDoc.id;
             const accountData = accountDoc.data();
             
@@ -99,7 +99,6 @@ export const fetchMails = functions
               await processAccount(uid, accountId, accountData, db);
             } catch (error: any) {
               functions.logger.error(`Error processing account ${accountId} for user ${uid}:`, error);
-              // エラーが発生しても次のアカウントの処理を継続
               continue;
             }
           }

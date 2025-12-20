@@ -246,7 +246,7 @@ describe('accountTest', () => {
 
       expect(result).toEqual({
         success: false,
-        errorMessage: expect.stringContaining('required'),
+        errorMessage: 'Missing or invalid parameters: host, port, useSsl, userName',
       });
     });
   });

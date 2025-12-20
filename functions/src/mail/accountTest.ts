@@ -55,10 +55,15 @@ export const accountTest: any = functions.region('asia-northeast1').https.onCall
     const uid = context.auth.uid;
 
     // パラメータ検証
-    if (!data.host || !data.port || data.useSsl === undefined || !data.userName) {
+    const isValidPort = Number.isInteger(data.port) && data.port > 0 && data.port <= 65535;
+    const hasHost = typeof data.host === 'string' && data.host.trim().length > 0;
+    const hasUser = typeof data.userName === 'string' && data.userName.trim().length > 0;
+    const useSslProvided = data.useSsl === true || data.useSsl === false;
+
+    if (!isValidPort || !hasHost || !hasUser || !useSslProvided) {
       return {
         success: false,
-        errorMessage: 'Missing required parameters: host, port, useSsl, userName',
+        errorMessage: 'Missing or invalid parameters: host, port, useSsl, userName',
       };
     }
 
