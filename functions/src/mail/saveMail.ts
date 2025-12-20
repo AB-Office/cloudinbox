@@ -27,6 +27,7 @@ import { generateBodyPreview } from './mailProcessing';
  * @param parsed - パースされたメール
  * @param db - Firestoreインスタンス
  * @param storage - Storageインスタンス
+ * @param isSentMail - 送信済みメールの場合true（デフォルト: false）
  * @returns 保存されたファイルサイズの合計（バイト）
  */
 export async function saveMail(
@@ -36,7 +37,8 @@ export async function saveMail(
   rawMessage: string,
   parsed: MailParser.ParsedMail,
   db: admin.firestore.Firestore,
-  storage: admin.storage.Storage
+  storage: admin.storage.Storage,
+  isSentMail: boolean = false
 ): Promise<number> {
   // メールサイズを推定（暗号化後のサイズを考慮）
   const rawMessageSize = Buffer.byteLength(rawMessage, 'utf8');
@@ -205,16 +207,36 @@ export async function saveMail(
 
   const threadDoc = await threadRef.get();
 
+  // ラベルを決定（送信済みメールの場合は'sent'、受信メールの場合は'inbox'）
+  const initialLabels = isSentMail ? ['sent'] : ['inbox'];
+
   if (threadDoc.exists) {
     // 既存スレッドを更新
-    await threadRef.update({
+    const updateData: any = {
       latestMessageId: messageId,
       preview: bodyPreview,
       hasUnread: true,
       lastMessageAt: receivedAt,
       sentAt: sentAt, // 最新メッセージの送信日時を更新
       updatedAt: now,
-    });
+    };
+
+    // ラベルを決定
+    const existingLabels = threadDoc.data()?.labels || [];
+    let newLabels: string[];
+    if (isSentMail) {
+      // 送信済みメールの場合、inboxラベルを削除してsentラベルを追加
+      newLabels = existingLabels.filter((label: string) => label !== 'inbox');
+      if (!newLabels.includes('sent')) {
+        newLabels.push('sent');
+      }
+    } else {
+      // 受信メールの場合、既存ラベルにinboxを追加（重複を避ける）
+      newLabels = Array.from(new Set([...existingLabels, 'inbox']));
+    }
+    updateData.labels = newLabels;
+
+    await threadRef.update(updateData);
   } else {
     // 新規スレッドを作成
     const threadData: MailThreadDoc = {
@@ -225,7 +247,7 @@ export async function saveMail(
       to,
       preview: bodyPreview,
       hasUnread: true,
-      labels: ['inbox'],
+      labels: initialLabels,
       lastMessageAt: receivedAt,
       sentAt: sentAt, // 最新メッセージの送信日時
       createdAt: now,
@@ -288,7 +310,7 @@ export async function saveMail(
     hasAttachments: parsed.attachments && parsed.attachments.length > 0,
     storage: storageData,
     isRead: false,
-    labels: ['inbox'],
+    labels: initialLabels,
     deletedAt: null,
     createdAt: now,
     updatedAt: now,

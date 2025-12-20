@@ -1,13 +1,14 @@
 /**
- * accountTest - POP3S接続テスト
+ * accountTest - POP3S/SMTP接続テスト
  * 
- * メールアカウント設定時のPOP3S接続テスト機能（SSL/TLS必須）
+ * メールアカウント設定時のPOP3S/SMTP接続テスト機能（SSL/TLS必須）
  */
 
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { decryptPassword } from '../encryption';
 import { testPop3Connection } from './pop3Client';
+import { testSmtpConnection } from './smtpClient';
 
 // Firebase Admin SDKの初期化（確実に初期化されるように）
 if (!admin.apps || admin.apps.length === 0) {
@@ -18,7 +19,8 @@ if (!admin.apps || admin.apps.length === 0) {
  * 接続テストリクエストの型定義
  */
 interface AccountTestRequest {
-  // アカウント作成前の接続テスト用
+  // POP3/SMTP共通
+  protocol: 'pop3' | 'smtp';
   host: string;
   port: number;
   useSsl: boolean;
@@ -38,7 +40,7 @@ interface AccountTestResponse {
 }
 
 /**
- * POP3S接続テストを実行するHTTP Callable Function
+ * POP3S/SMTP接続テストを実行するHTTP Callable Function
  *
  * テストコードから直接呼び出しやすくするため、型はanyとしてエクスポートする
  */
@@ -55,23 +57,25 @@ export const accountTest: any = functions.region('asia-northeast1').https.onCall
     const uid = context.auth.uid;
 
     // パラメータ検証
+    const isValidProtocol = data.protocol === 'pop3' || data.protocol === 'smtp';
     const isValidPort = Number.isInteger(data.port) && data.port > 0 && data.port <= 65535;
     const hasHost = typeof data.host === 'string' && data.host.trim().length > 0;
     const hasUser = typeof data.userName === 'string' && data.userName.trim().length > 0;
     const useSslProvided = data.useSsl === true || data.useSsl === false;
 
-    if (!isValidPort || !hasHost || !hasUser || !useSslProvided) {
+    if (!isValidProtocol || !isValidPort || !hasHost || !hasUser || !useSslProvided) {
       return {
         success: false,
-        errorMessage: 'Missing or invalid parameters: host, port, useSsl, userName',
+        errorMessage: 'Missing or invalid parameters: protocol, host, port, useSsl, userName',
       };
     }
 
     // SSL/TLS必須チェック
     if (!data.useSsl) {
+      const protocolName = data.protocol.toUpperCase();
       return {
         success: false,
-        errorMessage: 'SSL/TLS is required for POP3 connections',
+        errorMessage: `SSL/TLS is required for ${protocolName} connections`,
       };
     }
 
@@ -96,12 +100,20 @@ export const accountTest: any = functions.region('asia-northeast1').https.onCall
       }
 
       const accountData = accountDoc.data();
-      const passwordEnc = accountData?.pop3?.passwordEnc;
+      
+      // プロトコルに応じてパスワードフィールドを選択
+      let passwordEnc: any;
+      if (data.protocol === 'pop3') {
+        passwordEnc = accountData?.pop3?.passwordEnc;
+      } else {
+        passwordEnc = accountData?.smtp?.passwordEnc;
+      }
 
       if (!passwordEnc) {
+        const protocolName = data.protocol.toUpperCase();
         return {
           success: false,
-          errorMessage: 'Password not found in account',
+          errorMessage: `${protocolName} password not found in account`,
         };
       }
 
@@ -125,15 +137,29 @@ export const accountTest: any = functions.region('asia-northeast1').https.onCall
       password = data.password;
     }
 
-    // POP3S接続テストを実行
+    // プロトコルに応じて接続テストを実行
     try {
-      const result = await testPop3Connection(
-        data.host,
-        data.port,
-        data.useSsl,
-        data.userName,
-        password
-      );
+      let result: AccountTestResponse;
+      
+      if (data.protocol === 'pop3') {
+        // POP3S接続テストを実行
+        result = await testPop3Connection(
+          data.host,
+          data.port,
+          data.useSsl,
+          data.userName,
+          password
+        );
+      } else {
+        // SMTP接続テストを実行
+        result = await testSmtpConnection(
+          data.host,
+          data.port,
+          data.useSsl,
+          data.userName,
+          password
+        );
+      }
 
       // セキュリティ: 平文パスワードを即座に破棄
       password = '';
