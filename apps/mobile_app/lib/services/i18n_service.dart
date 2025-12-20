@@ -110,6 +110,12 @@ class I18nService {
     return 'All Mail';
   }
 
+  /// ロケールから送信済みラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateSent(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.sent;
+  }
+
   /// ロケールからゴミ箱ラベルを取得するユーティリティ
   static String translateTrash(Locale locale) {
     if (locale.languageCode == 'ja') {
@@ -374,6 +380,90 @@ class I18nService {
   static String translateConnectionTestSucceeded(Locale locale) {
     final localizations = _getLocalizations(locale);
     return localizations.connectionTestSucceeded;
+  }
+
+  /// ロケールからSMTPホストラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateSmtpHost(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.smtpHost;
+  }
+
+  /// ロケールからSMTPポートラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateSmtpPort(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.smtpPort;
+  }
+
+  /// ロケールからSMTPユーザー名ラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateSmtpUsername(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.smtpUsername;
+  }
+
+  /// ロケールからSMTPパスワードラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateSmtpPassword(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.smtpPassword;
+  }
+
+  /// ロケールからSMTPパスワードヒントを取得するユーティリティ（ARBファイルから取得）
+  static String translateSmtpPasswordHint(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.smtpPasswordHint;
+  }
+
+  /// ロケールからPOP3設定からコピーボタンラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateCopyFromPop3(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.copyFromPop3;
+  }
+
+  /// ロケールからSMTP接続テストボタンラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateTestSmtpConnection(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.testSmtpConnection;
+  }
+
+  /// ロケールから返信ボタンのツールチップを取得するユーティリティ（ARBファイルから取得）
+  static String translateReply(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.reply;
+  }
+
+  /// ロケールから全員に返信ボタンのツールチップを取得するユーティリティ（ARBファイルから取得）
+  static String translateReplyAll(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.replyAll;
+  }
+
+  /// ロケールから転送ボタンのツールチップを取得するユーティリティ（ARBファイルから取得）
+  static String translateForward(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.forward;
+  }
+
+  /// ロケールからゴミ箱に移動ボタンのツールチップを取得するユーティリティ（ARBファイルから取得）
+  static String translateMoveToTrash(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.moveToTrash;
+  }
+
+  /// ロケールからアーカイブボタンのツールチップを取得するユーティリティ（ARBファイルから取得）
+  static String translateArchive(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.archive;
+  }
+
+  /// ロケールからゴミ箱から復元ボタンのツールチップを取得するユーティリティ（ARBファイルから取得）
+  static String translateRestoreFromTrash(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.restoreFromTrash;
+  }
+
+  /// ロケールからアーカイブから復元ボタンのツールチップを取得するユーティリティ（ARBファイルから取得）
+  static String translateUnarchive(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.unarchive;
   }
 
   /// ロケールからAppLocalizationsインスタンスを取得するヘルパーメソッド

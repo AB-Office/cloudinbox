@@ -2,6 +2,8 @@ import 'package:cloudinbox_mobile_app/services/ad_service.dart';
 import 'package:cloudinbox_mobile_app/widgets/navigation_drawer.dart' as app;
 import 'package:cloudinbox_mobile_app/screens/settings_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/detail_screen.dart';
+import 'package:cloudinbox_mobile_app/screens/compose_screen.dart';
+import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
 import 'package:cloudinbox_mobile_app/main.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -56,6 +58,8 @@ class MailListScreen extends StatefulWidget {
     this.settingsRepository,
     this.onNavigate,
     this.currentRoute = '/inbox',
+    this.composeRepository,
+    this.accountRepository,
   });
 
   final InboxRepository repository;
@@ -65,6 +69,8 @@ class MailListScreen extends StatefulWidget {
   final SettingsRepository? settingsRepository;
   final void Function(String route)? onNavigate;
   final String currentRoute;
+  final MailComposeRepository? composeRepository;
+  final AccountRepository? accountRepository;
 
   @override
   State<MailListScreen> createState() => _MailListScreenState();
@@ -95,6 +101,24 @@ class _MailListScreenState extends State<MailListScreen> {
 
     final estimated = (size.height / itemHeight).floor() + 3;
     return estimated.clamp(minItems, maxItems);
+  }
+
+  Future<void> _onComposePressed() async {
+    if (widget.composeRepository == null || widget.accountRepository == null) {
+      return;
+    }
+
+    if (!mounted) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ComposeScreen(
+          repository: widget.composeRepository!,
+          accountRepository: widget.accountRepository!,
+        ),
+      ),
+    );
   }
 
   Future<void> _loadMore() async {
@@ -169,7 +193,14 @@ class _MailListScreenState extends State<MailListScreen> {
                 final allThreads = [...firstPageThreads, ..._additionalThreads];
                 
                 if (allThreads.isEmpty) {
-                  return const Center(child: Text('メールがありません'));
+                  final locale = Localizations.localeOf(context);
+                  return Center(
+                    child: Text(
+                      locale.languageCode == 'ja'
+                          ? 'メールがありません'
+                          : 'No mail',
+                    ),
+                  );
                 }
                 
                 return ListView.separated(
@@ -271,7 +302,9 @@ class _MailListScreenState extends State<MailListScreen> {
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Load more'),
+                      : Text(Localizations.localeOf(context).languageCode == 'ja'
+                          ? 'もっと見る'
+                          : 'Load more'),
                 ),
               );
             },
@@ -283,6 +316,13 @@ class _MailListScreenState extends State<MailListScreen> {
             ),
         ],
       ),
+      floatingActionButton: (widget.composeRepository != null &&
+              widget.accountRepository != null)
+          ? FloatingActionButton(
+              onPressed: _onComposePressed,
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 }

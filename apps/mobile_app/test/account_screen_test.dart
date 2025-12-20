@@ -22,6 +22,12 @@ class _FakeAccountRepository implements AccountRepository {
   }
 
   @override
+  Future<AccountTestResult> testSmtpConnection(AccountFormData data) async {
+    // デフォルトで成功を返す
+    return const AccountTestResult(success: true);
+  }
+
+  @override
   Future<void> createAccount(AccountFormData data) async {
     createAccountCalled = true;
     lastCreateData = data;
@@ -160,6 +166,11 @@ class _TestOnlyRepositoryStub implements AccountRepository {
 
   @override
   Future<AccountTestResult> testConnection(AccountFormData data) async {
+    return const AccountTestResult(success: true);
+  }
+
+  @override
+  Future<AccountTestResult> testSmtpConnection(AccountFormData data) async {
     return const AccountTestResult(success: true);
   }
 

@@ -44,6 +44,10 @@
   "@allMail": {
     "description": "All mail menu label"
   },
+  "sent": "Sent",
+  "@sent": {
+    "description": "Sent mail menu label"
+  },
   "trash": "Trash",
   "@trash": {
     "description": "Trash menu label"
@@ -244,6 +248,62 @@
   "connectionTestSucceeded": "Connection test succeeded",
   "@connectionTestSucceeded": {
     "description": "Connection test success message"
+  },
+  "smtpHost": "SMTP Host",
+  "@smtpHost": {
+    "description": "SMTP host input field"
+  },
+  "smtpPort": "SMTP Port",
+  "@smtpPort": {
+    "description": "SMTP port input field"
+  },
+  "smtpUsername": "SMTP Username",
+  "@smtpUsername": {
+    "description": "SMTP username input field"
+  },
+  "smtpPassword": "SMTP Password",
+  "@smtpPassword": {
+    "description": "SMTP password input field"
+  },
+  "smtpPasswordHint": "Enter only if you want to change the password",
+  "@smtpPasswordHint": {
+    "description": "SMTP password field hint (in edit mode)"
+  },
+  "copyFromPop3": "Copy from POP3 Settings",
+  "@copyFromPop3": {
+    "description": "Button label to copy SMTP settings from POP3 settings"
+  },
+  "testSmtpConnection": "Test SMTP Connection",
+  "@testSmtpConnection": {
+    "description": "SMTP connection test button label"
+  },
+  "reply": "Reply",
+  "@reply": {
+    "description": "Tooltip for the reply button"
+  },
+  "replyAll": "Reply All",
+  "@replyAll": {
+    "description": "Tooltip for the reply all button"
+  },
+  "forward": "Forward",
+  "@forward": {
+    "description": "Tooltip for the forward button"
+  },
+  "moveToTrash": "Move to Trash",
+  "@moveToTrash": {
+    "description": "Tooltip for the move to trash button"
+  },
+  "archive": "Archive",
+  "@archive": {
+    "description": "Tooltip for the archive button"
+  },
+  "restoreFromTrash": "Restore from Trash",
+  "@restoreFromTrash": {
+    "description": "Tooltip for the restore from trash button"
+  },
+  "unarchive": "Unarchive",
+  "@unarchive": {
+    "description": "Tooltip for the unarchive button"
   }
 }
 

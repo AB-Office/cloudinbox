@@ -42,6 +42,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get allMail => 'すべてのメール';
 
   @override
+  String get sent => '送信済み';
+
+  @override
   String get trash => 'ゴミ箱';
 
   @override
@@ -182,4 +185,46 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get connectionTestSucceeded => '接続テスト成功';
+
+  @override
+  String get smtpHost => 'SMTPホスト';
+
+  @override
+  String get smtpPort => 'SMTPポート';
+
+  @override
+  String get smtpUsername => 'SMTPユーザー名';
+
+  @override
+  String get smtpPassword => 'SMTPパスワード';
+
+  @override
+  String get smtpPasswordHint => '変更する場合のみ入力してください';
+
+  @override
+  String get copyFromPop3 => 'POP3設定からコピー';
+
+  @override
+  String get testSmtpConnection => 'SMTP接続テスト';
+
+  @override
+  String get reply => '返信';
+
+  @override
+  String get replyAll => '全員に返信';
+
+  @override
+  String get forward => '転送';
+
+  @override
+  String get moveToTrash => 'ゴミ箱に移動';
+
+  @override
+  String get archive => 'アーカイブ';
+
+  @override
+  String get restoreFromTrash => 'ゴミ箱から復元';
+
+  @override
+  String get unarchive => 'アーカイブから復元';
 }
