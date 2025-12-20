@@ -1,0 +1,249 @@
+{
+  "@@locale": "ja",
+  "appTitle": "CloudInbox",
+  "@appTitle": {
+    "description": "アプリのタイトル"
+  },
+  "login": "ログイン",
+  "@login": {
+    "description": "ログインボタンのラベル"
+  },
+  "loginWithGoogle": "Googleでログイン",
+  "@loginWithGoogle": {
+    "description": "Googleログインボタンのラベル"
+  },
+  "loginWithApple": "Appleでログイン",
+  "@loginWithApple": {
+    "description": "Appleログインボタンのラベル"
+  },
+  "logout": "ログアウト",
+  "@logout": {
+    "description": "ログアウトボタンのラベル"
+  },
+  "error": "エラー",
+  "@error": {
+    "description": "エラーメッセージのタイトル"
+  },
+  "loading": "読み込み中...",
+  "@loading": {
+    "description": "ローディングメッセージ"
+  },
+  "accountSettings": "メールアカウント設定",
+  "@accountSettings": {
+    "description": "メールアカウント設定メニューのラベル"
+  },
+  "settings": "設定",
+  "@settings": {
+    "description": "設定画面のタイトル"
+  },
+  "inbox": "受信トレイ",
+  "@inbox": {
+    "description": "受信トレイメニューのラベル"
+  },
+  "allMail": "すべてのメール",
+  "@allMail": {
+    "description": "すべてのメールメニューのラベル"
+  },
+  "trash": "ゴミ箱",
+  "@trash": {
+    "description": "ゴミ箱メニューのラベル"
+  },
+  "account": "アカウント",
+  "@account": {
+    "description": "アカウント設定画面のタイトル"
+  },
+  "label": "ラベル",
+  "@label": {
+    "description": "アカウントラベルの入力フィールド"
+  },
+  "email": "メールアドレス",
+  "@email": {
+    "description": "メールアドレスの入力フィールド"
+  },
+  "pop3Host": "POP3ホスト",
+  "@pop3Host": {
+    "description": "POP3ホストの入力フィールド"
+  },
+  "pop3Port": "POP3ポート",
+  "@pop3Port": {
+    "description": "POP3ポートの入力フィールド"
+  },
+  "pop3Username": "POP3ユーザー名",
+  "@pop3Username": {
+    "description": "POP3ユーザー名の入力フィールド"
+  },
+  "pop3Password": "POP3パスワード",
+  "@pop3Password": {
+    "description": "POP3パスワードの入力フィールド"
+  },
+  "testConnection": "接続テスト",
+  "@testConnection": {
+    "description": "接続テストボタンのラベル"
+  },
+  "createAccount": "アカウント作成",
+  "@createAccount": {
+    "description": "アカウント作成ボタンのラベル"
+  },
+  "pop3PasswordHint": "変更する場合のみ入力してください",
+  "@pop3PasswordHint": {
+    "description": "パスワードフィールドのヒント（編集モード時）"
+  },
+  "updateAccount": "アカウント更新",
+  "@updateAccount": {
+    "description": "アカウント更新ボタンのラベル"
+  },
+  "deleteAccount": "アカウント削除",
+  "@deleteAccount": {
+    "description": "アカウント削除ボタンのラベル"
+  },
+  "deleteAccountConfirm": "このアカウントを削除しますか？",
+  "@deleteAccountConfirm": {
+    "description": "アカウント削除確認ダイアログのメッセージ"
+  },
+  "deleteAccountConfirmTitle": "アカウント削除",
+  "@deleteAccountConfirmTitle": {
+    "description": "アカウント削除確認ダイアログのタイトル"
+  },
+  "cancel": "キャンセル",
+  "@cancel": {
+    "description": "キャンセルボタンのラベル"
+  },
+  "delete": "削除",
+  "@delete": {
+    "description": "削除ボタンのラベル"
+  },
+  "accountDeleted": "アカウントを削除しました",
+  "@accountDeleted": {
+    "description": "アカウント削除成功メッセージ"
+  },
+  "deleteAccountTypeTitle": "削除方法を選択",
+  "@deleteAccountTypeTitle": {
+    "description": "削除方法選択ダイアログのタイトル"
+  },
+  "softDelete": "一時的に削除（復元可能）",
+  "@softDelete": {
+    "description": "論理削除の説明"
+  },
+  "permanentDelete": "完全に削除（復元不可）",
+  "@permanentDelete": {
+    "description": "完全削除の説明"
+  },
+  "permanentDeleteConfirm": "このアカウントを完全に削除しますか？\nこの操作は取り消せません。",
+  "@permanentDeleteConfirm": {
+    "description": "完全削除確認メッセージ"
+  },
+  "permanentDeleteConfirmTitle": "完全削除の確認",
+  "@permanentDeleteConfirmTitle": {
+    "description": "完全削除確認ダイアログのタイトル"
+  },
+  "accountRestored": "アカウントを復元しました",
+  "@accountRestored": {
+    "description": "アカウント復元成功メッセージ"
+  },
+  "accountPermanentlyDeleted": "アカウントを完全に削除しました",
+  "@accountPermanentlyDeleted": {
+    "description": "アカウント完全削除成功メッセージ"
+  },
+  "plan": "プラン",
+  "@plan": {
+    "description": "プランラベル"
+  },
+  "used": "使用済み",
+  "@used": {
+    "description": "使用済みラベル"
+  },
+  "available": "利用可能",
+  "@available": {
+    "description": "利用可能ラベル"
+  },
+  "maxStorage": "最大ストレージ（バイト）",
+  "@maxStorage": {
+    "description": "最大ストレージラベル"
+  },
+  "usedStorage": "使用済みストレージ（バイト）",
+  "@usedStorage": {
+    "description": "使用済みストレージラベル"
+  },
+  "usageRate": "利用率（％）",
+  "@usageRate": {
+    "description": "利用率ラベル"
+  },
+  "mailAccounts": "メールアカウント",
+  "@mailAccounts": {
+    "description": "メールアカウントラベル"
+  },
+  "restore": "復元",
+  "@restore": {
+    "description": "復元ラベル"
+  },
+  "logoutError": "ログアウトエラー: {error}",
+  "@logoutError": {
+    "description": "ログアウトエラーメッセージ",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noMailAccounts": "メールアカウントがありません",
+  "@noMailAccounts": {
+    "description": "メールアカウントなしメッセージ"
+  },
+  "addAccountFromSettings": "下の「メールアカウント設定」から追加してください",
+  "@addAccountFromSettings": {
+    "description": "アカウント追加案内メッセージ"
+  },
+  "restoreAccountConfirm": "このアカウントを復元しますか？",
+  "@restoreAccountConfirm": {
+    "description": "復元確認メッセージ"
+  },
+  "connectionTestError": "接続テストエラー: {error}",
+  "@connectionTestError": {
+    "description": "接続テストエラーメッセージ",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "accountUpdated": "アカウントを更新しました",
+  "@accountUpdated": {
+    "description": "アカウント更新成功メッセージ"
+  },
+  "accountCreated": "アカウントを作成しました",
+  "@accountCreated": {
+    "description": "アカウント作成成功メッセージ"
+  },
+  "accountUpdateError": "アカウント更新エラー: {error}",
+  "@accountUpdateError": {
+    "description": "アカウント更新エラーメッセージ",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "accountCreationError": "アカウント作成エラー: {error}",
+  "@accountCreationError": {
+    "description": "アカウント作成エラーメッセージ",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeletionError": "アカウント削除エラー: {error}",
+  "@accountDeletionError": {
+    "description": "アカウント削除エラーメッセージ",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "connectionTestSucceeded": "接続テスト成功",
+  "@connectionTestSucceeded": {
+    "description": "接続テスト成功メッセージ"
+  }
+}
+

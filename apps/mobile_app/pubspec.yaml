@@ -1,0 +1,40 @@
+name: cloudinbox_mobile_app
+description: CloudInbox MVP - Flutter mobile app for POP3 mail reception and cloud storage
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  firebase_core: ^2.32.0
+  firebase_auth: ^4.16.0
+  google_sign_in: ^6.1.6
+  cloud_firestore: ^4.13.0
+  firebase_storage: ^11.5.0
+  cloud_functions: ^4.6.0
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  integration_test:
+    sdk: flutter
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon.png"
+  adaptive_icon_background: "assets/background.png"
+  adaptive_icon_foreground: "assets/foreground.png"
+
