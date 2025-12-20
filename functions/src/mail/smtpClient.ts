@@ -118,7 +118,7 @@ export async function testSmtpConnection(
  * @param cc - CCメールアドレス配列（オプション）
  * @param bcc - BCCメールアドレス配列（オプション）
  * @param subject - 件名
- * @param body - 本文（テキスト形式）
+ * @param body - 本文（HTML形式またはテキスト形式）
  * @param attachments - 添付ファイル配列（オプション）
  * @returns Promise<void>
  */

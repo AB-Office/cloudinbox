@@ -174,7 +174,7 @@
 
 ### 3. テスト実装
 
-#### - [ ] 3.1 SMTPクライアントテスト - smtpClient.test.ts
+#### - [x] 3.1 SMTPクライアントテスト - smtpClient.test.ts
 - **目的**: SMTPクライアントの単体テスト
 - **作業内容**:
   - `functions/src/mail/__tests__/smtpClient.test.ts`の作成
@@ -188,7 +188,7 @@
 - **要件カバー**: 1.7, 1.11, 2.8, 5.6, 5.7
 - **見積もり**: 3時間
 
-#### - [ ] 3.2 接続テスト機能拡張テスト - accountTest.test.ts
+#### - [x] 3.2 接続テスト機能拡張テスト - accountTest.test.ts
 - **目的**: accountTest関数の拡張機能のテスト
 - **作業内容**:
   - `functions/src/mail/__tests__/accountTest.test.ts`を更新
@@ -202,7 +202,7 @@
 - **要件カバー**: 1.6, 1.7, 1.8, 1.9, 1.10, 1.11, 1.12, 1.13
 - **見積もり**: 2時間
 
-#### - [ ] 3.3 メール送信機能テスト - sendMail.test.ts
+#### - [x] 3.3 メール送信機能テスト - sendMail.test.ts
 - **目的**: メール送信機能の統合テスト
 - **作業内容**:
   - `functions/src/mail/__tests__/sendMail.test.ts`の作成
@@ -217,7 +217,7 @@
 - **要件カバー**: 2.5, 2.6, 2.7, 2.8, 2.9, 2.10, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 5.1, 5.2, 5.3, 5.4, 5.5
 - **見積もり**: 4時間
 
-#### - [ ] 3.4 UIテスト - ComposeScreen
+#### - [x] 3.4 UIテスト - ComposeScreen
 - **目的**: メール作成画面のWidgetテスト
 - **作業内容**:
   - `apps/mobile_app/test/compose_screen_test.dart`の作成
@@ -231,7 +231,7 @@
 - **要件カバー**: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 4.10, 4.14, 4.15, 4.16
 - **見積もり**: 3時間
 
-#### - [ ] 3.5 UIテスト - AccountScreen拡張
+#### - [x] 3.5 UIテスト - AccountScreen拡張
 - **目的**: アカウント設定画面のSMTP設定機能のテスト
 - **作業内容**:
   - `apps/mobile_app/test/account_screen_test.dart`を更新
@@ -244,7 +244,7 @@
 - **要件カバー**: 1.1, 1.2, 1.3, 1.4, 1.16, 1.17, 1.18
 - **見積もり**: 2時間
 
-#### - [ ] 3.6 UIテスト - NavigationDrawer拡張
+#### - [x] 3.6 UIテスト - NavigationDrawer拡張
 - **目的**: ナビゲーションメニューの「送信済み」項目のテスト
 - **作業内容**:
   - `apps/mobile_app/test/navigation_drawer_test.dart`を更新
@@ -255,7 +255,7 @@
 - **要件カバー**: 4.22, 4.23
 - **見積もり**: 1時間
 
-#### - [ ] 3.7 UIテスト - DetailScreen拡張
+#### - [x] 3.7 UIテスト - DetailScreen拡張
 - **目的**: メール詳細画面の返信・転送ボタンのテスト
 - **作業内容**:
   - `apps/mobile_app/test/detail_screen_test.dart`を更新
@@ -268,7 +268,7 @@
 - **要件カバー**: 2.2, 2.3, 4.2, 4.3, 4.4
 - **見積もり**: 2時間
 
-#### - [ ] 3.8 E2Eテスト - メール送信フロー
+#### - [x] 3.8 E2Eテスト - メール送信フロー
 - **目的**: メール送信のエンドツーエンドテスト
 - **作業内容**:
   - `apps/mobile_app/integration_test/send_mail_test.dart`の作成

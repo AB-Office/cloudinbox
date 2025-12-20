@@ -117,12 +117,27 @@ class _ComposeScreenState extends State<ComposeScreen> {
   bool _isSending = false;
   String? _errorMessage;
   bool _showCcBcc = false;
+  bool _initializedFromIntent = false;
 
   @override
   void initState() {
     super.initState();
     _loadAccounts();
-    _initializeFromIntent();
+    // 転送時はLocalizations.localeOf(context)が必要なため、didChangeDependenciesで初期化
+    if (widget.intent.type != ComposeType.forward) {
+      _initializeFromIntent();
+      _initializedFromIntent = true;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 転送時の初期化をdidChangeDependenciesで実行（contextが利用可能になった後）
+    if (!_initializedFromIntent && widget.intent.type == ComposeType.forward) {
+      _initializeFromIntent();
+      _initializedFromIntent = true;
+    }
   }
 
   Future<void> _loadAccounts() async {

@@ -239,15 +239,16 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   void _onCopyFromPop3Pressed() {
-    setState(() {
-      _smtpHostController.text = _pop3HostController.text;
-      _smtpUsernameController.text = _pop3UsernameController.text;
-      _smtpPasswordController.text = _pop3PasswordController.text;
-      // ポートは587または465にデフォルト設定（587をデフォルトとする）
-      if (_smtpPortController.text.isEmpty) {
-        _smtpPortController.text = '587';
-      }
-    });
+    // コントローラーのテキストを更新（setStateの外で実行）
+    _smtpHostController.text = _pop3HostController.text;
+    _smtpUsernameController.text = _pop3UsernameController.text;
+    _smtpPasswordController.text = _pop3PasswordController.text;
+    // ポートは587または465にデフォルト設定（587をデフォルトとする）
+    if (_smtpPortController.text.isEmpty) {
+      _smtpPortController.text = '587';
+    }
+    // Builderの再評価を促すためにsetStateを呼び出す
+    setState(() {});
   }
 
   Future<void> _onCreateAccountPressed() async {
@@ -485,6 +486,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     key: const Key('pop3_host'),
                     controller: _pop3HostController,
                     decoration: InputDecoration(labelText: pop3HostText),
+                    onChanged: (_) => setState(() {}), // Builderの再評価を促す
                   ),
                   TextField(
                     key: const Key('pop3_port'),
@@ -496,6 +498,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     key: const Key('pop3_username'),
                     controller: _pop3UsernameController,
                     decoration: InputDecoration(labelText: pop3UsernameText),
+                    onChanged: (_) => setState(() {}), // Builderの再評価を促す
                   ),
                   TextField(
                     key: const Key('pop3_password'),
@@ -520,6 +523,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     decoration: InputDecoration(
                       labelText: I18nService.translateSmtpHost(locale),
                     ),
+                    onChanged: (_) => setState(() {}), // Builderの再評価を促す
                   ),
                   TextField(
                     key: const Key('smtp_port'),
@@ -535,6 +539,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     decoration: InputDecoration(
                       labelText: I18nService.translateSmtpUsername(locale),
                     ),
+                    onChanged: (_) => setState(() {}), // Builderの再評価を促す
                   ),
                   TextField(
                     key: const Key('smtp_password'),
