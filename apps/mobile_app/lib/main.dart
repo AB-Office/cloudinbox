@@ -81,6 +81,7 @@ class _MyAppState extends State<MyApp> {
           composeRepository: FirebaseMailComposeRepository(),
           accountRepository: FirebaseAccountRepository(),
         );
+        // 注意: InboxRepository側で'/sent'→'sent'のマッピングとデータ存在を必ず保証すること
       case '/sent':
         return MailListScreen(
           key: const ValueKey('mail_list_sent'),

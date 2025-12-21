@@ -124,9 +124,21 @@ class _DetailScreenState extends State<DetailScreen> {
     if (!mounted) return;
 
     // 送信者とCc受信者を結合（重複を避ける）
-    final replyToAll = <String>[_message!.from];
-    replyToAll.addAll(_message!.cc);
-    final uniqueReplyToAll = replyToAll.toSet().toList();
+    final allRecipients = <String>[
+      _message!.from,
+      ..._message!.to,
+      ..._message!.cc,
+    ];
+    // 自分のアドレス（利用可能であれば取得、未取得時は空で処理）
+    final selfEmails = <String>{
+      // 将来的に選択アカウントのメールやログインユーザーのメールを入れる
+      // 例: selectedAccountEmail ?? ''
+    };
+    final uniqueReplyToAll = allRecipients
+      .where((e) => e.isNotEmpty)
+      .toSet()
+      .difference(selfEmails)
+      .toList();
 
     final intent = ComposeIntent(
       type: ComposeType.replyAll,

@@ -123,7 +123,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
   void initState() {
     super.initState();
     _loadAccounts();
-    // 転送時はLocalizations.localeOf(context)が必要なため、didChangeDependenciesで初期化
+    // 転送以外の場合はinitStateで初期化（contextが必要ないため）
     if (widget.intent.type != ComposeType.forward) {
       _initializeFromIntent();
       _initializedFromIntent = true;
@@ -133,7 +133,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 転送時の初期化をdidChangeDependenciesで実行（contextが利用可能になった後）
+    // 転送の場合はdidChangeDependenciesで初期化（contextが必要なため）
     if (!_initializedFromIntent && widget.intent.type == ComposeType.forward) {
       _initializeFromIntent();
       _initializedFromIntent = true;
