@@ -8,7 +8,8 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
 import * as MailParser from 'mailparser';
-import mailbuild = require('mailbuild');
+// mailbuildはFirebase Functions環境で互換性の問題があるため、手動でMIME構築を行う
+// import mailbuild = require('mailbuild');
 import { decryptPassword } from '../encryption';
 import { sendSmtpMail, SmtpConfig, Attachment } from './smtpClient';
 import { saveMail } from './saveMail';
@@ -194,6 +195,9 @@ export const sendMail: any = functions
         }
 
         // SMTP経由でメール送信
+        // 注意: fromアドレス（email）と認証ユーザー名（smtpConfig.userName）が一致している必要がある場合がある
+        functions.logger.info(`sendMail: Preparing to send mail - from: ${email}, auth user: ${smtpConfig.userName}, accountId: ${data.accountId}`);
+        
         try {
           await sendSmtpMail(
             smtpSettings,
@@ -222,38 +226,66 @@ export const sendMail: any = functions
         password = '';
 
         // 送信済みメール保存用にMIMEメールを作成
+        // mailbuildがFirebase Functions環境で互換性の問題があるため、手動でMIME構築
         const messageId = `<${crypto.randomBytes(16).toString('hex')}@cloudinbox.local>`;
         const now = new Date();
         
-        // mailbuildを使用してMIMEメールを作成
-        const builder = mailbuild({
-          from: email,
-          to: data.to.join(', '),
-          subject: data.subject,
-          date: now,
-          messageId: messageId,
-          text: data.body,
-        });
-
+        // RFC 2822に準拠した基本的なMIMEメールを構築
+        const dateStr = now.toUTCString().replace(/GMT$/, '+0000');
+        const boundary = `----=_Part_${crypto.randomBytes(8).toString('hex')}_${Date.now()}`;
+        
+        // ヘッダーを構築
+        const headers: string[] = [];
+        headers.push(`Message-ID: ${messageId}`);
+        headers.push(`Date: ${dateStr}`);
+        headers.push(`From: ${email}`);
+        headers.push(`To: ${data.to.join(', ')}`);
         if (data.cc && data.cc.length > 0) {
-          builder.cc(data.cc.join(', '));
+          headers.push(`Cc: ${data.cc.join(', ')}`);
         }
-
-        if (data.bcc && data.bcc.length > 0) {
-          builder.bcc(data.bcc.join(', '));
+        // BCCはMIMEヘッダーには含めない（受信者に表示されないため）
+        headers.push(`Subject: ${data.subject.replace(/\r?\n/g, ' ')}`);
+        headers.push(`MIME-Version: 1.0`);
+        
+        let mimeBody = '';
+        if (attachments.length > 0) {
+          // マルチパートメッセージ（本文 + 添付ファイル）
+          headers.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+          
+          // 本文パート
+          mimeBody += `--${boundary}\r\n`;
+          mimeBody += `Content-Type: text/plain; charset=utf-8\r\n`;
+          mimeBody += `Content-Transfer-Encoding: 7bit\r\n`;
+          mimeBody += `\r\n`;
+          mimeBody += data.body;
+          mimeBody += `\r\n`;
+          
+          // 添付ファイルを追加
+          for (const att of attachments) {
+            mimeBody += `--${boundary}\r\n`;
+            mimeBody += `Content-Type: ${att.contentType || 'application/octet-stream'}\r\n`;
+            // ファイル名をエンコード（RFC 2047）
+            const encodedFilename = `=?UTF-8?B?${Buffer.from(att.filename, 'utf8').toString('base64')}?=`;
+            mimeBody += `Content-Disposition: attachment; filename="${encodedFilename}"\r\n`;
+            mimeBody += `Content-Transfer-Encoding: base64\r\n`;
+            mimeBody += `\r\n`;
+            const base64Content = att.content.toString('base64');
+            // 76文字ごとに改行
+            for (let i = 0; i < base64Content.length; i += 76) {
+              mimeBody += base64Content.slice(i, i + 76) + '\r\n';
+            }
+          }
+          mimeBody += `--${boundary}--\r\n`;
+        } else {
+          // シンプルなテキストメッセージ
+          headers.push(`Content-Type: text/plain; charset=utf-8`);
+          headers.push(`Content-Transfer-Encoding: 7bit`);
+          mimeBody = data.body;
         }
-
-        // 添付ファイルを追加
-        for (const att of attachments) {
-          builder.attachment({
-            filename: att.filename,
-            contents: att.content,
-            contentType: att.contentType || 'application/octet-stream',
-          });
-        }
-
-        const mimeMessage = builder.build();
-
+        
+        // ヘッダーとボディを結合
+        const mimeMessage = headers.join('\r\n') + '\r\n\r\n' + mimeBody;
+        
         // MIMEメールをmailparserで解析
         const parsed = await MailParser.simpleParser(mimeMessage);
 

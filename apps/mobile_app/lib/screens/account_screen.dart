@@ -252,7 +252,8 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _onCreateAccountPressed() async {
-    if (!_testSucceeded) {
+    // ボタンの有効化条件をチェック（編集モードの場合はSMTP接続テストが必要な場合もある）
+    if (!_shouldEnableCreateButton()) {
       return;
     }
     
@@ -316,6 +317,31 @@ class _AccountScreenState extends State<AccountScreen> {
       _testSucceeded = result.success;
       _errorMessage = result.errorMessage;
     });
+  }
+
+  /// アカウント作成/更新ボタンを有効化するかどうかを判定
+  bool _shouldEnableCreateButton() {
+    final isEditMode = widget.accountId != null || widget.account != null;
+    final isCreating = _isTesting && _testSucceeded;
+    
+    if (isCreating) {
+      return false;
+    }
+    
+    // 編集モードの場合
+    if (isEditMode) {
+      // SMTP設定が入力されている場合は、SMTP接続テストが成功している必要がある
+      final hasSmtpSettings = _smtpHostController.text.isNotEmpty && 
+                             _smtpUsernameController.text.isNotEmpty;
+      if (hasSmtpSettings) {
+        return _smtpTestSucceeded;
+      }
+      // SMTP設定がない場合は、既存アカウントなので更新可能
+      return true;
+    }
+    
+    // 新規作成モードの場合、POP3接続テストが成功している必要がある
+    return _testSucceeded;
   }
 
   Future<void> _onDeleteAccountPressed() async {
@@ -644,7 +670,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       Expanded(
                         child: ElevatedButton(
                           key: const Key('button_create_account'),
-                          onPressed: (_testSucceeded && !isCreating) 
+                          onPressed: _shouldEnableCreateButton() 
                               ? _onCreateAccountPressed 
                               : null,
                           child: isCreating 

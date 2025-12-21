@@ -11,7 +11,8 @@ import { sendSmtpMail } from '../smtpClient';
 import { saveMail } from '../saveMail';
 import { generateThreadId } from '../mailProcessing';
 import * as MailParser from 'mailparser';
-import mailbuild = require('mailbuild');
+// mailbuildは使用していないため、モックは不要
+// import mailbuild = require('mailbuild');
 
 // モック
 jest.mock('firebase-admin');
@@ -20,7 +21,6 @@ jest.mock('../smtpClient');
 jest.mock('../saveMail');
 jest.mock('../mailProcessing');
 jest.mock('mailparser');
-jest.mock('mailbuild');
 jest.mock('firebase-functions', () => ({
   region: jest.fn(() => ({
     runWith: jest.fn(() => ({
@@ -44,13 +44,6 @@ jest.mock('firebase-functions', () => ({
 }));
 
 import * as functions from 'firebase-functions';
-
-const mockBuilder = {
-  cc: jest.fn().mockReturnThis(),
-  bcc: jest.fn().mockReturnThis(),
-  attachment: jest.fn().mockReturnThis(),
-  build: jest.fn().mockReturnValue('MIME message'),
-};
 
 describe('sendMail', () => {
   const mockUid = 'test-user-123';
@@ -144,14 +137,6 @@ describe('sendMail', () => {
 
     // mailparserモック
     (MailParser.simpleParser as jest.Mock).mockResolvedValue(mockParsedMail);
-
-    // mailbuildモック（jest.mock()で設定済み）
-    jest.clearAllMocks();
-    mockBuilder.cc.mockClear();
-    mockBuilder.bcc.mockClear();
-    mockBuilder.attachment.mockClear();
-    mockBuilder.build.mockClear();
-    (mailbuild as jest.Mock).mockReturnValue(mockBuilder);
   });
 
   describe('認証チェック', () => {
@@ -579,7 +564,7 @@ describe('sendMail', () => {
   });
 
   describe('MIMEメール構築', () => {
-    it('mailbuildを使用してMIMEメールを構築する', async () => {
+    it('手動でMIMEメールを構築してmailparserで解析する', async () => {
       const data = {
         accountId: mockAccountId,
         to: ['recipient@example.com'],
@@ -589,18 +574,19 @@ describe('sendMail', () => {
 
       await sendMail(data, mockContext);
 
-      expect(mailbuild).toHaveBeenCalledWith(
-        expect.objectContaining({
-          from: mockAccountData.email,
-          to: data.to.join(', '),
-          subject: data.subject,
-          text: data.body,
-        })
-      );
+      // MailParser.simpleParserが呼ばれていることを確認
+      expect(MailParser.simpleParser).toHaveBeenCalled();
+      const mimeMessage = (MailParser.simpleParser as jest.Mock).mock.calls[0][0];
+      expect(mimeMessage).toBeTruthy();
+      expect(typeof mimeMessage).toBe('string');
+      // MIMEメッセージに基本的なヘッダーが含まれていることを確認
+      expect(mimeMessage).toContain('From:');
+      expect(mimeMessage).toContain('To:');
+      expect(mimeMessage).toContain('Subject:');
+      expect(mimeMessage).toContain('Test Body');
     });
 
-    it('CCがある場合、builder.cc()を呼び出す', async () => {
-
+    it('CCがある場合、MIMEメッセージにCcヘッダーが含まれる', async () => {
       const data = {
         accountId: mockAccountId,
         to: ['recipient@example.com'],
@@ -611,11 +597,13 @@ describe('sendMail', () => {
 
       await sendMail(data, mockContext);
 
-      expect(mockBuilder.cc).toHaveBeenCalledWith('cc@example.com');
+      // MailParser.simpleParserが呼ばれていることを確認
+      expect(MailParser.simpleParser).toHaveBeenCalled();
+      const mimeMessage = (MailParser.simpleParser as jest.Mock).mock.calls[0][0];
+      expect(mimeMessage).toContain('Cc: cc@example.com');
     });
 
-    it('BCCがある場合、builder.bcc()を呼び出す', async () => {
-
+    it('BCCがある場合、MIMEメッセージは構築される（BCCはヘッダーに含まれない）', async () => {
       const data = {
         accountId: mockAccountId,
         to: ['recipient@example.com'],
@@ -626,11 +614,15 @@ describe('sendMail', () => {
 
       await sendMail(data, mockContext);
 
-      expect(mockBuilder.bcc).toHaveBeenCalledWith('bcc@example.com');
+      // MailParser.simpleParserが呼ばれていることを確認
+      expect(MailParser.simpleParser).toHaveBeenCalled();
+      const mimeMessage = (MailParser.simpleParser as jest.Mock).mock.calls[0][0];
+      expect(mimeMessage).toBeTruthy();
+      // BCCはMIMEヘッダーには含まれない（RFC 2822準拠）
+      expect(mimeMessage).not.toContain('Bcc:');
     });
 
-    it('添付ファイルがある場合、builder.attachment()を呼び出す', async () => {
-
+    it('添付ファイルがある場合、マルチパートMIMEメッセージが構築される', async () => {
       const data = {
         accountId: mockAccountId,
         to: ['recipient@example.com'],
@@ -647,13 +639,12 @@ describe('sendMail', () => {
 
       await sendMail(data, mockContext);
 
-      expect(mockBuilder.attachment).toHaveBeenCalledWith(
-        expect.objectContaining({
-          filename: 'test.txt',
-          contents: Buffer.from('test content'),
-          contentType: 'text/plain',
-        })
-      );
+      // MailParser.simpleParserが呼ばれていることを確認
+      expect(MailParser.simpleParser).toHaveBeenCalled();
+      const mimeMessage = (MailParser.simpleParser as jest.Mock).mock.calls[0][0];
+      expect(mimeMessage).toContain('multipart/mixed');
+      expect(mimeMessage).toContain('Content-Disposition: attachment');
+      expect(mimeMessage).toContain('filename=');
     });
   });
 });

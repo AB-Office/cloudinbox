@@ -138,6 +138,7 @@ export async function sendSmtpMail(
   }
 
   functions.logger.info(`sendSmtpMail: Sending mail via ${config.host}:${config.port} from ${from} to ${to.join(', ')}`);
+  functions.logger.info(`sendSmtpMail: Authenticating as user: ${config.userName}`);
 
   try {
     // nodemailerのトランスポートを作成
@@ -157,34 +158,37 @@ export async function sendSmtpMail(
       greetingTimeout: 30000, // 30秒のグリーティングタイムアウト
     });
 
+    // 接続と認証を事前に検証（認証が成功しているか確認）
+    functions.logger.info(`sendSmtpMail: Verifying connection and authentication...`);
+    await transporter.verify();
+    functions.logger.info(`sendSmtpMail: Connection and authentication verified successfully`);
+
     // メール送信オプション
+    // envelopeオプションを使用して、MAIL FROMコマンドで使用するアドレスを明示的に指定
     const mailOptions: nodemailer.SendMailOptions = {
-      from,
+      from: from,
       to: to.join(', '),
       subject: subject || '',
       text: body || '',
+      ...(cc && cc.length > 0 && { cc: cc.join(', ') }),
+      ...(bcc && bcc.length > 0 && { bcc: bcc.join(', ') }),
+      ...(attachments && attachments.length > 0 && {
+        attachments: attachments.map((att) => ({
+          filename: att.filename,
+          content: att.content,
+          contentType: att.contentType,
+        })),
+      }),
+      envelope: {
+        from: from, // MAIL FROMコマンドで使用するアドレス（fromパラメータを使用）
+        to: to, // RCPT TOコマンドで使用するアドレス
+      },
     };
 
-    // CCがある場合は追加
-    if (cc && cc.length > 0) {
-      mailOptions.cc = cc.join(', ');
-    }
-
-    // BCCがある場合は追加
-    if (bcc && bcc.length > 0) {
-      mailOptions.bcc = bcc.join(', ');
-    }
-
-    // 添付ファイルがある場合は追加
-    if (attachments && attachments.length > 0) {
-      mailOptions.attachments = attachments.map((att) => ({
-        filename: att.filename,
-        content: att.content,
-        contentType: att.contentType,
-      }));
-    }
+    functions.logger.info(`sendSmtpMail: Mail options - from: ${from}, envelope.from: ${from}, auth user: ${config.userName}, to: ${to.join(', ')}`);
 
     // メール送信を実行
+    functions.logger.info(`sendSmtpMail: Attempting to send mail...`);
     const info = await transporter.sendMail(mailOptions);
 
     functions.logger.info(`sendSmtpMail: Mail sent successfully. Message ID: ${info.messageId}`);
@@ -193,6 +197,15 @@ export async function sendSmtpMail(
     transporter.close();
   } catch (error: any) {
     functions.logger.error(`sendSmtpMail error for ${config.host}:${config.port}:`, error);
+    functions.logger.error(`sendSmtpMail error details:`, {
+      code: error.code,
+      responseCode: error.responseCode,
+      response: error.response,
+      command: error.command,
+      message: error.message,
+      from: from,
+      authUser: config.userName,
+    });
 
     // エラーメッセージを適切にフォーマット
     let errorMessage = 'Mail sending failed';
@@ -201,7 +214,9 @@ export async function sendSmtpMail(
     } else if (error.code === 'EAUTH') {
       errorMessage = `Authentication failed: ${error.message || 'Invalid username or password'}`;
     } else if (error.responseCode === 550 || error.responseCode === 551 || error.responseCode === 552) {
-      errorMessage = `Mail delivery failed: ${error.response || error.message}`;
+      // 550エラーの詳細情報を含める
+      const responseMsg = error.response || error.message || 'Mail delivery rejected by server';
+      errorMessage = `Mail delivery failed (${error.responseCode}): ${responseMsg}`;
     } else if (error.message) {
       errorMessage = error.message;
     }
