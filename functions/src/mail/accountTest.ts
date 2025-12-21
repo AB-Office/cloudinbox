@@ -142,7 +142,7 @@ export const accountTest: any = functions.region('asia-northeast1').https.onCall
       let result: AccountTestResponse;
       
       if (data.protocol === 'pop3') {
-        // POP3S接続テストを実行
+    // POP3S接続テストを実行
         result = await testPop3Connection(
           data.host,
           data.port,
@@ -153,12 +153,12 @@ export const accountTest: any = functions.region('asia-northeast1').https.onCall
       } else {
         // SMTP接続テストを実行
         result = await testSmtpConnection(
-          data.host,
-          data.port,
-          data.useSsl,
-          data.userName,
-          password
-        );
+        data.host,
+        data.port,
+        data.useSsl,
+        data.userName,
+        password
+      );
       }
 
       // セキュリティ: 平文パスワードを即座に破棄

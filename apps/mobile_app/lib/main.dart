@@ -899,7 +899,7 @@ class FirebaseAccountRepository implements AccountRepository {
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
-      final encryptCallable = _functions.httpsCallable('encryptPasswordFunction');
+        final encryptCallable = _functions.httpsCallable('encryptPasswordFunction');
       
       if (data.pop3Password.isNotEmpty) {
         // POP3パスワードを暗号化

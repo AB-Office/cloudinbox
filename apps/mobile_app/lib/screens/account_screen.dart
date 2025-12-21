@@ -636,7 +636,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         _smtpErrorMessage!,
                         style: const TextStyle(color: Colors.red),
                       ),
-                    ),
+                  ),
                   const SizedBox(height: 16),
                   if (_isTesting && !_testSucceeded) const CircularProgressIndicator(),
                   if (_testSucceeded && !_isTesting && !isCreating)
