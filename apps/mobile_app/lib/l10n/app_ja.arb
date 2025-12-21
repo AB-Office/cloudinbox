@@ -44,6 +44,10 @@
   "@allMail": {
     "description": "すべてのメールメニューのラベル"
   },
+  "sent": "送信済み",
+  "@sent": {
+    "description": "送信済みメニューのラベル"
+  },
   "trash": "ゴミ箱",
   "@trash": {
     "description": "ゴミ箱メニューのラベル"
@@ -244,6 +248,62 @@
   "connectionTestSucceeded": "接続テスト成功",
   "@connectionTestSucceeded": {
     "description": "接続テスト成功メッセージ"
+  },
+  "smtpHost": "SMTPホスト",
+  "@smtpHost": {
+    "description": "SMTPホストの入力フィールド"
+  },
+  "smtpPort": "SMTPポート",
+  "@smtpPort": {
+    "description": "SMTPポートの入力フィールド"
+  },
+  "smtpUsername": "SMTPユーザー名",
+  "@smtpUsername": {
+    "description": "SMTPユーザー名の入力フィールド"
+  },
+  "smtpPassword": "SMTPパスワード",
+  "@smtpPassword": {
+    "description": "SMTPパスワードの入力フィールド"
+  },
+  "smtpPasswordHint": "変更する場合のみ入力してください",
+  "@smtpPasswordHint": {
+    "description": "SMTPパスワードフィールドのヒント（編集モード時）"
+  },
+  "copyFromPop3": "POP3設定からコピー",
+  "@copyFromPop3": {
+    "description": "POP3設定からSMTP設定をコピーするボタンのラベル"
+  },
+  "testSmtpConnection": "SMTP接続テスト",
+  "@testSmtpConnection": {
+    "description": "SMTP接続テストボタンのラベル"
+  },
+  "reply": "返信",
+  "@reply": {
+    "description": "返信ボタンのツールチップ"
+  },
+  "replyAll": "全員に返信",
+  "@replyAll": {
+    "description": "全員に返信ボタンのツールチップ"
+  },
+  "forward": "転送",
+  "@forward": {
+    "description": "転送ボタンのツールチップ"
+  },
+  "moveToTrash": "ゴミ箱に移動",
+  "@moveToTrash": {
+    "description": "ゴミ箱に移動ボタンのツールチップ"
+  },
+  "archive": "アーカイブ",
+  "@archive": {
+    "description": "アーカイブボタンのツールチップ"
+  },
+  "restoreFromTrash": "ゴミ箱から復元",
+  "@restoreFromTrash": {
+    "description": "ゴミ箱から復元ボタンのツールチップ"
+  },
+  "unarchive": "アーカイブから復元",
+  "@unarchive": {
+    "description": "アーカイブから復元ボタンのツールチップ"
   }
 }
 

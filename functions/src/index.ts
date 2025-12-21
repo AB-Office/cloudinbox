@@ -29,3 +29,6 @@ export { decryptMail } from './mail/decryptMail';
 // ゴミ箱完全削除
 export { purgeTrash } from './mail/purgeTrash';
 
+// メール送信
+export { sendMail } from './mail/sendMail';
+

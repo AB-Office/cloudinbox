@@ -42,6 +42,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allMail => 'All Mail';
 
   @override
+  String get sent => 'Sent';
+
+  @override
   String get trash => 'Trash';
 
   @override
@@ -182,4 +185,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connectionTestSucceeded => 'Connection test succeeded';
+
+  @override
+  String get smtpHost => 'SMTP Host';
+
+  @override
+  String get smtpPort => 'SMTP Port';
+
+  @override
+  String get smtpUsername => 'SMTP Username';
+
+  @override
+  String get smtpPassword => 'SMTP Password';
+
+  @override
+  String get smtpPasswordHint => 'Enter only if you want to change the password';
+
+  @override
+  String get copyFromPop3 => 'Copy from POP3 Settings';
+
+  @override
+  String get testSmtpConnection => 'Test SMTP Connection';
+
+  @override
+  String get reply => 'Reply';
+
+  @override
+  String get replyAll => 'Reply All';
+
+  @override
+  String get forward => 'Forward';
+
+  @override
+  String get moveToTrash => 'Move to Trash';
+
+  @override
+  String get archive => 'Archive';
+
+  @override
+  String get restoreFromTrash => 'Restore from Trash';
+
+  @override
+  String get unarchive => 'Unarchive';
 }

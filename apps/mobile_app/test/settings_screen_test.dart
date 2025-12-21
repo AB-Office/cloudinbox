@@ -44,6 +44,11 @@ class _FakeAccountRepository implements AccountRepository {
   }
 
   @override
+  Future<AccountTestResult> testSmtpConnection(AccountFormData data) async {
+    return const AccountTestResult(success: true);
+  }
+
+  @override
   Future<void> createAccount(AccountFormData data) async {}
 
   @override

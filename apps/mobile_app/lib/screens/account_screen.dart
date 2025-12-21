@@ -11,6 +11,10 @@ class AccountFormData {
     required this.pop3Port,
     required this.pop3Username,
     required this.pop3Password,
+    this.smtpHost = '',
+    this.smtpPort = 587,
+    this.smtpUsername = '',
+    this.smtpPassword = '',
   });
 
   final String label;
@@ -19,6 +23,10 @@ class AccountFormData {
   final int pop3Port;
   final String pop3Username;
   final String pop3Password;
+  final String smtpHost;
+  final int smtpPort;
+  final String smtpUsername;
+  final String smtpPassword;
 }
 
 /// POP3S 接続テスト結果
@@ -60,6 +68,7 @@ class MailAccount {
 /// アカウント設定用のリポジトリ抽象
 abstract class AccountRepository {
   Future<AccountTestResult> testConnection(AccountFormData data);
+  Future<AccountTestResult> testSmtpConnection(AccountFormData data);
   Future<void> createAccount(AccountFormData data);
   Future<List<MailAccount>> listAccounts({bool includeInactive = false});
   Future<MailAccount?> getAccount(String accountId);
@@ -96,11 +105,18 @@ class _AccountScreenState extends State<AccountScreen> {
   final _pop3PortController = TextEditingController(text: '995');
   final _pop3UsernameController = TextEditingController();
   final _pop3PasswordController = TextEditingController();
+  final _smtpHostController = TextEditingController();
+  final _smtpPortController = TextEditingController(text: '587');
+  final _smtpUsernameController = TextEditingController();
+  final _smtpPasswordController = TextEditingController();
 
   bool _isTesting = false;
   bool _testSucceeded = false;
   String? _errorMessage;
   bool _isLoading = false;
+  bool _isTestingSmtp = false;
+  bool _smtpTestSucceeded = false;
+  String? _smtpErrorMessage;
 
   @override
   void initState() {
@@ -147,14 +163,19 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   AccountFormData _buildFormData() {
-    final port = int.tryParse(_pop3PortController.text) ?? 995;
+    final pop3Port = int.tryParse(_pop3PortController.text) ?? 995;
+    final smtpPort = int.tryParse(_smtpPortController.text) ?? 587;
     return AccountFormData(
       label: _labelController.text,
       email: _emailController.text,
       pop3Host: _pop3HostController.text,
-      pop3Port: port,
+      pop3Port: pop3Port,
       pop3Username: _pop3UsernameController.text,
       pop3Password: _pop3PasswordController.text,
+      smtpHost: _smtpHostController.text,
+      smtpPort: smtpPort,
+      smtpUsername: _smtpUsernameController.text,
+      smtpPassword: _smtpPasswordController.text,
     );
   }
 
@@ -186,8 +207,53 @@ class _AccountScreenState extends State<AccountScreen> {
     }
   }
 
+  Future<void> _onTestSmtpConnectionPressed() async {
+    setState(() {
+      _isTestingSmtp = true;
+      _smtpTestSucceeded = false;
+      _smtpErrorMessage = null;
+    });
+    try {
+      final result = await widget.repository.testSmtpConnection(_buildFormData());
+      if (mounted) {
+        setState(() {
+          _smtpTestSucceeded = result.success;
+          _smtpErrorMessage = result.errorMessage;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        final locale = Localizations.localeOf(context);
+        setState(() {
+          _smtpTestSucceeded = false;
+          _smtpErrorMessage = I18nService.translateConnectionTestError(locale, e.toString());
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isTestingSmtp = false;
+        });
+      }
+    }
+  }
+
+  void _onCopyFromPop3Pressed() {
+    // コントローラーのテキストを更新（setStateの外で実行）
+    _smtpHostController.text = _pop3HostController.text;
+    _smtpUsernameController.text = _pop3UsernameController.text;
+    _smtpPasswordController.text = _pop3PasswordController.text;
+    // ポートは587または465にデフォルト設定（587をデフォルトとする）
+    if (_smtpPortController.text.isEmpty) {
+      _smtpPortController.text = '587';
+    }
+    // Builderの再評価を促すためにsetStateを呼び出す
+    setState(() {});
+  }
+
   Future<void> _onCreateAccountPressed() async {
-    if (!_testSucceeded) {
+    // ボタンの有効化条件をチェック（編集モードの場合はSMTP接続テストが必要な場合もある）
+    if (!_shouldEnableCreateButton()) {
       return;
     }
     
@@ -251,6 +317,31 @@ class _AccountScreenState extends State<AccountScreen> {
       _testSucceeded = result.success;
       _errorMessage = result.errorMessage;
     });
+  }
+
+  /// アカウント作成/更新ボタンを有効化するかどうかを判定
+  bool _shouldEnableCreateButton() {
+    final isEditMode = widget.accountId != null || widget.account != null;
+    final isCreating = _isTesting && _testSucceeded;
+    
+    if (isCreating) {
+      return false;
+    }
+    
+    // 編集モードの場合
+    if (isEditMode) {
+      // SMTP設定が入力されている場合は、SMTP接続テストが成功している必要がある
+      final hasSmtpSettings = _smtpHostController.text.isNotEmpty && 
+                             _smtpUsernameController.text.isNotEmpty;
+      if (hasSmtpSettings) {
+        return _smtpTestSucceeded;
+      }
+      // SMTP設定がない場合は、既存アカウントなので更新可能
+      return true;
+    }
+    
+    // 新規作成モードの場合、POP3接続テストが成功している必要がある
+    return _testSucceeded;
   }
 
   Future<void> _onDeleteAccountPressed() async {
@@ -421,6 +512,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     key: const Key('pop3_host'),
                     controller: _pop3HostController,
                     decoration: InputDecoration(labelText: pop3HostText),
+                    onChanged: (_) => setState(() {}), // Builderの再評価を促す
                   ),
                   TextField(
                     key: const Key('pop3_port'),
@@ -432,6 +524,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     key: const Key('pop3_username'),
                     controller: _pop3UsernameController,
                     decoration: InputDecoration(labelText: pop3UsernameText),
+                    onChanged: (_) => setState(() {}), // Builderの再評価を促す
                   ),
                   TextField(
                     key: const Key('pop3_password'),
@@ -442,6 +535,107 @@ class _AccountScreenState extends State<AccountScreen> {
                       helperText: pop3PasswordHint,
                     ),
                     obscureText: true,
+                  ),
+                  const SizedBox(height: 24),
+                  // SMTP設定セクション
+                  Text(
+                    locale.languageCode == 'ja' ? 'SMTP設定' : 'SMTP Settings',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    key: const Key('smtp_host'),
+                    controller: _smtpHostController,
+                    decoration: InputDecoration(
+                      labelText: I18nService.translateSmtpHost(locale),
+                    ),
+                    onChanged: (_) => setState(() {}), // Builderの再評価を促す
+                  ),
+                  TextField(
+                    key: const Key('smtp_port'),
+                    controller: _smtpPortController,
+                    decoration: InputDecoration(
+                      labelText: I18nService.translateSmtpPort(locale),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  TextField(
+                    key: const Key('smtp_username'),
+                    controller: _smtpUsernameController,
+                    decoration: InputDecoration(
+                      labelText: I18nService.translateSmtpUsername(locale),
+                    ),
+                    onChanged: (_) => setState(() {}), // Builderの再評価を促す
+                  ),
+                  TextField(
+                    key: const Key('smtp_password'),
+                    controller: _smtpPasswordController,
+                    decoration: InputDecoration(
+                      labelText: I18nService.translateSmtpPassword(locale),
+                      hintText: isEditMode ? I18nService.translateSmtpPasswordHint(locale) : null,
+                      helperText: isEditMode ? I18nService.translateSmtpPasswordHint(locale) : null,
+                    ),
+                    obscureText: true,
+                  ),
+                  // POP3設定からコピーボタン（SMTP設定が未入力の場合のみ表示）
+                  Builder(
+                    builder: (context) {
+                      final shouldShowCopyButton = _smtpHostController.text.isEmpty &&
+                          _smtpUsernameController.text.isEmpty &&
+                          _pop3HostController.text.isNotEmpty &&
+                          _pop3UsernameController.text.isNotEmpty;
+                      
+                      if (!shouldShowCopyButton) {
+                        return const SizedBox.shrink();
+                      }
+                      
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: OutlinedButton.icon(
+                          key: const Key('button_copy_from_pop3'),
+                          onPressed: _onCopyFromPop3Pressed,
+                          icon: const Icon(Icons.copy),
+                          label: Text(I18nService.translateCopyFromPop3(locale)),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  // SMTP接続テストボタン
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      key: const Key('button_test_smtp_connection'),
+                      onPressed: _isTestingSmtp ? null : _onTestSmtpConnectionPressed,
+                      child: _isTestingSmtp
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(I18nService.translateTestSmtpConnection(locale)),
+                    ),
+                  ),
+                  if (_isTestingSmtp && !_smtpTestSucceeded)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  if (_smtpTestSucceeded && !_isTestingSmtp)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        successText,
+                        style: TextStyle(color: Colors.green.shade700),
+                      ),
+                    ),
+                  if (_smtpErrorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        _smtpErrorMessage!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
                   ),
                   const SizedBox(height: 16),
                   if (_isTesting && !_testSucceeded) const CircularProgressIndicator(),
@@ -476,7 +670,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       Expanded(
                         child: ElevatedButton(
                           key: const Key('button_create_account'),
-                          onPressed: (_testSucceeded && !isCreating) 
+                          onPressed: _shouldEnableCreateButton() 
                               ? _onCreateAccountPressed 
                               : null,
                           child: isCreating 

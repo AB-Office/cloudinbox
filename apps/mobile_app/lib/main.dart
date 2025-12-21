@@ -5,6 +5,7 @@ import 'package:cloudinbox_mobile_app/screens/mail_list_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/settings_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/detail_screen.dart';
+import 'package:cloudinbox_mobile_app/screens/compose_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,6 +17,7 @@ import 'package:cloudinbox_mobile_app/l10n/app_localizations.dart';
 import 'package:cloudinbox_mobile_app/firebase_options_dev.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloudinbox_mobile_app/services/i18n_service.dart';
+import 'dart:convert';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,6 +67,8 @@ class _MyAppState extends State<MyApp> {
           settingsRepository: FirebaseSettingsRepository(),
           currentRoute: '/inbox',
           onNavigate: _navigateToRoute,
+          composeRepository: FirebaseMailComposeRepository(),
+          accountRepository: FirebaseAccountRepository(),
         );
       case '/all':
         return MailListScreen(
@@ -74,6 +78,20 @@ class _MyAppState extends State<MyApp> {
           settingsRepository: FirebaseSettingsRepository(),
           currentRoute: '/all',
           onNavigate: _navigateToRoute,
+          composeRepository: FirebaseMailComposeRepository(),
+          accountRepository: FirebaseAccountRepository(),
+        );
+        // 注意: InboxRepository側で'/sent'→'sent'のマッピングとデータ存在を必ず保証すること
+      case '/sent':
+        return MailListScreen(
+          key: const ValueKey('mail_list_sent'),
+          repository: inboxRepository,
+          title: I18nService.translateSent(locale),
+          settingsRepository: FirebaseSettingsRepository(),
+          currentRoute: '/sent',
+          onNavigate: _navigateToRoute,
+          composeRepository: FirebaseMailComposeRepository(),
+          accountRepository: FirebaseAccountRepository(),
         );
       case '/trash':
         return MailListScreen(
@@ -83,6 +101,8 @@ class _MyAppState extends State<MyApp> {
           settingsRepository: FirebaseSettingsRepository(),
           currentRoute: '/trash',
           onNavigate: _navigateToRoute,
+          composeRepository: FirebaseMailComposeRepository(),
+          accountRepository: FirebaseAccountRepository(),
         );
       case '/settings':
         return SettingsScreen(
@@ -92,6 +112,13 @@ class _MyAppState extends State<MyApp> {
           onLogout: _handleLogout,
           currentRoute: '/settings',
           onNavigate: _navigateToRoute,
+        );
+      case '/compose':
+        return ComposeScreen(
+          key: const ValueKey('compose_mail'),
+          repository: FirebaseMailComposeRepository(),
+          accountRepository: FirebaseAccountRepository(),
+          intent: const ComposeIntent(),
         );
       default:
         return _buildScreenForRoute('/inbox', context);
@@ -355,6 +382,8 @@ class FirebaseInboxRepository implements InboxRepository {
         return 'inbox';
       case '/trash':
         return 'trash';
+      case '/sent':
+        return 'sent';
       case '/all':
       default:
         return ''; // すべてのメール（ラベルフィルタなし）
@@ -606,6 +635,7 @@ class FirebaseAccountRepository implements AccountRepository {
     try {
       final callable = _functions.httpsCallable('accountTest');
       final result = await callable.call({
+        'protocol': 'pop3',
         'host': data.pop3Host,
         'port': data.pop3Port,
         'useSsl': true, // SSL/TLS必須
@@ -635,6 +665,42 @@ class FirebaseAccountRepository implements AccountRepository {
   }
 
   @override
+  Future<AccountTestResult> testSmtpConnection(AccountFormData data) async {
+    try {
+      final callable = _functions.httpsCallable('accountTest');
+      final result = await callable.call({
+        'protocol': 'smtp',
+        'host': data.smtpHost,
+        'port': data.smtpPort,
+        'useSsl': true, // SSL/TLS必須
+        'userName': data.smtpUsername,
+        'password': data.smtpPassword.isNotEmpty
+            ? data.smtpPassword
+            : data.pop3Password, // SMTPパスワードが空の場合はPOP3パスワードを使用
+      });
+
+      // 型安全なキャスト
+      final dataResult = Map<String, dynamic>.from(result.data as Map);
+      return AccountTestResult(
+        success: dataResult['success'] as bool? ?? false,
+        errorMessage: dataResult['errorMessage'] as String?,
+      );
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('Firebase Functions error: ${e.code} - ${e.message}');
+      return AccountTestResult(
+        success: false,
+        errorMessage: e.message ?? 'SMTP connection test failed',
+      );
+    } catch (e) {
+      debugPrint('Error calling accountTest for SMTP: $e');
+      return AccountTestResult(
+        success: false,
+        errorMessage: 'Error: $e',
+      );
+    }
+  }
+
+  @override
   Future<void> createAccount(AccountFormData data) async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -652,6 +718,19 @@ class FirebaseAccountRepository implements AccountRepository {
       final encryptData = Map<String, dynamic>.from(encryptResult.data as Map);
       final passwordEnc = Map<String, dynamic>.from(encryptData['passwordEnc'] as Map);
 
+      // SMTPパスワードを暗号化（SMTP設定がある場合）
+      Map<String, dynamic>? smtpPasswordEnc;
+      if (data.smtpPassword.isNotEmpty || data.smtpHost.isNotEmpty) {
+        final smtpPasswordToEncrypt = data.smtpPassword.isNotEmpty
+            ? data.smtpPassword
+            : data.pop3Password; // SMTPパスワードが空の場合はPOP3パスワードを使用
+        final smtpEncryptResult = await encryptCallable.call({
+          'password': smtpPasswordToEncrypt,
+        });
+        final smtpEncryptData = Map<String, dynamic>.from(smtpEncryptResult.data as Map);
+        smtpPasswordEnc = Map<String, dynamic>.from(smtpEncryptData['passwordEnc'] as Map);
+      }
+
       // Firestoreにアカウントを保存
       final accountRef = _firestore
           .collection('users')
@@ -659,7 +738,7 @@ class FirebaseAccountRepository implements AccountRepository {
           .collection('mailAccounts')
           .doc(); // 自動生成ID
 
-      await accountRef.set({
+      final accountData = <String, dynamic>{
         'label': data.label,
         'email': data.email,
         'pop3': {
@@ -676,7 +755,24 @@ class FirebaseAccountRepository implements AccountRepository {
         'status': 'active',
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      };
+
+      // SMTP設定を追加（設定がある場合）
+      if (data.smtpHost.isNotEmpty && smtpPasswordEnc != null) {
+        accountData['smtp'] = {
+          'host': data.smtpHost,
+          'port': data.smtpPort,
+          'useSsl': true, // SSL/TLS必須
+          'userName': data.smtpUsername.isNotEmpty ? data.smtpUsername : data.pop3Username,
+          'passwordEnc': {
+            'ciphertext': smtpPasswordEnc['ciphertext'],
+            'nonce': smtpPasswordEnc['nonce'],
+            'tag': smtpPasswordEnc['tag'],
+          },
+        };
+      }
+
+      await accountRef.set(accountData);
 
       debugPrint('Account created successfully: ${accountRef.id}');
     } on FirebaseFunctionsException catch (e) {
@@ -804,9 +900,10 @@ class FirebaseAccountRepository implements AccountRepository {
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
-      if (data.pop3Password.isNotEmpty) {
-        // パスワードを暗号化
         final encryptCallable = _functions.httpsCallable('encryptPasswordFunction');
+      
+      if (data.pop3Password.isNotEmpty) {
+        // POP3パスワードを暗号化
         final encryptResult = await encryptCallable.call({
           'password': data.pop3Password,
         });
@@ -819,6 +916,31 @@ class FirebaseAccountRepository implements AccountRepository {
           'ciphertext': passwordEnc['ciphertext'],
           'nonce': passwordEnc['nonce'],
           'tag': passwordEnc['tag'],
+        };
+      }
+
+      // SMTP設定を更新（設定がある場合）
+      if (data.smtpHost.isNotEmpty) {
+        final smtpPasswordToEncrypt = data.smtpPassword.isNotEmpty
+            ? data.smtpPassword
+            : data.pop3Password; // SMTPパスワードが空の場合はPOP3パスワードを使用
+        
+        final smtpEncryptResult = await encryptCallable.call({
+          'password': smtpPasswordToEncrypt,
+        });
+        final smtpEncryptData = Map<String, dynamic>.from(smtpEncryptResult.data as Map);
+        final smtpPasswordEnc = Map<String, dynamic>.from(smtpEncryptData['passwordEnc'] as Map);
+
+        updateData['smtp.host'] = data.smtpHost;
+        updateData['smtp.port'] = data.smtpPort;
+        updateData['smtp.useSsl'] = true;
+        updateData['smtp.userName'] = data.smtpUsername.isNotEmpty
+            ? data.smtpUsername
+            : data.pop3Username;
+        updateData['smtp.passwordEnc'] = {
+          'ciphertext': smtpPasswordEnc['ciphertext'],
+          'nonce': smtpPasswordEnc['nonce'],
+          'tag': smtpPasswordEnc['tag'],
         };
       }
 
@@ -1001,10 +1123,13 @@ class FirebaseDetailRepository implements MailDetailRepository {
         subject: data['subject'] as String? ?? '',
         from: data['from'] as String? ?? '',
         to: (data['to'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+        cc: (data['cc'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+        bcc: (data['bcc'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
         sentAt: data['sentAt'] != null
             ? _formatTimestamp(data['sentAt'] as Timestamp)
             : '',
         bodyText: emailBody,
+        threadId: data['threadId'] as String?,
       );
     } catch (e) {
       debugPrint('Error loading message: $e');
@@ -1087,6 +1212,96 @@ class FirebaseDetailRepository implements MailDetailRepository {
   }
 }
 
+/// 実際のFirebase Functionsを使用するMailComposeRepository実装
+class FirebaseMailComposeRepository implements MailComposeRepository {
+  final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(region: 'asia-northeast1');
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  @override
+  Future<List<MailAccount>> listAccounts() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      final accountsSnapshot = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('mailAccounts')
+          .where('status', isEqualTo: 'active')
+          .get();
+
+      return accountsSnapshot.docs.map((doc) {
+        final data = doc.data();
+        final pop3 = data['pop3'] as Map<String, dynamic>?;
+        final status = data['status'] as String? ?? 'active';
+        final deletedAtTimestamp = data['deletedAt'] as Timestamp?;
+        final deletedAt = deletedAtTimestamp?.toDate();
+        
+        return MailAccount(
+          id: doc.id,
+          label: data['label'] as String? ?? '',
+          email: data['email'] as String? ?? '',
+          pop3Host: pop3?['host'] as String? ?? '',
+          pop3Port: pop3?['port'] as int? ?? 995,
+          pop3Username: pop3?['userName'] as String? ?? '',
+          status: status,
+          deletedAt: deletedAt,
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('Error listing accounts: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<SendMailResponse> sendMail(SendMailRequest request) async {
+    try {
+      final callable = _functions.httpsCallable('sendMail');
+      
+      // 添付ファイルをBase64エンコード
+      final attachments = request.attachments.map((att) => {
+        'filename': att.filename,
+        'content': base64Encode(att.content),
+        'contentType': att.contentType,
+      }).toList();
+
+      final result = await callable.call({
+        'accountId': request.accountId,
+        'to': request.to,
+        'cc': request.cc.isNotEmpty ? request.cc : null,
+        'bcc': request.bcc.isNotEmpty ? request.bcc : null,
+        'subject': request.subject,
+        'body': request.body,
+        'attachments': attachments.isNotEmpty ? attachments : null,
+        'threadId': request.threadId,
+      });
+
+      final dataResult = Map<String, dynamic>.from(result.data as Map);
+      return SendMailResponse(
+        success: dataResult['success'] as bool? ?? false,
+        messageId: dataResult['messageId'] as String?,
+        errorMessage: dataResult['errorMessage'] as String?,
+      );
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('Firebase Functions error: ${e.code} - ${e.message}');
+      return SendMailResponse(
+        success: false,
+        errorMessage: e.message ?? 'Failed to send mail',
+      );
+    } catch (e) {
+      debugPrint('Error calling sendMail: $e');
+      return SendMailResponse(
+        success: false,
+        errorMessage: 'Error: $e',
+      );
+    }
+  }
+}
+
 /// スタブのAccountRepository実装（テスト用）
 class StubAccountRepository implements AccountRepository {
   @override
@@ -1094,6 +1309,14 @@ class StubAccountRepository implements AccountRepository {
     // スタブ実装: 常に成功
     await Future.delayed(const Duration(milliseconds: 500));
     debugPrint('StubAccountRepository.testConnection called with: ${data.pop3Host}:${data.pop3Port}');
+    return const AccountTestResult(success: true);
+  }
+
+  @override
+  Future<AccountTestResult> testSmtpConnection(AccountFormData data) async {
+    // スタブ実装: 常に成功
+    await Future.delayed(const Duration(milliseconds: 500));
+    debugPrint('StubAccountRepository.testSmtpConnection called with: ${data.smtpHost}:${data.smtpPort}');
     return const AccountTestResult(success: true);
   }
 

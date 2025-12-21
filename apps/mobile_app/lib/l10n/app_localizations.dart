@@ -161,6 +161,12 @@ abstract class AppLocalizations {
   /// **'All Mail'**
   String get allMail;
 
+  /// Sent mail menu label
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get sent;
+
   /// Trash menu label
   ///
   /// In en, this message translates to:
@@ -424,6 +430,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Connection test succeeded'**
   String get connectionTestSucceeded;
+
+  /// SMTP host input field
+  ///
+  /// In en, this message translates to:
+  /// **'SMTP Host'**
+  String get smtpHost;
+
+  /// SMTP port input field
+  ///
+  /// In en, this message translates to:
+  /// **'SMTP Port'**
+  String get smtpPort;
+
+  /// SMTP username input field
+  ///
+  /// In en, this message translates to:
+  /// **'SMTP Username'**
+  String get smtpUsername;
+
+  /// SMTP password input field
+  ///
+  /// In en, this message translates to:
+  /// **'SMTP Password'**
+  String get smtpPassword;
+
+  /// SMTP password field hint (in edit mode)
+  ///
+  /// In en, this message translates to:
+  /// **'Enter only if you want to change the password'**
+  String get smtpPasswordHint;
+
+  /// Button label to copy SMTP settings from POP3 settings
+  ///
+  /// In en, this message translates to:
+  /// **'Copy from POP3 Settings'**
+  String get copyFromPop3;
+
+  /// SMTP connection test button label
+  ///
+  /// In en, this message translates to:
+  /// **'Test SMTP Connection'**
+  String get testSmtpConnection;
+
+  /// Tooltip for the reply button
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get reply;
+
+  /// Tooltip for the reply all button
+  ///
+  /// In en, this message translates to:
+  /// **'Reply All'**
+  String get replyAll;
+
+  /// Tooltip for the forward button
+  ///
+  /// In en, this message translates to:
+  /// **'Forward'**
+  String get forward;
+
+  /// Tooltip for the move to trash button
+  ///
+  /// In en, this message translates to:
+  /// **'Move to Trash'**
+  String get moveToTrash;
+
+  /// Tooltip for the archive button
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get archive;
+
+  /// Tooltip for the restore from trash button
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from Trash'**
+  String get restoreFromTrash;
+
+  /// Tooltip for the unarchive button
+  ///
+  /// In en, this message translates to:
+  /// **'Unarchive'**
+  String get unarchive;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

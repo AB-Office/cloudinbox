@@ -30,6 +30,7 @@ class _NavigationDrawerState extends State<NavigationDrawer> {
     final locale = Localizations.localeOf(context);
     final inboxLabel = I18nService.translateInbox(locale);
     final allMailLabel = I18nService.translateAllMail(locale);
+    final sentLabel = I18nService.translateSent(locale);
     final trashLabel = I18nService.translateTrash(locale);
     final settingsLabel = I18nService.translateSettings(locale);
 
@@ -68,6 +69,12 @@ class _NavigationDrawerState extends State<NavigationDrawer> {
                     title: Text(allMailLabel),
                     selected: widget.currentRoute == '/all',
                     onTap: () => _onMenuItemTap('/all'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.send),
+                    title: Text(sentLabel),
+                    selected: widget.currentRoute == '/sent',
+                    onTap: () => _onMenuItemTap('/sent'),
                   ),
                   ListTile(
                     leading: const Icon(Icons.delete),
