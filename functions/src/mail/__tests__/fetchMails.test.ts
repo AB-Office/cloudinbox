@@ -37,6 +37,13 @@ jest.mock('firebase-functions', () => ({
     warn: jest.fn(),
   },
 }));
+
+const mockEnqueueTask = jest.fn();
+jest.mock('../cloudTasksClient', () => ({
+  getCloudTasksClient: jest.fn(() => ({
+    enqueueTask: mockEnqueueTask,
+  })),
+}));
 jest.mock('../pop3Client');
 
 describe('fetchMails', () => {
@@ -278,6 +285,65 @@ describe('fetchMails', () => {
     // 実際のコードではwhereを使わず、すべてのアカウントを取得してからJavaScriptでフィルタリング
     // したがって、whereは呼ばれない
     expect(mockMailAccountsCollection.get).toHaveBeenCalled();
+  });
+
+  it('アクティブなアカウントごとにCloud Tasksタスクを投入する', async () => {
+    const mockUsersCollection = {
+      get: jest.fn().mockResolvedValue({
+        docs: [
+          {
+            id: 'user-1',
+            data: () => ({}),
+          },
+        ],
+      }),
+    };
+
+    const mockMailAccountsCollection = {
+      get: jest.fn().mockResolvedValue({
+        docs: [
+          {
+            id: 'account-1',
+            data: () => ({
+              status: 'active',
+            }),
+          },
+          {
+            id: 'account-2',
+            data: () => ({
+              status: 'active',
+            }),
+          },
+        ],
+      }),
+    };
+
+    const mockUserDoc = {
+      collection: jest.fn((path: string) => {
+        if (path === 'mailAccounts') {
+          return mockMailAccountsCollection;
+        }
+        return mockMailAccountsCollection;
+      }),
+    };
+
+    mockFirestore.collection = jest.fn((path: string) => {
+      if (path === 'users') {
+        return {
+          get: mockUsersCollection.get,
+          doc: jest.fn(() => mockUserDoc),
+        };
+      }
+      return mockUsersCollection;
+    });
+
+    if (savedHandler) {
+      await savedHandler(mockContext);
+    }
+
+    expect(mockEnqueueTask).toHaveBeenCalledTimes(2);
+    expect(mockEnqueueTask).toHaveBeenCalledWith('user-1', 'account-1');
+    expect(mockEnqueueTask).toHaveBeenCalledWith('user-1', 'account-2');
   });
 });
 

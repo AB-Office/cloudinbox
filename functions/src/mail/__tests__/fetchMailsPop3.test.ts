@@ -2,7 +2,7 @@
  * fetchMails - POP3S接続とメール取得のテスト
  */
 
-import { processAccount } from '../fetchMails';
+import { processAccount } from '../processAccount';
 import * as admin from 'firebase-admin';
 import * as encryption from '../../encryption';
 import { Pop3sClient } from '../pop3sClient';
@@ -280,6 +280,67 @@ describe('fetchMails - POP3S接続とメール取得', () => {
       expect(mockPop3sClient.retrieveMessage).toHaveBeenCalledTimes(2);
       expect(mockPop3sClient.retrieveMessage).toHaveBeenCalledWith(1);
       expect(mockPop3sClient.retrieveMessage).toHaveBeenCalledWith(2);
+    });
+
+    it('processAccountの処理時間が10分を超えた場合は後続メッセージの処理を中断する', async () => {
+      (encryption.decryptPassword as jest.Mock).mockResolvedValue('decrypted-password');
+      (MailParser.simpleParser as jest.Mock).mockResolvedValue({
+        subject: 'Test',
+        from: { text: 'sender@example.com' },
+        text: 'Body',
+      });
+      (saveMail as jest.Mock).mockResolvedValue(1000);
+
+      // 3通のメッセージがあるとする
+      mockPop3sClient.listMessages.mockResolvedValue([
+        { number: 1, size: 1000 },
+        { number: 2, size: 2000 },
+        { number: 3, size: 3000 },
+      ]);
+
+      const nowSpy = jest.spyOn(Date, 'now');
+      const base = 1_700_000_000_000;
+      // 関数開始〜2通目処理までは10分未満、3通目開始時点で10分超過とみなす
+      nowSpy
+        .mockReturnValueOnce(base) // 関数開始
+        .mockReturnValueOnce(base) // 復号後
+        .mockReturnValueOnce(base + 1_000) // 接続開始
+        .mockReturnValueOnce(base + 2_000) // 接続完了
+        .mockReturnValueOnce(base + 3_000) // listMessages開始
+        .mockReturnValueOnce(base + 4_000) // listMessages完了
+        // メッセージ1
+        .mockReturnValueOnce(base + 5_000) // retrieve 1 start
+        .mockReturnValueOnce(base + 6_000) // retrieve 1 end
+        .mockReturnValueOnce(base + 7_000) // parse 1 start
+        .mockReturnValueOnce(base + 8_000) // parse 1 end
+        .mockReturnValueOnce(base + 9_000) // save 1 start
+        .mockReturnValueOnce(base + 10_000) // save 1 end
+        // ここで10分超過として扱う
+        .mockReturnValueOnce(base + 10 * 60 * 1000 + 1);
+
+      const mockAccountRef = {
+        update: jest.fn().mockResolvedValue(undefined),
+      };
+
+      const mockAccountsCollection = {
+        doc: jest.fn().mockReturnValue(mockAccountRef),
+      };
+
+      const mockUserDocRef = {
+        collection: jest.fn().mockReturnValue(mockAccountsCollection),
+      };
+
+      mockFirestore.collection = jest.fn(() => ({
+        doc: jest.fn(() => mockUserDocRef),
+      }));
+
+      await processAccount(mockUid, mockAccountId, mockAccountData, mockFirestore);
+
+      // 10分を超えた時点でループを抜けるため、メッセージ1のみ処理される
+      expect(mockPop3sClient.retrieveMessage).toHaveBeenCalledTimes(1);
+      expect(mockPop3sClient.retrieveMessage).toHaveBeenCalledWith(1);
+
+      nowSpy.mockRestore();
     });
 
     it('メールをパースする（mailparser使用）', async () => {

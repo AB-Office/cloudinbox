@@ -23,6 +23,9 @@ export { encryptPasswordFunction } from './mail/encryptPassword';
 // メール自動受信
 export { fetchMails } from './mail/fetchMails';
 
+// Cloud Tasksハンドラ（processAccount用）
+export { processAccountTaskHandler } from './mail/processAccountTaskHandler';
+
 // メール本文復号
 export { decryptMail } from './mail/decryptMail';
 
