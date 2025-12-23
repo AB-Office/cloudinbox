@@ -1,7 +1,8 @@
 /**
- * cloudTasksClient - Cloud Tasks APIラッパー
+ * cloudTasksClient - Firebase Functions v2 タスクキューラッパー
  *
- * Cloud Tasks APIを使用してメール受信タスクをキューイングする
+ * Firebase Functions v2 の onTaskDispatched ハンドラに対してタスクを投入する
+ * @google-cloud/tasks を使用して、関数名を直接指定してタスクを投入する
  */
 
 import { CloudTasksClient } from '@google-cloud/tasks';
@@ -12,7 +13,7 @@ export class CloudTasksClientWrapper {
   private projectId: string;
   private location: string;
   private queueName: string;
-  private cloudRunJobUrl: string;
+  private functionName: string;
 
   constructor() {
     this.client = new CloudTasksClient();
@@ -20,23 +21,23 @@ export class CloudTasksClientWrapper {
     // 環境変数から設定を取得
     this.projectId = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || '';
     this.location = process.env.CLOUD_TASKS_LOCATION || 'asia-northeast1';
-    this.queueName = process.env.CLOUD_TASKS_QUEUE_NAME || 'mail-fetch-queue';
-    this.cloudRunJobUrl = process.env.CLOUD_RUN_JOB_URL || '';
+    // Firebase Functions v2 の onTaskDispatched は関数名に基づいてキューを自動生成する
+    // デフォルトでは関数名と同じ名前のキューが作成される
+    this.queueName = process.env.CLOUD_TASKS_QUEUE_NAME || 'processAccountTaskHandler';
+    // processAccountTaskHandler の関数名（デプロイ時に自動生成される）
+    this.functionName = process.env.PROCESS_ACCOUNT_TASK_HANDLER_NAME || 'processAccountTaskHandler';
 
     if (!this.projectId) {
       throw new Error('GCLOUD_PROJECT or GOOGLE_CLOUD_PROJECT environment variable is required');
     }
-    if (!this.cloudRunJobUrl) {
-      throw new Error('CLOUD_RUN_JOB_URL environment variable is required');
-    }
 
     functions.logger.info(
-      `CloudTasksClient initialized: project=${this.projectId}, location=${this.location}, queue=${this.queueName}`
+      `CloudTasksClient initialized: project=${this.projectId}, location=${this.location}, queue=${this.queueName}, function=${this.functionName}`
     );
   }
 
   /**
-   * タスクをCloud Tasks Queueにエンキューする
+   * タスクをFirebase Functions v2 の onTaskDispatched ハンドラにエンキューする
    *
    * @param uid - ユーザーID
    * @param accountId - アカウントID
@@ -58,23 +59,34 @@ export class CloudTasksClientWrapper {
       const queuePath = this.client.queuePath(this.projectId, this.location, this.queueName);
 
       // タスクペイロードを構築
+      // Firebase Functions v2 の onTaskDispatched は、HTTPターゲット経由の場合、
+      // リクエストボディを { data: { ... } } 形式でラップする必要がある
       const payload = {
-        uid,
-        accountId,
+        data: {
+          uid,
+          accountId,
+        },
       };
 
-      // HTTPリクエストタスクを作成
+      // Cloud Functions v2 の onTaskDispatched ハンドラを直接呼び出すタスクを作成
+      // 関数名を指定してタスクを作成（HTTPターゲットではなく、直接関数を呼び出す）
+      // OIDC トークンを使用して認証する
+      const serviceAccountEmail = process.env.CLOUD_TASKS_SERVICE_ACCOUNT || 
+        `${this.projectId}@appspot.gserviceaccount.com`;
+      
       const task = {
         httpRequest: {
           httpMethod: 'POST' as const,
-          url: this.cloudRunJobUrl,
+          // Cloud Functions v2 の onTaskDispatched ハンドラのURL
+          // 形式: https://{location}-{project-id}.cloudfunctions.net/{function-name}
+          url: `https://${this.location}-${this.projectId}.cloudfunctions.net/${this.functionName}`,
           headers: {
             'Content-Type': 'application/json',
           },
           body: Buffer.from(JSON.stringify(payload)).toString('base64'),
-        },
-        scheduleTime: {
-          seconds: Math.floor(Date.now() / 1000), // 即座に実行
+          oidcToken: {
+            serviceAccountEmail: serviceAccountEmail,
+          },
         },
       };
 
@@ -101,7 +113,7 @@ export class CloudTasksClientWrapper {
       };
 
       functions.logger.info(
-        `Enqueuing task: uid=${uid}, accountId=${accountId}, queue=${this.queueName}`
+        `Enqueuing task: uid=${uid}, accountId=${accountId}, queue=${this.queueName}, function=${this.functionName}`
       );
 
       const [response] = await this.client.createTask(request);

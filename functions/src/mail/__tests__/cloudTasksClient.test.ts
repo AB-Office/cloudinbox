@@ -28,7 +28,7 @@ describe('CloudTasksClientWrapper', () => {
       GCLOUD_PROJECT: 'test-project',
       CLOUD_TASKS_LOCATION: 'asia-northeast1',
       CLOUD_TASKS_QUEUE_NAME: 'mail-fetch-queue',
-      CLOUD_RUN_JOB_URL: 'https://example.com/tasks/processAccount',
+      PROCESS_ACCOUNT_TASK_HANDLER_NAME: 'processAccountTaskHandler',
     };
   });
 
@@ -59,7 +59,7 @@ describe('CloudTasksClientWrapper', () => {
 
     const request = mockCreateTask.mock.calls[0][0];
     expect(request.parent).toBe('projects/test-project/locations/asia-northeast1/queues/mail-fetch-queue');
-    expect(request.task.httpRequest.url).toBe('https://example.com/tasks/processAccount');
+    expect(request.task.httpRequest.url).toBe('https://asia-northeast1-test-project.cloudfunctions.net/processAccountTaskHandler');
     expect(request.task.retryConfig).toBeDefined();
     expect(taskName).toBe('tasks/123');
   });
