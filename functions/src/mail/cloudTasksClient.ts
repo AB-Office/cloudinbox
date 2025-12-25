@@ -73,13 +73,13 @@ export class CloudTasksClientWrapper {
       // OIDC トークンを使用して認証する
       const serviceAccountEmail = process.env.CLOUD_TASKS_SERVICE_ACCOUNT || 
         `${this.projectId}@appspot.gserviceaccount.com`;
+      const defaultUrl = `https://${this.location}-${this.projectId}.cloudfunctions.net/${this.functionName}`;
+      const targetUrl = process.env.CLOUD_TASKS_HANDLER_URL || defaultUrl;
       
       const task = {
         httpRequest: {
           httpMethod: 'POST' as const,
-          // Cloud Functions v2 の onTaskDispatched ハンドラのURL
-          // 形式: https://{location}-{project-id}.cloudfunctions.net/{function-name}
-          url: `https://${this.location}-${this.projectId}.cloudfunctions.net/${this.functionName}`,
+          url: targetUrl,
           headers: {
             'Content-Type': 'application/json',
           },

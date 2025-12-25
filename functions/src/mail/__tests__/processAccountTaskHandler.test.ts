@@ -104,6 +104,90 @@ describe('processAccountTaskHandler - handleProcessAccountTask', () => {
       mockFirestore
     );
   });
+
+  it('task.data.data形式のペイロードから正しく取得できる', async () => {
+    const mockAccountData = {
+      label: 'Test Account',
+    };
+
+    const mockAccountsCollection = {
+      doc: jest.fn(() => ({
+        get: jest.fn().mockResolvedValue({
+          exists: true,
+          data: () => mockAccountData,
+        }),
+      })),
+    };
+
+    const mockUserDocRef = {
+      collection: jest.fn(() => mockAccountsCollection),
+    };
+
+    mockFirestore.collection = jest.fn(() => ({
+      doc: jest.fn(() => mockUserDocRef),
+    }));
+
+    (processAccount as jest.Mock).mockResolvedValue(undefined);
+
+    // task.data.data形式のペイロードをシミュレート
+    const taskDataWithData = {
+      data: {
+        uid: 'user-1',
+        accountId: 'account-1',
+      },
+    };
+
+    // handleProcessAccountTaskは直接ペイロードを受け取るので、
+    // task.data.dataから取得したペイロードを渡す
+    await handleProcessAccountTask(taskDataWithData.data);
+
+    expect(processAccount).toHaveBeenCalledWith(
+      'user-1',
+      'account-1',
+      mockAccountData,
+      mockFirestore
+    );
+  });
+
+  it('task.data形式のペイロード（dataプロパティなし）からも正しく取得できる', async () => {
+    const mockAccountData = {
+      label: 'Test Account',
+    };
+
+    const mockAccountsCollection = {
+      doc: jest.fn(() => ({
+        get: jest.fn().mockResolvedValue({
+          exists: true,
+          data: () => mockAccountData,
+        }),
+      })),
+    };
+
+    const mockUserDocRef = {
+      collection: jest.fn(() => mockAccountsCollection),
+    };
+
+    mockFirestore.collection = jest.fn(() => ({
+      doc: jest.fn(() => mockUserDocRef),
+    }));
+
+    (processAccount as jest.Mock).mockResolvedValue(undefined);
+
+    // task.data形式のペイロード（dataプロパティなし）をシミュレート
+    const taskDataDirect = {
+      uid: 'user-1',
+      accountId: 'account-1',
+    };
+
+    await handleProcessAccountTask(taskDataDirect);
+
+    expect(processAccount).toHaveBeenCalledWith(
+      'user-1',
+      'account-1',
+      mockAccountData,
+      mockFirestore
+    );
+  });
 });
 
 

@@ -61,6 +61,21 @@ describe('CloudTasksClientWrapper', () => {
     expect(request.parent).toBe('projects/test-project/locations/asia-northeast1/queues/mail-fetch-queue');
     expect(request.task.httpRequest.url).toBe('https://asia-northeast1-test-project.cloudfunctions.net/processAccountTaskHandler');
     expect(request.task.retryConfig).toBeDefined();
+    
+    // リクエストボディが { data: { uid, accountId } } 形式であることを確認
+    const bodyBuffer = Buffer.from(request.task.httpRequest.body, 'base64');
+    const bodyJson = JSON.parse(bodyBuffer.toString());
+    expect(bodyJson).toEqual({
+      data: {
+        uid: 'user-1',
+        accountId: 'account-1',
+      },
+    });
+    
+    // OIDCトークンが設定されていることを確認
+    expect(request.task.httpRequest.oidcToken).toBeDefined();
+    expect(request.task.httpRequest.oidcToken.serviceAccountEmail).toBe('test-project@appspot.gserviceaccount.com');
+    
     expect(taskName).toBe('tasks/123');
   });
 });

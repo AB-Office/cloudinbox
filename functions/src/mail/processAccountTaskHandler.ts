@@ -60,6 +60,9 @@ export const processAccountTaskHandler = onTaskDispatched(
       // onTaskDispatched は HTTP ターゲット経由の場合、{ data: { ... } } 形式で
       // リクエストボディを受け取るため、task.data.data から実際のペイロードを取得
       const payload = task.data?.data || task.data;
+      if (!payload || typeof payload !== 'object' || !payload.uid || !payload.accountId) {
+        throw new functions.https.HttpsError('invalid-argument', 'uid and accountId are required');
+      }
       await handleProcessAccountTask(payload);
     } catch (error: any) {
       // Cloud Tasks の再試行ポリシーに委ねるため、エラーはそのままスローする
