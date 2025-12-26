@@ -1,7 +1,9 @@
 import 'dart:typed_data';
 import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
 import 'package:cloudinbox_mobile_app/services/i18n_service.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 /// メール送信リクエスト
 class SendMailRequest {
@@ -104,6 +106,9 @@ class ComposeScreen extends StatefulWidget {
 }
 
 class _ComposeScreenState extends State<ComposeScreen> {
+  // ファイルサイズ制限（10MB）
+  static const int _maxAttachmentSizeBytes = 10 * 1024 * 1024; // 10MB
+
   final _toController = TextEditingController();
   final _ccController = TextEditingController();
   final _bccController = TextEditingController();
@@ -330,18 +335,147 @@ class _ComposeScreenState extends State<ComposeScreen> {
   }
 
   Future<void> _onAddAttachmentPressed() async {
-    // TODO: file_pickerパッケージを追加後に実装
-    // 現在は一時的に空実装
-    if (mounted) {
-      final locale = Localizations.localeOf(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(locale.languageCode == 'ja'
-              ? '添付ファイル機能は準備中です'
-              : 'Attachment feature is coming soon'),
-        ),
+    if (!mounted) return;
+
+    try {
+      // ファイル選択ダイアログを表示
+      final FilePickerResult? result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        withData: true, // ファイルデータをメモリに読み込む
       );
+
+      // ファイル選択がキャンセルされた場合
+      if (result == null || result.files.isEmpty) {
+        return; // エラーメッセージを表示せずに終了
+      }
+
+      // 選択されたファイルを処理
+      final List<AttachmentData> newAttachments = [];
+      for (final platformFile in result.files) {
+        try {
+          // ファイルの内容を読み込む（withData: trueによりbytesが利用可能）
+          final Uint8List? fileBytes = platformFile.bytes;
+
+          if (fileBytes == null) {
+            // ファイル読み込みに失敗
+            if (mounted) {
+              final locale = Localizations.localeOf(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(locale.languageCode == 'ja'
+                      ? 'ファイルの読み込みに失敗しました: ${platformFile.name}'
+                      : 'Failed to read file: ${platformFile.name}'),
+                ),
+              );
+            }
+            continue;
+          }
+
+          // ファイルサイズチェック
+          if (fileBytes.length > _maxAttachmentSizeBytes) {
+            // ファイルサイズ超過
+            if (mounted) {
+              final locale = Localizations.localeOf(context);
+              final maxSizeMB = _maxAttachmentSizeBytes / (1024 * 1024);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(locale.languageCode == 'ja'
+                      ? 'ファイルサイズが${maxSizeMB.toInt()}MBを超えています: ${platformFile.name}'
+                      : 'File size exceeds ${maxSizeMB.toInt()}MB: ${platformFile.name}'),
+                ),
+              );
+            }
+            debugPrint('File size exceeds limit: ${platformFile.name} (${fileBytes.length} bytes)');
+            continue; // このファイルは追加しない
+          }
+
+          // コンテンツタイプを取得（拡張子から推測）
+          // file_pickerのPlatformFileからextensionを取得して推測
+          String? contentType;
+          if (platformFile.extension != null) {
+            contentType = _getContentTypeFromExtension(platformFile.extension!);
+          }
+          // 推測できない場合はデフォルトとしてapplication/octet-streamを設定
+          contentType ??= 'application/octet-stream';
+
+          // AttachmentDataオブジェクトを作成
+          final attachment = AttachmentData(
+            filename: platformFile.name,
+            content: fileBytes,
+            contentType: contentType,
+          );
+
+          newAttachments.add(attachment);
+        } catch (e) {
+          // ファイル読み込みエラー
+          debugPrint('Error reading file ${platformFile.name}: $e');
+          if (mounted) {
+            final locale = Localizations.localeOf(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(locale.languageCode == 'ja'
+                    ? 'ファイルの読み込みに失敗しました: ${platformFile.name}'
+                    : 'Failed to read file: ${platformFile.name}'),
+              ),
+            );
+          }
+        }
+      }
+
+      // 添付ファイルリストに追加
+      if (newAttachments.isNotEmpty && mounted) {
+        setState(() {
+          _attachments.addAll(newAttachments);
+        });
+      }
+    } catch (e) {
+      // ファイル選択エラー
+      debugPrint('Error picking files: $e');
+      if (mounted) {
+        final locale = Localizations.localeOf(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(locale.languageCode == 'ja'
+                ? 'ファイル選択に失敗しました'
+                : 'Failed to pick files'),
+          ),
+        );
+      }
     }
+  }
+
+  /// 拡張子からコンテンツタイプを推測
+  String? _getContentTypeFromExtension(String extension) {
+    final ext = extension.toLowerCase();
+    const contentTypes = {
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'txt': 'text/plain',
+      'html': 'text/html',
+      'css': 'text/css',
+      'js': 'text/javascript',
+      'json': 'application/json',
+      'xml': 'application/xml',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'bmp': 'image/bmp',
+      'svg': 'image/svg+xml',
+      'zip': 'application/zip',
+      'rar': 'application/x-rar-compressed',
+      '7z': 'application/x-7z-compressed',
+      'mp3': 'audio/mpeg',
+      'mp4': 'video/mp4',
+      'avi': 'video/x-msvideo',
+      'mov': 'video/quicktime',
+    };
+    return contentTypes[ext];
   }
 
   void _onRemoveAttachment(int index) {

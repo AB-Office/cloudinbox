@@ -18,31 +18,34 @@
 
 ### 2. ファイル選択機能の実装
 
-- [ ] 2.1 ComposeScreenのファイル選択機能実装
+- [x] 2.1 ComposeScreenのファイル選択機能実装
   - `apps/mobile_app/lib/screens/compose_screen.dart`の`_onAddAttachmentPressed`メソッドを実装
   - `file_picker`パッケージの`FilePicker.platform.pickFiles()`を呼び出し
   - 複数ファイル選択を許可（`allowMultiple: true`）
   - ファイル選択結果の処理（`FilePickerResult`からファイル情報を取得）
-  - 選択されたファイルの読み込み（`readAsBytes()`を使用）
+  - 選択されたファイルの読み込み（`withData: true`でbytesを取得）
   - ファイル情報（ファイル名、ファイルサイズ、コンテンツタイプ）の取得
   - `AttachmentData`オブジェクトの作成
   - `_attachments`リストへの追加
   - ファイル選択キャンセル時の処理（エラーメッセージを表示せずに終了）
   - ファイル読み込みエラー時のエラーメッセージ表示
+  - 拡張子からコンテンツタイプを推測する`_getContentTypeFromExtension`メソッドを実装
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 1.10, 1.11_
 
-- [ ] 2.2 ファイルサイズ検証の実装
+- [x] 2.2 ファイルサイズ検証の実装
   - ファイルサイズ制限の定数を定義（10MBを推奨）
   - ファイル選択時にファイルサイズをチェック
   - ファイルサイズ超過時のエラーメッセージ表示（国際化対応）
   - ファイルサイズ超過の場合は`_attachments`リストに追加しない
+  - デバッグログにファイルサイズ情報を記録
   - _Requirements: 1.12, 5.2_
 
-- [ ] 2.3 コンテンツタイプ自動検出の実装
+- [x] 2.3 コンテンツタイプ自動検出の実装
   - 選択されたファイルの拡張子からコンテンツタイプを推測
-  - `file_picker`の`FilePickerResult`から取得可能な場合はそれを使用
+  - `file_picker`の`PlatformFile.extension`から取得可能な場合はそれを使用
   - 推測できない場合は`application/octet-stream`をデフォルトとして設定
   - `AttachmentData`の`contentType`フィールドに設定
+  - `_getContentTypeFromExtension`メソッドで主要なファイルタイプに対応
   - _Requirements: 1.11_
 
 ### 3. 添付ファイル表示の改善
