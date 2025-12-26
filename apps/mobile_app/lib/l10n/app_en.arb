@@ -304,6 +304,163 @@
   "unarchive": "Unarchive",
   "@unarchive": {
     "description": "Tooltip for the unarchive button"
+  },
+  "compose": "Compose",
+  "@compose": {
+    "description": "Compose screen title"
+  },
+  "send": "Send",
+  "@send": {
+    "description": "Send button label"
+  },
+  "from": "From",
+  "@from": {
+    "description": "From field label"
+  },
+  "to": "To",
+  "@to": {
+    "description": "To field label"
+  },
+  "enterEmailAddress": "Enter email address",
+  "@enterEmailAddress": {
+    "description": "Email address input field hint"
+  },
+  "showCcBcc": "Show Cc/Bcc",
+  "@showCcBcc": {
+    "description": "Show Cc/Bcc button label"
+  },
+  "hideCcBcc": "Hide Cc/Bcc",
+  "@hideCcBcc": {
+    "description": "Hide Cc/Bcc button label"
+  },
+  "subject": "Subject",
+  "@subject": {
+    "description": "Subject field label"
+  },
+  "body": "Body",
+  "@body": {
+    "description": "Body field label"
+  },
+  "addAttachment": "Add Attachment",
+  "@addAttachment": {
+    "description": "Add attachment button label"
+  },
+  "discard": "Discard",
+  "@discard": {
+    "description": "Discard button label"
+  },
+  "discardInputConfirm": "Do you want to discard the input?",
+  "@discardInputConfirm": {
+    "description": "Discard input confirmation dialog message"
+  },
+  "forwardedMessagePrefix": "-------- Forwarded Message --------",
+  "@forwardedMessagePrefix": {
+    "description": "Forwarded message prefix"
+  },
+  "errorPleaseEnterRecipient": "Please enter recipient",
+  "@errorPleaseEnterRecipient": {
+    "description": "Recipient not entered error message"
+  },
+  "errorPleaseEnterSubject": "Please enter subject",
+  "@errorPleaseEnterSubject": {
+    "description": "Subject not entered error message"
+  },
+  "errorPleaseSelectSenderAccount": "Please select sender account",
+  "@errorPleaseSelectSenderAccount": {
+    "description": "Sender account not selected error message"
+  },
+  "errorInvalidEmailAddress": "Invalid email address: {email}",
+  "@errorInvalidEmailAddress": {
+    "description": "Invalid email address error message",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "errorFailedToSendMail": "Failed to send mail",
+  "@errorFailedToSendMail": {
+    "description": "Failed to send mail error message"
+  },
+  "errorGeneric": "Error: {error}",
+  "@errorGeneric": {
+    "description": "Generic error message",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorFailedToReadFile": "Failed to read file: {filename}",
+  "@errorFailedToReadFile": {
+    "description": "File read error message",
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "errorFileSizeExceedsLimit": "File size exceeds {maxSize}MB: {filename}",
+  "@errorFileSizeExceedsLimit": {
+    "description": "File size exceeds limit error message",
+    "placeholders": {
+      "maxSize": {
+        "type": "int"
+      },
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "errorFailedToPickFiles": "Failed to pick files",
+  "@errorFailedToPickFiles": {
+    "description": "File picker error message"
+  },
+  "errorFileAccessPermissionDenied": "File access permission denied. Please grant permission in settings.",
+  "@errorFileAccessPermissionDenied": {
+    "description": "File access permission denied error message"
+  },
+  "errorFileAccessPermissionDeniedGeneric": "File access permission denied",
+  "@errorFileAccessPermissionDeniedGeneric": {
+    "description": "File access permission denied error message (generic)"
+  },
+  "errorFileSelectionCanceled": "File selection was canceled",
+  "@errorFileSelectionCanceled": {
+    "description": "File selection canceled message"
+  },
+  "errorFileSelectionUnknown": "Failed to pick files (unknown error)",
+  "@errorFileSelectionUnknown": {
+    "description": "File selection unknown error message"
+  },
+  "errorFileSelectionFailed": "Failed to pick files: {message}",
+  "@errorFileSelectionFailed": {
+    "description": "File selection failed error message (with details)",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "noMail": "No mail",
+  "@noMail": {
+    "description": "No mail message"
+  },
+  "smtpSettings": "SMTP Settings",
+  "@smtpSettings": {
+    "description": "SMTP settings section title"
+  },
+  "loadMore": "Load more",
+  "@loadMore": {
+    "description": "Load more button label"
+  },
+  "errorFailedToLoadAccounts": "Failed to load accounts: {error}",
+  "@errorFailedToLoadAccounts": {
+    "description": "Failed to load accounts error message",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   }
 }
 

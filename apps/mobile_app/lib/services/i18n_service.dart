@@ -466,6 +466,192 @@ class I18nService {
     return localizations.unarchive;
   }
 
+  /// ロケールからメール作成画面のタイトルを取得するユーティリティ（ARBファイルから取得）
+  static String translateCompose(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.compose;
+  }
+
+  /// ロケールから送信ボタンのラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateSend(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.send;
+  }
+
+  /// ロケールから送信元フィールドのラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateFrom(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.from;
+  }
+
+  /// ロケールから宛先フィールドのラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateTo(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.to;
+  }
+
+  /// ロケールからメールアドレス入力フィールドのヒントを取得するユーティリティ（ARBファイルから取得）
+  static String translateEnterEmailAddress(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.enterEmailAddress;
+  }
+
+  /// ロケールからCc/Bcc表示ボタンのラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateShowCcBcc(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.showCcBcc;
+  }
+
+  /// ロケールからCc/Bcc非表示ボタンのラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateHideCcBcc(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.hideCcBcc;
+  }
+
+  /// ロケールから件名フィールドのラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateSubject(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.subject;
+  }
+
+  /// ロケールから本文フィールドのラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateBody(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.body;
+  }
+
+  /// ロケールから添付ファイル追加ボタンのラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateAddAttachment(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.addAttachment;
+  }
+
+  /// ロケールから破棄ボタンのラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateDiscard(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.discard;
+  }
+
+  /// ロケールから入力内容破棄確認メッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateDiscardInputConfirm(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.discardInputConfirm;
+  }
+
+  /// ロケールから転送メッセージのプレフィックスを取得するユーティリティ（ARBファイルから取得）
+  static String translateForwardedMessagePrefix(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.forwardedMessagePrefix;
+  }
+
+  /// ロケールから宛先未入力エラーメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorPleaseEnterRecipient(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorPleaseEnterRecipient;
+  }
+
+  /// ロケールから件名未入力エラーメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorPleaseEnterSubject(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorPleaseEnterSubject;
+  }
+
+  /// ロケールから送信元アカウント未選択エラーメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorPleaseSelectSenderAccount(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorPleaseSelectSenderAccount;
+  }
+
+  /// ロケールから無効なメールアドレスエラーメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorInvalidEmailAddress(Locale locale, String email) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorInvalidEmailAddress(email);
+  }
+
+  /// ロケールからメール送信失敗エラーメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorFailedToSendMail(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorFailedToSendMail;
+  }
+
+  /// ロケールから汎用エラーメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorGeneric(Locale locale, String error) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorGeneric(error);
+  }
+
+  /// ロケールからファイル読み込みエラーメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorFailedToReadFile(Locale locale, String filename) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorFailedToReadFile(filename);
+  }
+
+  /// ロケールからファイルサイズ超過エラーメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorFileSizeExceedsLimit(Locale locale, int maxSize, String filename) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorFileSizeExceedsLimit(maxSize, filename);
+  }
+
+  /// ロケールからファイル選択失敗エラーメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorFailedToPickFiles(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorFailedToPickFiles;
+  }
+
+  /// ロケールからファイルアクセス権限エラーメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorFileAccessPermissionDenied(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorFileAccessPermissionDenied;
+  }
+
+  /// ロケールからファイルアクセス権限エラーメッセージ（汎用）を取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorFileAccessPermissionDeniedGeneric(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorFileAccessPermissionDeniedGeneric;
+  }
+
+  /// ロケールからファイル選択キャンセルメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorFileSelectionCanceled(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorFileSelectionCanceled;
+  }
+
+  /// ロケールからファイル選択不明エラーメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorFileSelectionUnknown(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorFileSelectionUnknown;
+  }
+
+  /// ロケールからファイル選択失敗エラーメッセージ（詳細付き）を取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorFileSelectionFailed(Locale locale, String message) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorFileSelectionFailed(message);
+  }
+
+  /// ロケールからメールなしメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateNoMail(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.noMail;
+  }
+
+  /// ロケールからSMTP設定セクションのタイトルを取得するユーティリティ（ARBファイルから取得）
+  static String translateSmtpSettings(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.smtpSettings;
+  }
+
+  /// ロケールからもっと見るボタンのラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateLoadMore(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.loadMore;
+  }
+
+  /// ロケールからアカウント読み込みエラーメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorFailedToLoadAccounts(Locale locale, String error) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorFailedToLoadAccounts(error);
+  }
+
   /// ロケールからAppLocalizationsインスタンスを取得するヘルパーメソッド
   static AppLocalizations _getLocalizations(Locale locale) {
     // AppLocalizationsのサブクラスを直接インスタンス化

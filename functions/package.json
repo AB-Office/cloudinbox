@@ -1,6 +1,6 @@
 {
   "name": "cloudinbox-functions",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "description": "CloudInbox MVP - Cloud Functions for POP3 mail reception and cloud storage",
   "main": "lib/index.js",
   "scripts": {

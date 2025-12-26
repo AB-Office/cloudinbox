@@ -539,7 +539,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   const SizedBox(height: 24),
                   // SMTP設定セクション
                   Text(
-                    locale.languageCode == 'ja' ? 'SMTP設定' : 'SMTP Settings',
+                    I18nService.translateSmtpSettings(locale),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 16),

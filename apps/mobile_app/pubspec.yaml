@@ -1,7 +1,7 @@
 name: cloudinbox_mobile_app
 description: CloudInbox MVP - Flutter mobile app for POP3 mail reception and cloud storage
 publish_to: 'none'
-version: 1.1.0+2
+version: 1.4.0+1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -20,6 +20,7 @@ dependencies:
   intl: ^0.20.2
   path_provider: ^2.1.1
   share_plus: ^7.2.1
+  file_picker: ^8.0.0
 
 # 注意:
 # - iOS: Info.plist に必要な用途説明(NSPhotoLibraryAddUsageDescription等)を追加

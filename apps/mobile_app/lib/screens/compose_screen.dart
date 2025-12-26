@@ -1,7 +1,11 @@
+import 'dart:io' show Platform;
 import 'dart:typed_data';
 import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
 import 'package:cloudinbox_mobile_app/services/i18n_service.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 /// メール送信リクエスト
 class SendMailRequest {
@@ -104,6 +108,9 @@ class ComposeScreen extends StatefulWidget {
 }
 
 class _ComposeScreenState extends State<ComposeScreen> {
+  // ファイルサイズ制限（10MB）
+  static const int _maxAttachmentSizeBytes = 10 * 1024 * 1024; // 10MB
+
   final _toController = TextEditingController();
   final _ccController = TextEditingController();
   final _bccController = TextEditingController();
@@ -155,9 +162,10 @@ class _ComposeScreenState extends State<ComposeScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final locale = Localizations.localeOf(context);
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Failed to load accounts: $e';
+          _errorMessage = I18nService.translateErrorFailedToLoadAccounts(locale, e.toString());
         });
       }
     }
@@ -193,9 +201,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
       }
       if (widget.intent.body != null) {
         final locale = Localizations.localeOf(context);
-        final prefix = locale.languageCode == 'ja'
-            ? '-------- 転送メッセージ --------'
-            : '-------- Forwarded Message --------';
+        final prefix = I18nService.translateForwardedMessagePrefix(locale);
         _bodyController.text = '\n\n$prefix\n${widget.intent.body!}';
       }
     }
@@ -207,27 +213,21 @@ class _ComposeScreenState extends State<ComposeScreen> {
     final toAddresses = _parseEmailAddresses(_toController.text);
     if (toAddresses.isEmpty) {
       setState(() {
-        _errorMessage = locale.languageCode == 'ja'
-            ? '宛先を入力してください'
-            : 'Please enter recipient';
+        _errorMessage = I18nService.translateErrorPleaseEnterRecipient(locale);
       });
       return;
     }
 
     if (_subjectController.text.trim().isEmpty) {
       setState(() {
-        _errorMessage = locale.languageCode == 'ja'
-            ? '件名を入力してください'
-            : 'Please enter subject';
+        _errorMessage = I18nService.translateErrorPleaseEnterSubject(locale);
       });
       return;
     }
 
     if (_selectedAccountId == null) {
       setState(() {
-        _errorMessage = locale.languageCode == 'ja'
-            ? '送信元アカウントを選択してください'
-            : 'Please select sender account';
+        _errorMessage = I18nService.translateErrorPleaseSelectSenderAccount(locale);
       });
       return;
     }
@@ -243,9 +243,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
     for (final email in allRecipients) {
       if (!emailRegex.hasMatch(email)) {
         setState(() {
-          _errorMessage = locale.languageCode == 'ja'
-              ? '無効なメールアドレス: $email'
-              : 'Invalid email address: $email';
+          _errorMessage = I18nService.translateErrorInvalidEmailAddress(locale, email);
         });
         return;
       }
@@ -279,9 +277,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
           final locale = Localizations.localeOf(context);
           setState(() {
             _errorMessage = response.errorMessage ??
-                (locale.languageCode == 'ja'
-                    ? 'メール送信に失敗しました'
-                    : 'Failed to send mail');
+                I18nService.translateErrorFailedToSendMail(locale);
             _isSending = false;
           });
         }
@@ -290,9 +286,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
       if (mounted) {
         final locale = Localizations.localeOf(context);
         setState(() {
-          _errorMessage = locale.languageCode == 'ja'
-              ? 'エラー: $e'
-              : 'Error: $e';
+          _errorMessage = I18nService.translateErrorGeneric(locale, e.toString());
           _isSending = false;
         });
       }
@@ -302,15 +296,13 @@ class _ComposeScreenState extends State<ComposeScreen> {
   Future<void> _onCancelPressed() async {
     final locale = Localizations.localeOf(context);
     final cancelText = I18nService.translateCancel(locale);
-    final discardText = locale.languageCode == 'ja' ? '破棄' : 'Discard';
+    final discardText = I18nService.translateDiscard(locale);
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(discardText),
-        content: Text(locale.languageCode == 'ja'
-            ? '入力内容を破棄しますか？'
-            : 'Do you want to discard the input?'),
+        content: Text(I18nService.translateDiscardInputConfirm(locale)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -330,18 +322,202 @@ class _ComposeScreenState extends State<ComposeScreen> {
   }
 
   Future<void> _onAddAttachmentPressed() async {
-    // TODO: file_pickerパッケージを追加後に実装
-    // 現在は一時的に空実装
-    if (mounted) {
-      final locale = Localizations.localeOf(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(locale.languageCode == 'ja'
-              ? '添付ファイル機能は準備中です'
-              : 'Attachment feature is coming soon'),
-        ),
+    if (!mounted) return;
+
+    try {
+      // ファイル選択ダイアログを表示
+      final FilePickerResult? result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        withData: true, // ファイルデータをメモリに読み込む
       );
+
+      // ファイル選択がキャンセルされた場合
+      if (result == null || result.files.isEmpty) {
+        return; // エラーメッセージを表示せずに終了
+      }
+
+      // ファイル処理中であることを示す（複数ファイル処理の場合に有効）
+      if (mounted && result.files.length > 1) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
+
+      // 選択されたファイルを処理
+      final List<AttachmentData> newAttachments = [];
+      for (final platformFile in result.files) {
+        try {
+          // ファイルの内容を読み込む（withData: trueによりbytesが利用可能）
+          final Uint8List? fileBytes = platformFile.bytes;
+
+          if (fileBytes == null) {
+            // ファイル読み込みに失敗
+            if (mounted) {
+              final locale = Localizations.localeOf(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(I18nService.translateErrorFailedToReadFile(locale, platformFile.name)),
+                ),
+              );
+            }
+            continue;
+          }
+
+          // ファイルサイズチェック
+          if (fileBytes.length > _maxAttachmentSizeBytes) {
+            // ファイルサイズ超過
+            if (mounted) {
+              final locale = Localizations.localeOf(context);
+              final maxSizeMB = _maxAttachmentSizeBytes / (1024 * 1024);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(I18nService.translateErrorFileSizeExceedsLimit(locale, maxSizeMB.toInt(), platformFile.name)),
+                ),
+              );
+            }
+            debugPrint('[Attachment Error] File size exceeds limit: filename=${platformFile.name}, size=${fileBytes.length} bytes, limit=${_maxAttachmentSizeBytes} bytes');
+            continue; // このファイルは追加しない
+          }
+
+          // コンテンツタイプを取得（拡張子から推測）
+          // file_pickerのPlatformFileからextensionを取得して推測
+          String? contentType;
+          if (platformFile.extension != null) {
+            contentType = _getContentTypeFromExtension(platformFile.extension!);
+          }
+          // 推測できない場合はデフォルトとしてapplication/octet-streamを設定
+          contentType ??= 'application/octet-stream';
+
+          // AttachmentDataオブジェクトを作成
+          final attachment = AttachmentData(
+            filename: platformFile.name,
+            content: fileBytes,
+            contentType: contentType,
+          );
+
+          newAttachments.add(attachment);
+        } catch (e) {
+          // ファイル読み込みエラー
+          debugPrint('[Attachment Error] File read error: filename=${platformFile.name}, error=$e, errorType=${e.runtimeType}');
+          if (mounted) {
+            final locale = Localizations.localeOf(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(I18nService.translateErrorFailedToReadFile(locale, platformFile.name)),
+              ),
+            );
+          }
+        }
+      }
+
+      // 添付ファイルリストに追加
+      if (newAttachments.isNotEmpty && mounted) {
+        setState(() {
+          _attachments.addAll(newAttachments);
+          _isLoading = false; // 処理完了
+        });
+      } else if (mounted) {
+        setState(() {
+          _isLoading = false; // 処理完了（追加するファイルがない場合も）
+        });
+      }
+    } on PlatformException catch (e) {
+      // プラットフォーム固有のエラー（権限エラー等）
+      debugPrint('[Attachment Error] Platform error: platform=${Platform.operatingSystem}, code=${e.code}, message=${e.message}, details=${e.details}');
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // エラー時も読み込み状態を解除
+        });
+        final locale = Localizations.localeOf(context);
+        String errorMessage = _getPlatformSpecificErrorMessage(e, locale);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+          ),
+        );
+      }
+    } catch (e) {
+      // その他のエラー
+      debugPrint('[Attachment Error] File picker error: error=$e, errorType=${e.runtimeType}');
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // エラー時も読み込み状態を解除
+        });
+        final locale = Localizations.localeOf(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(I18nService.translateErrorFailedToPickFiles(locale)),
+          ),
+        );
+      }
     }
+  }
+
+  /// プラットフォーム固有のエラーメッセージを取得
+  String _getPlatformSpecificErrorMessage(PlatformException e, Locale locale) {
+    final isAndroid = Platform.isAndroid;
+    final isIOS = Platform.isIOS;
+
+    // 権限エラーの場合
+    if (e.code == 'permission_denied' || 
+        e.message?.toLowerCase().contains('permission') == true ||
+        e.message?.toLowerCase().contains('権限') == true) {
+      if (isAndroid || isIOS) {
+        return I18nService.translateErrorFileAccessPermissionDenied(locale);
+      } else {
+        return I18nService.translateErrorFileAccessPermissionDeniedGeneric(locale);
+      }
+    }
+
+    // プラットフォーム固有のエラーコードの処理
+    if (isAndroid || isIOS) {
+      switch (e.code) {
+        case 'user_canceled':
+        case 'pick_files_canceled':
+          return I18nService.translateErrorFileSelectionCanceled(locale);
+        case 'unknown':
+          return I18nService.translateErrorFileSelectionUnknown(locale);
+        default:
+          return I18nService.translateErrorFileSelectionFailed(locale, e.message ?? e.code);
+      }
+    }
+
+    // その他のプラットフォームエラー
+    return I18nService.translateErrorFailedToPickFiles(locale);
+  }
+
+  /// 拡張子からコンテンツタイプを推測
+  String? _getContentTypeFromExtension(String extension) {
+    final ext = extension.toLowerCase();
+    const contentTypes = {
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'txt': 'text/plain',
+      'html': 'text/html',
+      'css': 'text/css',
+      'js': 'text/javascript',
+      'json': 'application/json',
+      'xml': 'application/xml',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'bmp': 'image/bmp',
+      'svg': 'image/svg+xml',
+      'zip': 'application/zip',
+      'rar': 'application/x-rar-compressed',
+      '7z': 'application/x-7z-compressed',
+      'mp3': 'audio/mpeg',
+      'mp4': 'video/mp4',
+      'avi': 'video/x-msvideo',
+      'mov': 'video/quicktime',
+    };
+    return contentTypes[ext];
   }
 
   void _onRemoveAttachment(int index) {
@@ -364,7 +540,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(locale.languageCode == 'ja' ? 'メール作成' : 'Compose'),
+        title: Text(I18nService.translateCompose(locale)),
         actions: [
           if (_isSending)
             const Padding(
@@ -378,7 +554,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
           else
             TextButton(
               onPressed: _onSendPressed,
-              child: Text(locale.languageCode == 'ja' ? '送信' : 'Send'),
+              child: Text(I18nService.translateSend(locale)),
             ),
         ],
         leading: IconButton(
@@ -398,7 +574,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     DropdownButtonFormField<String>(
                       value: _selectedAccountId,
                       decoration: InputDecoration(
-                        labelText: locale.languageCode == 'ja' ? '送信元' : 'From',
+                        labelText: I18nService.translateFrom(locale),
                       ),
                       items: _accounts.map((account) {
                         return DropdownMenuItem(
@@ -418,10 +594,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
                   TextField(
                     controller: _toController,
                     decoration: InputDecoration(
-                      labelText: locale.languageCode == 'ja' ? '宛先' : 'To',
-                      hintText: locale.languageCode == 'ja'
-                          ? 'メールアドレスを入力'
-                          : 'Enter email address',
+                      labelText: I18nService.translateTo(locale),
+                      hintText: I18nService.translateEnterEmailAddress(locale),
                     ),
                     keyboardType: TextInputType.emailAddress,
                   ),
@@ -435,12 +609,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     icon: Icon(
                         _showCcBcc ? Icons.expand_less : Icons.expand_more),
                     label: Text(_showCcBcc
-                        ? (locale.languageCode == 'ja'
-                            ? 'Cc/Bccを隠す'
-                            : 'Hide Cc/Bcc')
-                        : (locale.languageCode == 'ja'
-                            ? 'Cc/Bccを表示'
-                            : 'Show Cc/Bcc')),
+                        ? I18nService.translateHideCcBcc(locale)
+                        : I18nService.translateShowCcBcc(locale)),
                   ),
                   // Cc/Bccフィールド
                   if (_showCcBcc) ...[
@@ -448,9 +618,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       controller: _ccController,
                       decoration: InputDecoration(
                         labelText: 'Cc',
-                        hintText: locale.languageCode == 'ja'
-                            ? 'メールアドレスを入力'
-                            : 'Enter email address',
+                        hintText: I18nService.translateEnterEmailAddress(locale),
                       ),
                       keyboardType: TextInputType.emailAddress,
                     ),
@@ -458,9 +626,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       controller: _bccController,
                       decoration: InputDecoration(
                         labelText: 'Bcc',
-                        hintText: locale.languageCode == 'ja'
-                            ? 'メールアドレスを入力'
-                            : 'Enter email address',
+                        hintText: I18nService.translateEnterEmailAddress(locale),
                       ),
                       keyboardType: TextInputType.emailAddress,
                     ),
@@ -469,14 +635,14 @@ class _ComposeScreenState extends State<ComposeScreen> {
                   TextField(
                     controller: _subjectController,
                     decoration: InputDecoration(
-                      labelText: locale.languageCode == 'ja' ? '件名' : 'Subject',
+                      labelText: I18nService.translateSubject(locale),
                     ),
                   ),
                   // 本文
                   TextField(
                     controller: _bodyController,
                     decoration: InputDecoration(
-                      labelText: locale.languageCode == 'ja' ? '本文' : 'Body',
+                      labelText: I18nService.translateBody(locale),
                       alignLabelWithHint: true,
                     ),
                     maxLines: null,
@@ -488,22 +654,34 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     const SizedBox(height: 16),
                     ...List.generate(
                         _attachments.length,
-                        (index) => ListTile(
-                              leading: const Icon(Icons.attachment),
-                              title: Text(_attachments[index].filename),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () => _onRemoveAttachment(index),
-                              ),
-                            )),
+                        (index) {
+                          final attachment = _attachments[index];
+                          final fileSize = I18nService.formatBytes(
+                            attachment.content.length,
+                            context,
+                          );
+                          return ListTile(
+                            leading: const Icon(Icons.attachment),
+                            title: Text(attachment.filename),
+                            subtitle: Text(fileSize),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () => _onRemoveAttachment(index),
+                            ),
+                          );
+                        }),
                   ],
                   // 添付ファイル追加ボタン
                   TextButton.icon(
-                    onPressed: _onAddAttachmentPressed,
-                    icon: const Icon(Icons.attach_file),
-                    label: Text(locale.languageCode == 'ja'
-                        ? '添付ファイルを追加'
-                        : 'Add Attachment'),
+                    onPressed: _isLoading ? null : _onAddAttachmentPressed,
+                    icon: _isLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.attach_file),
+                    label: Text(I18nService.translateAddAttachment(locale)),
                   ),
                   // エラーメッセージ
                   if (_errorMessage != null)

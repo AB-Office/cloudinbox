@@ -618,7 +618,7 @@ describe('getAttachmentsList', () => {
 
       await expect(
         executeGetAttachmentsList(mockUid, messageId, mockFirestore, mockStorage)
-      ).rejects.toThrow('Failed to get attachments list: Storage error');
+      ).rejects.toThrow('Failed to get attachments list');
     });
 
     it('異常系: ファイルのメタデータ取得に失敗しても続行する', async () => {

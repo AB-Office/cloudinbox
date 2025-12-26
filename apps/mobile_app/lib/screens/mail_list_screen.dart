@@ -1,4 +1,5 @@
 import 'package:cloudinbox_mobile_app/services/ad_service.dart';
+import 'package:cloudinbox_mobile_app/services/i18n_service.dart';
 import 'package:cloudinbox_mobile_app/widgets/navigation_drawer.dart' as app;
 import 'package:cloudinbox_mobile_app/screens/settings_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/detail_screen.dart';
@@ -196,9 +197,7 @@ class _MailListScreenState extends State<MailListScreen> {
                   final locale = Localizations.localeOf(context);
                   return Center(
                     child: Text(
-                      locale.languageCode == 'ja'
-                          ? 'メールがありません'
-                          : 'No mail',
+                      I18nService.translateNoMail(locale),
                     ),
                   );
                 }
@@ -302,9 +301,7 @@ class _MailListScreenState extends State<MailListScreen> {
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Text(Localizations.localeOf(context).languageCode == 'ja'
-                          ? 'もっと見る'
-                          : 'Load more'),
+                      : Text(I18nService.translateLoadMore(Localizations.localeOf(context))),
                 ),
               );
             },
