@@ -1200,11 +1200,11 @@ class FirebaseDetailRepository implements MailDetailRepository {
         'messageId': messageId,
       });
 
-      final data = Map<String, dynamic>.from(result.data as Map<String, dynamic>);
+      final data = Map<String, dynamic>.from(result.data as Map);
       final attachments = (data['attachments'] as List<dynamic>?) ?? [];
 
       return attachments.map((item) {
-        final attachmentData = Map<String, dynamic>.from(item as Map<String, dynamic>);
+        final attachmentData = Map<String, dynamic>.from(item as Map);
         return AttachmentListItem(
           filename: attachmentData['filename'] as String? ?? '',
           size: attachmentData['size'] as int? ?? 0,
@@ -1237,7 +1237,7 @@ class FirebaseDetailRepository implements MailDetailRepository {
         'filename': filename,
       });
 
-      final data = Map<String, dynamic>.from(result.data as Map<String, dynamic>);
+      final data = Map<String, dynamic>.from(result.data as Map);
       final contentBase64 = data['content'] as String? ?? '';
       final decodedContent = base64Decode(contentBase64);
 
