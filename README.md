@@ -11,7 +11,7 @@ Googleの外部メール受信終了後、複数メールアカウントを一�
 - **メール送信**: SMTP（SSL/TLS必須）によるメール送信機能
 - **添付ファイル管理**: メール添付ファイルの表示・ダウンロード機能
 - **容量管理**: プランベースのストレージ制限と使用量追跡
-- **暗号化**: アプリケーションレベル暗号化（AES-256-GCM、KMS + DEK）
+- **暗号化**: アプリケーションレベル暗号化（AES-256-GCM、KMS + Secret Managerによる鍵管理）
 - **クロスプラットフォーム**: Flutterアプリによるモバイル対応
 - **認証**: Firebase Auth（Google Sign-In）
 
@@ -21,7 +21,7 @@ Googleの外部メール受信終了後、複数メールアカウントを一�
 外部メール(POP3S/SMTP)
    ↓
 Cloud Functions
-   ├ EncryptionService (KMS + DEK)
+   ├ EncryptionService (KMS + Secret Manager)
    ├ Firestore (メタデータ)
    └ Storage (本文・添付ファイル)
    ↓
@@ -38,7 +38,7 @@ Flutterアプリ (モバイル)
 - **データベース**: Firestore (NoSQL)
 - **ストレージ**: Firebase Storage
 - **認証**: Firebase Auth
-- **暗号化**: Google Cloud KMS + Secret Manager
+- **暗号化**: Google Cloud KMS（KEK管理） + Secret Manager（wrapされたDEKの保存）
 
 ### フロントエンド
 - **フレームワーク**: Flutter (Dart)
@@ -188,18 +188,33 @@ firebase deploy
 - **認証**: Firebase Auth による Google アカウント認証
 - **認可**: Firestore Security Rules によるデータアクセス制御
 - **暗号化**: 
-  - アプリケーションレベル暗号化（AES-256-GCM）
-  - Google Cloud KMS によるマスター鍵管理
-  - ユーザーごとのデータ暗号化キー（DEK）
+  - アルゴリズム: AES-256-GCM
+  - 鍵管理アーキテクチャ: KMS（KEK） + Secret Manager（wrapされたDEK）
+    - **KEK (Key Encryption Key)**: Google Cloud KMSで管理されるマスター鍵（プロジェクト全体で1つ）
+    - **DEK (Data Encryption Key)**: ユーザーごとに生成される32バイトのデータ暗号化鍵
+    - **鍵のライフサイクル**:
+      1. ユーザー作成時: DEKを生成 → KMSのKEKでwrap（暗号化） → wrapされたDEKをSecret Managerに保存
+      2. データ暗号化時: Secret ManagerからwrapされたDEKを取得 → KMSでunwrap（復号） → DEKでデータを暗号化
+      3. データ復号時: Secret ManagerからwrapされたDEKを取得 → KMSでunwrap（復号） → DEKでデータを復号
+    - **役割分担**:
+      - **KMS**: KEKの管理とDEKのwrap/unwrap処理を実行
+      - **Secret Manager**: KMSでwrapされたDEK（暗号化されたDEK）を保存（平文のDEKは保存しない）
 - **通信**: SSL/TLS 必須（POP3S、SMTP）
 
 ## ライセンス
 
-Private project
+**Private project - All rights reserved**
+
+本プロジェクトはプライベートプロジェクトであり、オープンソースではありません。
+
+⚠️ **重要**: 本リポジトリはGitHub ActionsおよびCI/CDワークフローを有効化するためにのみ公開されています。**ライセンスは一切付与されておらず、このソフトウェアの使用、コピー、修正、配布、販売、その他の利用は一切禁止されています。**
+
+詳細なライセンス条項については [LICENSE.txt](./LICENSE.txt) を必ず確認してください。このリポジトリにアクセスする、閲覧する、またはその他の方法で利用することにより、あなたはライセンス条項に同意したものとみなされます。ライセンス条項に同意できない場合は、直ちにこのソフトウェアへのアクセスを停止してください。
+
+使用許可を希望される場合は、AB-Office に書面でお問い合わせください。
 
 ## ドキュメント
 
 - [MVP 仕様書](./docs/SPEC_MVP_FREE.md)
 - [Cloud Tasks OIDC セットアップ](./docs/SETUP_CLOUD_TASKS_OIDC.md)
 - [Secret Manager KMS セットアップ](./docs/SETUP_SECRET_MANAGER_KMS.md)
-
