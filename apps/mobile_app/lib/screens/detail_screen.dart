@@ -1,8 +1,40 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloudinbox_mobile_app/services/ad_service.dart';
 import 'package:cloudinbox_mobile_app/screens/compose_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
 import 'package:cloudinbox_mobile_app/services/i18n_service.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+
+/// 添付ファイルリストアイテム
+class AttachmentListItem {
+  const AttachmentListItem({
+    required this.filename,
+    required this.size,
+    required this.contentType,
+  });
+
+  final String filename;
+  final int size;  // bytes
+  final String contentType;
+}
+
+/// ダウンロードされた添付ファイル
+class DownloadedAttachment {
+  const DownloadedAttachment({
+    required this.content,
+    required this.filename,
+    required this.contentType,
+    required this.size,
+  });
+
+  final Uint8List content;
+  final String filename;
+  final String contentType;
+  final int size;  // bytes
+}
 
 /// メール本文を含むメッセージ詳細
 class MailMessageDetail {
@@ -32,6 +64,8 @@ class MailMessageDetail {
 /// メール詳細取得用リポジトリ抽象
 abstract class MailDetailRepository {
   Future<MailMessageDetail> loadMessage(String messageId);
+  Future<List<AttachmentListItem>> getAttachmentsList(String messageId);
+  Future<DownloadedAttachment> downloadAttachment(String messageId, String filename);
   Future<void> moveToTrash(String messageId);
   Future<void> archive(String messageId);
   Future<void> restoreFromTrash(String messageId);
@@ -62,8 +96,10 @@ class DetailScreen extends StatefulWidget {
 
 class _DetailScreenState extends State<DetailScreen> {
   MailMessageDetail? _message;
+  List<AttachmentListItem> _attachments = [];
   bool _isLoading = false;
   String? _errorMessage;
+  final Set<String> _downloadingFilenames = {};
 
   Future<void> _handleMoveToTrash() async {
     if (_message == null) return;
@@ -201,8 +237,10 @@ class _DetailScreenState extends State<DetailScreen> {
     });
     try {
       final message = await widget.repository.loadMessage(widget.messageId);
+      final attachments = await widget.repository.getAttachmentsList(widget.messageId);
       setState(() {
         _message = message;
+        _attachments = attachments;
       });
     } catch (e) {
       setState(() {
@@ -212,6 +250,64 @@ class _DetailScreenState extends State<DetailScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Icon _getAttachmentIcon(String contentType) {
+    if (contentType.startsWith('image/')) {
+      return const Icon(Icons.image);
+    } else if (contentType.startsWith('video/')) {
+      return const Icon(Icons.video_file);
+    } else if (contentType.startsWith('audio/')) {
+      return const Icon(Icons.audio_file);
+    } else if (contentType == 'application/pdf') {
+      return const Icon(Icons.picture_as_pdf);
+    } else if (contentType.startsWith('text/')) {
+      return const Icon(Icons.description);
+    } else {
+      return const Icon(Icons.attach_file);
+    }
+  }
+
+  Future<void> _handleAttachmentTap(AttachmentListItem attachment) async {
+    if (_message == null) return;
+    if (_downloadingFilenames.contains(attachment.filename)) return;
+
+    setState(() {
+      _downloadingFilenames.add(attachment.filename);
+      _errorMessage = null;
+    });
+
+    try {
+      // ダウンロード
+      final downloaded = await widget.repository.downloadAttachment(
+        _message!.id,
+        attachment.filename,
+      );
+
+      // 一時ファイルに保存
+      final tempDir = await getTemporaryDirectory();
+      final safeName = downloaded.filename.split(Platform.pathSeparator).last;
+      final file = File('${tempDir.path}/$safeName');
+      await file.writeAsBytes(downloaded.content);
+
+      // 共有/保存
+      if (!mounted) return;
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: downloaded.filename,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'ファイルのダウンロードに失敗しました: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _downloadingFilenames.remove(attachment.filename);
         });
       }
     }
@@ -335,6 +431,32 @@ class _DetailScreenState extends State<DetailScreen> {
                                 Text('To: ${_message!.to.join(', ')}'),
                                 Text('Date: ${_message!.sentAt}'),
                                 const SizedBox(height: 16),
+                                // 添付ファイルリスト
+                                if (_attachments.isNotEmpty) ...[
+                                  Text(
+                                    '添付ファイル',
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ..._attachments.map((attachment) => ListTile(
+                                        leading: _downloadingFilenames.contains(attachment.filename)
+                                            ? const SizedBox(
+                                                width: 24,
+                                                height: 24,
+                                                child: CircularProgressIndicator(strokeWidth: 2),
+                                              )
+                                            : _getAttachmentIcon(attachment.contentType),
+                                        title: Text(attachment.filename),
+                                        subtitle: Text(
+                                          I18nService.formatBytes(attachment.size, context),
+                                        ),
+                                        dense: true,
+                                        onTap: _downloadingFilenames.contains(attachment.filename)
+                                            ? null
+                                            : () => _handleAttachmentTap(attachment),
+                                      )),
+                                  const SizedBox(height: 16),
+                                ],
                                 Expanded(
                                   child: _message!.bodyText.isEmpty
                                       ? const Center(

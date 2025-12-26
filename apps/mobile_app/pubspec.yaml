@@ -18,6 +18,13 @@ dependencies:
   firebase_storage: ^11.5.0
   cloud_functions: ^4.6.0
   intl: ^0.20.2
+  path_provider: ^2.1.1
+  share_plus: ^7.2.1
+
+# 注意:
+# - iOS: Info.plist に必要な用途説明(NSPhotoLibraryAddUsageDescription等)を追加
+# - Android: minSdkVersionがshare_plus要件を満たすか確認、MANAGE_EXTERNAL_STORAGE不要方針で実装
+# - CI: flutter build ios/android を追加し依存追加の影響を検証
 
 dev_dependencies:
   flutter_test:

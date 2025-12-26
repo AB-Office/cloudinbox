@@ -1188,6 +1188,76 @@ class FirebaseDetailRepository implements MailDetailRepository {
   }
 
   @override
+  Future<List<AttachmentListItem>> getAttachmentsList(String messageId) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      final callable = _functions.httpsCallable('getAttachmentsList');
+      final result = await callable.call({
+        'messageId': messageId,
+      });
+
+      final data = Map<String, dynamic>.from(result.data as Map);
+      final attachments = (data['attachments'] as List<dynamic>?) ?? [];
+
+      return attachments.map((item) {
+        final attachmentData = Map<String, dynamic>.from(item as Map);
+        return AttachmentListItem(
+          filename: attachmentData['filename'] as String? ?? '',
+          size: attachmentData['size'] as int? ?? 0,
+          contentType: attachmentData['contentType'] as String? ?? 'application/octet-stream',
+        );
+      }).toList();
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('Firebase Functions error: ${e.code} - ${e.message}');
+      debugPrint('Error details: ${e.details}');
+      // エラーが発生した場合は空リストを返す（添付ファイルがない場合と同じ扱い）
+      return [];
+    } catch (e) {
+      debugPrint('Error calling getAttachmentsList: $e');
+      // エラーが発生した場合は空リストを返す（添付ファイルがない場合と同じ扱い）
+      return [];
+    }
+  }
+
+  @override
+  Future<DownloadedAttachment> downloadAttachment(String messageId, String filename) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      final callable = _functions.httpsCallable('downloadAttachment');
+      final result = await callable.call({
+        'messageId': messageId,
+        'filename': filename,
+      });
+
+      final data = Map<String, dynamic>.from(result.data as Map);
+      final contentBase64 = data['content'] as String? ?? '';
+      final decodedContent = base64Decode(contentBase64);
+
+      return DownloadedAttachment(
+        content: decodedContent,
+        filename: data['filename'] as String? ?? filename,
+        contentType: data['contentType'] as String? ?? 'application/octet-stream',
+        size: data['size'] as int? ?? decodedContent.length,
+      );
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('Firebase Functions error: ${e.code} - ${e.message}');
+      debugPrint('Error details: ${e.details}');
+      rethrow;
+    } catch (e) {
+      debugPrint('Error calling downloadAttachment: $e');
+      rethrow;
+    }
+  }
+
+  @override
   Future<void> moveToTrash(String messageId) async {
     // TODO: 実装
     throw UnimplementedError();
