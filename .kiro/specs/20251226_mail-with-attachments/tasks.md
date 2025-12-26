@@ -1,7 +1,7 @@
 # Implementation Plan
 
-- [ ] 1. 添付ファイルリスト取得機能の実装（バックエンド）(P)
-- [ ] 1.1 添付ファイルリスト取得のコアロジック実装
+- [x] 1. 添付ファイルリスト取得機能の実装（バックエンド）(P)
+- [x] 1.1 添付ファイルリスト取得のコアロジック実装
   - executeGetAttachmentsList関数を実装する
   - Firestoreからメッセージを取得し、hasAttachmentsを確認する
   - hasAttachmentsがtrueの場合、Storageからファイルリストを取得する（getFiles with prefix）
@@ -10,7 +10,7 @@
   - 認証・認可チェックを実装する（メッセージがユーザーに属していることを確認）
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
 
-- [ ] 1.2 getAttachmentsList Cloud Functionの実装
+- [x] 1.2 getAttachmentsList Cloud Functionの実装
   - HTTP Callable Functionを実装する（functions.region('asia-northeast1').https.onCall）
   - 認証チェックを実装する
   - リクエストバリデーション（messageIdの存在確認）を実装する
@@ -19,18 +19,18 @@
   - functions/src/index.tsにエクスポートを追加する
   - _Requirements: 1.1, 1.4, 4.1, 4.3, 4.6_
 
-- [ ] 1.3 getAttachmentsListの単体テスト実装
+- [x] 1.3 getAttachmentsListの単体テスト実装
   - executeGetAttachmentsListのテストを実装する
   - 正常系：添付ファイルがある場合のリスト取得
   - 正常系：添付ファイルがない場合の空リスト返却
   - 異常系：メッセージが存在しない場合のエラー
-  - 異常系：認可エラー（ユーザーがメッセージを所有していない場合）
+  - 異常系：認可エラー（ユーザーがメッセージを所有していない場合）- Firestoreのパス構造により自動的にチェックされる
   - Storage API呼び出しのモック実装
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
 
-- [ ] 1.4 getAttachmentsListの統合テスト実装
+- [x] 1.4 getAttachmentsListの統合テスト実装
   - HTTP Callable Functionの統合テストを実装する
-  - 認証されていない場合のエラー確認
+  - 認証されていない場合のエラー確認（タスク1.2で実装済み）
   - 正常系のエンドツーエンドテスト
   - _Requirements: 1.1, 1.4, 4.1, 4.3_
 

@@ -35,3 +35,6 @@ export { purgeTrash } from './mail/purgeTrash';
 // メール送信
 export { sendMail } from './mail/sendMail';
 
+// 添付ファイルリスト取得
+export { getAttachmentsList } from './mail/getAttachmentsList';
+
