@@ -1,0 +1,60 @@
+Copyright (c) 2025 AB-Office. All rights reserved.
+
+PROPRIETARY LICENSE
+
+NOTICE: This repository is made publicly available solely for the purpose of
+enabling GitHub Actions and continuous integration workflows. This code is NOT
+open source software and is protected by copyright law.
+
+NO LICENSE GRANTED
+
+You are NOT granted any license, express or implied, to use, copy, modify,
+distribute, sell, or otherwise exploit this software or any part thereof, for
+any purpose, including but not limited to commercial use, without the prior
+written permission of AB-Office.
+
+RESTRICTIONS
+
+Without limiting the foregoing, you are expressly prohibited from:
+- Using this software in any manner, including but not limited to execution,
+  installation, or integration into your own projects
+- Copying, reproducing, or duplicating this software, in whole or in part
+- Modifying, adapting, or creating derivative works based on this software
+- Distributing, sublicensing, or otherwise transferring this software to any
+  third party
+- Using this software for any commercial purpose
+- Reverse engineering, decompiling, or disassembling this software
+- Removing or altering any copyright notices or proprietary markings
+
+PROTECTED AS PRIVATE CODE
+
+This code is protected with the same level of confidentiality and restrictions
+as private, proprietary code. The public availability of this repository does
+not constitute a grant of license or permission to use, and should not be
+construed as such.
+
+NO WARRANTY
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+AB-OFFICE BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION
+WITH THIS SOFTWARE OR THE USE OR OTHER DEALINGS WITH THIS SOFTWARE.
+
+LEGAL COMPLIANCE
+
+By accessing, viewing, or otherwise interacting with this repository, you
+acknowledge that you have read and understood this license, and agree to be
+bound by its terms. If you do not agree to these terms, you must immediately
+cease all access to and use of this software.
+
+PERMISSION REQUESTS
+
+To request permission to use this software, please contact AB-Office in writing
+with details of your intended use case.
+
+---
+
+© 2025 AB-Office. All rights reserved.
+
