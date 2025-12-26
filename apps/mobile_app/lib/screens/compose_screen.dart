@@ -4,6 +4,7 @@ import 'package:cloudinbox_mobile_app/services/i18n_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 /// メール送信リクエスト
 class SendMailRequest {
@@ -349,6 +350,13 @@ class _ComposeScreenState extends State<ComposeScreen> {
         return; // エラーメッセージを表示せずに終了
       }
 
+      // ファイル処理中であることを示す（複数ファイル処理の場合に有効）
+      if (mounted && result.files.length > 1) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
+
       // 選択されたファイルを処理
       final List<AttachmentData> newAttachments = [];
       for (final platformFile in result.files) {
@@ -385,7 +393,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                 ),
               );
             }
-            debugPrint('File size exceeds limit: ${platformFile.name} (${fileBytes.length} bytes)');
+            debugPrint('[Attachment Error] File size exceeds limit: filename=${platformFile.name}, size=${fileBytes.length} bytes, limit=${_maxAttachmentSizeBytes} bytes');
             continue; // このファイルは追加しない
           }
 
@@ -408,7 +416,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
           newAttachments.add(attachment);
         } catch (e) {
           // ファイル読み込みエラー
-          debugPrint('Error reading file ${platformFile.name}: $e');
+          debugPrint('[Attachment Error] File read error: filename=${platformFile.name}, error=$e, errorType=${e.runtimeType}');
           if (mounted) {
             final locale = Localizations.localeOf(context);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -426,12 +434,48 @@ class _ComposeScreenState extends State<ComposeScreen> {
       if (newAttachments.isNotEmpty && mounted) {
         setState(() {
           _attachments.addAll(newAttachments);
+          _isLoading = false; // 処理完了
+        });
+      } else if (mounted) {
+        setState(() {
+          _isLoading = false; // 処理完了（追加するファイルがない場合も）
         });
       }
-    } catch (e) {
-      // ファイル選択エラー
-      debugPrint('Error picking files: $e');
+    } on PlatformException catch (e) {
+      // プラットフォーム固有のエラー（権限エラー等）
+      debugPrint('[Attachment Error] Platform error: code=${e.code}, message=${e.message}, details=${e.details}');
       if (mounted) {
+        setState(() {
+          _isLoading = false; // エラー時も読み込み状態を解除
+        });
+        final locale = Localizations.localeOf(context);
+        String errorMessage;
+        // 権限エラーの場合
+        if (e.code == 'permission_denied' || 
+            e.message?.toLowerCase().contains('permission') == true ||
+            e.message?.toLowerCase().contains('権限') == true) {
+          errorMessage = locale.languageCode == 'ja'
+              ? 'ファイルへのアクセス権限がありません'
+              : 'File access permission denied';
+        } else {
+          // その他のプラットフォームエラー
+          errorMessage = locale.languageCode == 'ja'
+              ? 'ファイル選択に失敗しました'
+              : 'Failed to pick files';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+          ),
+        );
+      }
+    } catch (e) {
+      // その他のエラー
+      debugPrint('[Attachment Error] File picker error: error=$e, errorType=${e.runtimeType}');
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // エラー時も読み込み状態を解除
+        });
         final locale = Localizations.localeOf(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -641,8 +685,14 @@ class _ComposeScreenState extends State<ComposeScreen> {
                   ],
                   // 添付ファイル追加ボタン
                   TextButton.icon(
-                    onPressed: _onAddAttachmentPressed,
-                    icon: const Icon(Icons.attach_file),
+                    onPressed: _isLoading ? null : _onAddAttachmentPressed,
+                    icon: _isLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.attach_file),
                     label: Text(locale.languageCode == 'ja'
                         ? '添付ファイルを追加'
                         : 'Add Attachment'),
