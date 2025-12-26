@@ -263,7 +263,9 @@ export const sendMail: any = functions
         headers.push('MIME-Version: 1.0');
         const normalizeCRLF = (v: string) => v.replace(/\r?\n/g, CRLF);
         // quoted-printableモジュールを使用してエンコード
-        const bodyQp = quotedPrintable.encode(data.body);
+        // UTF-8文字列をBufferに変換してからエンコード（quoted-printableはバイト列を期待）
+        const bodyBuffer = Buffer.from(data.body, 'utf8');
+        const bodyQp = quotedPrintable.encode(bodyBuffer.toString('latin1'));
         
         let mimeBody = '';
         if (attachments.length > 0) {

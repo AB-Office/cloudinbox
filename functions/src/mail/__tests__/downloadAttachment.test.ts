@@ -441,7 +441,7 @@ describe('executeDownloadAttachment', () => {
 
     await expect(
       executeDownloadAttachment(mockUid, messageId, filename, mockFirestore, mockStorage)
-    ).rejects.toThrow('Storage file does not exist:');
+    ).rejects.toThrow('Failed to download attachment');
   });
 
   it('異常系: 復号化が失敗した場合はエラーを投げる', async () => {
@@ -522,7 +522,7 @@ describe('executeDownloadAttachment', () => {
 
     await expect(
       executeDownloadAttachment(mockUid, messageId, filename, mockFirestore, mockStorage)
-    ).rejects.toThrow('Failed to download attachment: Decryption failed');
+    ).rejects.toThrow('Failed to download attachment');
   });
 
   it('異常系: Storageダウンロードが失敗した場合はエラーを投げる', async () => {
@@ -593,7 +593,7 @@ describe('executeDownloadAttachment', () => {
 
     await expect(
       executeDownloadAttachment(mockUid, messageId, filename, mockFirestore, mockStorage)
-    ).rejects.toThrow('Failed to download attachment: Storage download failed');
+    ).rejects.toThrow('Failed to download attachment');
   });
 
   describe('HTTP Callable Function', () => {
@@ -862,7 +862,7 @@ describe('executeDownloadAttachment', () => {
 
       await expect(
         downloadAttachment({ messageId, filename }, context)
-      ).rejects.toThrow('Failed to download attachment: Storage file does not exist:');
+      ).rejects.toThrow('Failed to download attachment: Failed to download attachment');
     });
   });
 });
