@@ -622,14 +622,22 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     const SizedBox(height: 16),
                     ...List.generate(
                         _attachments.length,
-                        (index) => ListTile(
-                              leading: const Icon(Icons.attachment),
-                              title: Text(_attachments[index].filename),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () => _onRemoveAttachment(index),
-                              ),
-                            )),
+                        (index) {
+                          final attachment = _attachments[index];
+                          final fileSize = I18nService.formatBytes(
+                            attachment.content.length,
+                            context,
+                          );
+                          return ListTile(
+                            leading: const Icon(Icons.attachment),
+                            title: Text(attachment.filename),
+                            subtitle: Text(fileSize),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () => _onRemoveAttachment(index),
+                            ),
+                          );
+                        }),
                   ],
                   // 添付ファイル追加ボタン
                   TextButton.icon(
