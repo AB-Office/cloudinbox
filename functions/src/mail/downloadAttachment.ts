@@ -99,7 +99,7 @@ export async function executeDownloadAttachment(
     functions.logger.error(`Failed to download attachment: messageId=${messageId}, filename=${filename}`, error);
     functions.logger.error(`Error details: ${JSON.stringify(error)}`);
     functions.logger.error(`Error stack: ${error.stack}`);
-    throw new Error(`Failed to download attachment: ${error.message}`);
+    throw new Error('Failed to download attachment');
   }
 }
 

@@ -36,8 +36,7 @@
 1. When メッセージに添付ファイルがある時, the Mail Detail Screen shall 添付ファイル名とファイルサイズを表示する添付ファイルリストセクションを表示する
 2. When ユーザーが添付ファイルをタップした時, the Mail Detail Screen shall その添付ファイルのダウンロードを開始する
 3. While 添付ファイルがダウンロード中である間, the Mail Detail Screen shall 読み込みインジケーターを表示する
-4. When 添付ファイルのダウンロードが完了した時, the Mail Detail Screen shall デバイスのダウンロードディレクトリにファイルを保存する、またはファイルを開く/共有するオプションを提供する
-5. If 添付ファイルのダウンロードが失敗した場合, the Mail Detail Screen shall ユーザーにエラーメッセージを表示する
+4. When 添付ファイルのダウンロードが完了した時, the Mail Detail Screen shall アプリの一時領域へ安全に保存し、ユーザーに開く/共有/保存先選択（SAF/ファイルピッカー経由）を提供する（Androidのスコープドストレージ制約に準拠）5. If 添付ファイルのダウンロードが失敗した場合, the Mail Detail Screen shall ユーザーにエラーメッセージを表示する
 6. The Mail Detail Screen shall ファイルタイプを示す形式（例：コンテンツタイプに基づくアイコン）で添付ファイルを表示する
 
 ### Requirement 4: セキュリティとエラーハンドリング

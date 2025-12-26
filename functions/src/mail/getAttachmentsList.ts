@@ -126,7 +126,7 @@ export async function executeGetAttachmentsList(
   } catch (error: any) {
     functions.logger.error(`Failed to get attachments list from Storage for message: ${messageId}`, error);
     functions.logger.error(`Error details: ${JSON.stringify(error)}`);
-    throw new Error(`Failed to get attachments list: ${error.message}`);
+    throw new Error('Failed to get attachments list');
   }
 }
 

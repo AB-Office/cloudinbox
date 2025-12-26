@@ -289,7 +289,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
       // 一時ファイルに保存
       final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/${downloaded.filename}');
+      final safeName = downloaded.filename.split(Platform.pathSeparator).last;
+      final file = File('${tempDir.path}/$safeName');
       await file.writeAsBytes(downloaded.content);
 
       // 共有/保存
