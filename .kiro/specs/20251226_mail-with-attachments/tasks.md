@@ -34,8 +34,8 @@
   - 正常系のエンドツーエンドテスト
   - _Requirements: 1.1, 1.4, 4.1, 4.3_
 
-- [ ] 2. 添付ファイルダウンロード・復号化機能の実装（バックエンド）(P)
-- [ ] 2.1 添付ファイルダウンロード・復号化のコアロジック実装
+- [x] 2. 添付ファイルダウンロード・復号化機能の実装（バックエンド）(P)
+- [x] 2.1 添付ファイルダウンロード・復号化のコアロジック実装
   - executeDownloadAttachment関数を実装する
   - Firestoreからメッセージを取得し、認証・認可チェックを実行する
   - Storageから暗号化されたファイルをダウンロードする
@@ -45,30 +45,33 @@
   - ファイルメタデータ（filename、contentType、size）を取得する
   - _Requirements: 2.1, 2.2, 2.5, 4.1, 4.2_
 
-- [ ] 2.2 downloadAttachment Cloud Functionの実装
+- [x] 2.2 downloadAttachment Cloud Functionの実装
   - HTTP Callable Functionを実装する（functions.region('asia-northeast1').https.onCall）
   - 認証チェックを実装する
   - リクエストバリデーション（messageId、filenameの存在確認）を実装する
   - executeDownloadAttachmentを呼び出す
   - エラーハンドリングを実装する（HttpsErrorを使用）
-  - ファイルが存在しない場合のエラー処理
-  - 復号化が失敗した場合のエラー処理
+  - ファイルが存在しない場合のエラー処理（executeDownloadAttachment内で実装）
+  - 復号化が失敗した場合のエラー処理（executeDownloadAttachment内で実装）
   - functions/src/index.tsにエクスポートを追加する
   - _Requirements: 2.3, 2.4, 2.6, 4.1, 4.3, 4.4, 4.5, 4.6_
 
-- [ ] 2.3 downloadAttachmentの単体テスト実装
+- [x] 2.3 downloadAttachmentの単体テスト実装
   - executeDownloadAttachmentのテストを実装する
   - 正常系：ファイルのダウンロード・復号化
+  - 正常系：異なるcontentType（画像）のテスト
+  - 正常系：contentTypeが未設定の場合のデフォルト値テスト
   - 異常系：メッセージが存在しない場合のエラー
-  - 異常系：認可エラー（ユーザーがメッセージを所有していない場合）
+  - 異常系：認可エラー（ユーザーがメッセージを所有していない場合）- Firestoreのパス構造により自動的にチェックされる
   - 異常系：ファイルが存在しない場合のエラー
   - 異常系：復号化が失敗した場合のエラー
+  - 異常系：Storageダウンロードが失敗した場合のエラー
   - Storage API呼び出しと復号化のモック実装
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
 
-- [ ] 2.4 downloadAttachmentの統合テスト実装
+- [x] 2.4 downloadAttachmentの統合テスト実装
   - HTTP Callable Functionの統合テストを実装する
-  - 認証されていない場合のエラー確認
+  - 認証されていない場合のエラー確認（タスク2.2で実装済み）
   - 正常系のエンドツーエンドテスト
   - _Requirements: 2.1, 2.2, 2.6, 4.1, 4.3_
 
