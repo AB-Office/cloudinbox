@@ -514,6 +514,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unarchive'**
   String get unarchive;
+
+  /// Compose screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Compose'**
+  String get compose;
+
+  /// Send button label
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get send;
+
+  /// From field label
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get from;
+
+  /// To field label
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get to;
+
+  /// Email address input field hint
+  ///
+  /// In en, this message translates to:
+  /// **'Enter email address'**
+  String get enterEmailAddress;
+
+  /// Show Cc/Bcc button label
+  ///
+  /// In en, this message translates to:
+  /// **'Show Cc/Bcc'**
+  String get showCcBcc;
+
+  /// Hide Cc/Bcc button label
+  ///
+  /// In en, this message translates to:
+  /// **'Hide Cc/Bcc'**
+  String get hideCcBcc;
+
+  /// Subject field label
+  ///
+  /// In en, this message translates to:
+  /// **'Subject'**
+  String get subject;
+
+  /// Body field label
+  ///
+  /// In en, this message translates to:
+  /// **'Body'**
+  String get body;
+
+  /// Add attachment button label
+  ///
+  /// In en, this message translates to:
+  /// **'Add Attachment'**
+  String get addAttachment;
+
+  /// Discard button label
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get discard;
+
+  /// Discard input confirmation dialog message
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to discard the input?'**
+  String get discardInputConfirm;
+
+  /// Forwarded message prefix
+  ///
+  /// In en, this message translates to:
+  /// **'-------- Forwarded Message --------'**
+  String get forwardedMessagePrefix;
+
+  /// Recipient not entered error message
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter recipient'**
+  String get errorPleaseEnterRecipient;
+
+  /// Subject not entered error message
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter subject'**
+  String get errorPleaseEnterSubject;
+
+  /// Sender account not selected error message
+  ///
+  /// In en, this message translates to:
+  /// **'Please select sender account'**
+  String get errorPleaseSelectSenderAccount;
+
+  /// Invalid email address error message
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email address: {email}'**
+  String errorInvalidEmailAddress(String email);
+
+  /// Failed to send mail error message
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send mail'**
+  String get errorFailedToSendMail;
+
+  /// Generic error message
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String errorGeneric(String error);
+
+  /// File read error message
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to read file: {filename}'**
+  String errorFailedToReadFile(String filename);
+
+  /// File size exceeds limit error message
+  ///
+  /// In en, this message translates to:
+  /// **'File size exceeds {maxSize}MB: {filename}'**
+  String errorFileSizeExceedsLimit(int maxSize, String filename);
+
+  /// File picker error message
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to pick files'**
+  String get errorFailedToPickFiles;
+
+  /// File access permission denied error message
+  ///
+  /// In en, this message translates to:
+  /// **'File access permission denied. Please grant permission in settings.'**
+  String get errorFileAccessPermissionDenied;
+
+  /// File access permission denied error message (generic)
+  ///
+  /// In en, this message translates to:
+  /// **'File access permission denied'**
+  String get errorFileAccessPermissionDeniedGeneric;
+
+  /// File selection canceled message
+  ///
+  /// In en, this message translates to:
+  /// **'File selection was canceled'**
+  String get errorFileSelectionCanceled;
+
+  /// File selection unknown error message
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to pick files (unknown error)'**
+  String get errorFileSelectionUnknown;
+
+  /// File selection failed error message (with details)
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to pick files: {message}'**
+  String errorFileSelectionFailed(String message);
+
+  /// No mail message
+  ///
+  /// In en, this message translates to:
+  /// **'No mail'**
+  String get noMail;
+
+  /// SMTP settings section title
+  ///
+  /// In en, this message translates to:
+  /// **'SMTP Settings'**
+  String get smtpSettings;
+
+  /// Load more button label
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get loadMore;
+
+  /// Failed to load accounts error message
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load accounts: {error}'**
+  String errorFailedToLoadAccounts(String error);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

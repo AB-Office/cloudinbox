@@ -304,6 +304,163 @@
   "unarchive": "アーカイブから復元",
   "@unarchive": {
     "description": "アーカイブから復元ボタンのツールチップ"
+  },
+  "compose": "メール作成",
+  "@compose": {
+    "description": "メール作成画面のタイトル"
+  },
+  "send": "送信",
+  "@send": {
+    "description": "送信ボタンのラベル"
+  },
+  "from": "送信元",
+  "@from": {
+    "description": "送信元フィールドのラベル"
+  },
+  "to": "宛先",
+  "@to": {
+    "description": "宛先フィールドのラベル"
+  },
+  "enterEmailAddress": "メールアドレスを入力",
+  "@enterEmailAddress": {
+    "description": "メールアドレス入力フィールドのヒント"
+  },
+  "showCcBcc": "Cc/Bccを表示",
+  "@showCcBcc": {
+    "description": "Cc/Bcc表示ボタンのラベル"
+  },
+  "hideCcBcc": "Cc/Bccを隠す",
+  "@hideCcBcc": {
+    "description": "Cc/Bcc非表示ボタンのラベル"
+  },
+  "subject": "件名",
+  "@subject": {
+    "description": "件名フィールドのラベル"
+  },
+  "body": "本文",
+  "@body": {
+    "description": "本文フィールドのラベル"
+  },
+  "addAttachment": "添付ファイルを追加",
+  "@addAttachment": {
+    "description": "添付ファイル追加ボタンのラベル"
+  },
+  "discard": "破棄",
+  "@discard": {
+    "description": "破棄ボタンのラベル"
+  },
+  "discardInputConfirm": "入力内容を破棄しますか？",
+  "@discardInputConfirm": {
+    "description": "入力内容破棄確認ダイアログのメッセージ"
+  },
+  "forwardedMessagePrefix": "-------- 転送メッセージ --------",
+  "@forwardedMessagePrefix": {
+    "description": "転送メッセージのプレフィックス"
+  },
+  "errorPleaseEnterRecipient": "宛先を入力してください",
+  "@errorPleaseEnterRecipient": {
+    "description": "宛先未入力エラーメッセージ"
+  },
+  "errorPleaseEnterSubject": "件名を入力してください",
+  "@errorPleaseEnterSubject": {
+    "description": "件名未入力エラーメッセージ"
+  },
+  "errorPleaseSelectSenderAccount": "送信元アカウントを選択してください",
+  "@errorPleaseSelectSenderAccount": {
+    "description": "送信元アカウント未選択エラーメッセージ"
+  },
+  "errorInvalidEmailAddress": "無効なメールアドレス: {email}",
+  "@errorInvalidEmailAddress": {
+    "description": "無効なメールアドレスエラーメッセージ",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "errorFailedToSendMail": "メール送信に失敗しました",
+  "@errorFailedToSendMail": {
+    "description": "メール送信失敗エラーメッセージ"
+  },
+  "errorGeneric": "エラー: {error}",
+  "@errorGeneric": {
+    "description": "汎用エラーメッセージ",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorFailedToReadFile": "ファイルの読み込みに失敗しました: {filename}",
+  "@errorFailedToReadFile": {
+    "description": "ファイル読み込みエラーメッセージ",
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "errorFileSizeExceedsLimit": "ファイルサイズが{maxSize}MBを超えています: {filename}",
+  "@errorFileSizeExceedsLimit": {
+    "description": "ファイルサイズ超過エラーメッセージ",
+    "placeholders": {
+      "maxSize": {
+        "type": "int"
+      },
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "errorFailedToPickFiles": "ファイル選択に失敗しました",
+  "@errorFailedToPickFiles": {
+    "description": "ファイル選択失敗エラーメッセージ"
+  },
+  "errorFileAccessPermissionDenied": "ファイルへのアクセス権限がありません。設定から権限を許可してください。",
+  "@errorFileAccessPermissionDenied": {
+    "description": "ファイルアクセス権限エラーメッセージ"
+  },
+  "errorFileAccessPermissionDeniedGeneric": "ファイルへのアクセス権限がありません",
+  "@errorFileAccessPermissionDeniedGeneric": {
+    "description": "ファイルアクセス権限エラーメッセージ（汎用）"
+  },
+  "errorFileSelectionCanceled": "ファイル選択がキャンセルされました",
+  "@errorFileSelectionCanceled": {
+    "description": "ファイル選択キャンセルメッセージ"
+  },
+  "errorFileSelectionUnknown": "ファイル選択に失敗しました（不明なエラー）",
+  "@errorFileSelectionUnknown": {
+    "description": "ファイル選択不明エラーメッセージ"
+  },
+  "errorFileSelectionFailed": "ファイル選択に失敗しました: {message}",
+  "@errorFileSelectionFailed": {
+    "description": "ファイル選択失敗エラーメッセージ（詳細付き）",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "noMail": "メールがありません",
+  "@noMail": {
+    "description": "メールなしメッセージ"
+  },
+  "smtpSettings": "SMTP設定",
+  "@smtpSettings": {
+    "description": "SMTP設定セクションのタイトル"
+  },
+  "loadMore": "もっと見る",
+  "@loadMore": {
+    "description": "もっと見るボタンのラベル"
+  },
+  "errorFailedToLoadAccounts": "アカウントの読み込みに失敗しました: {error}",
+  "@errorFailedToLoadAccounts": {
+    "description": "アカウント読み込みエラーメッセージ",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   }
 }
 

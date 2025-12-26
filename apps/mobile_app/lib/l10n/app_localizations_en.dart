@@ -227,4 +227,109 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get unarchive => 'Unarchive';
+
+  @override
+  String get compose => 'Compose';
+
+  @override
+  String get send => 'Send';
+
+  @override
+  String get from => 'From';
+
+  @override
+  String get to => 'To';
+
+  @override
+  String get enterEmailAddress => 'Enter email address';
+
+  @override
+  String get showCcBcc => 'Show Cc/Bcc';
+
+  @override
+  String get hideCcBcc => 'Hide Cc/Bcc';
+
+  @override
+  String get subject => 'Subject';
+
+  @override
+  String get body => 'Body';
+
+  @override
+  String get addAttachment => 'Add Attachment';
+
+  @override
+  String get discard => 'Discard';
+
+  @override
+  String get discardInputConfirm => 'Do you want to discard the input?';
+
+  @override
+  String get forwardedMessagePrefix => '-------- Forwarded Message --------';
+
+  @override
+  String get errorPleaseEnterRecipient => 'Please enter recipient';
+
+  @override
+  String get errorPleaseEnterSubject => 'Please enter subject';
+
+  @override
+  String get errorPleaseSelectSenderAccount => 'Please select sender account';
+
+  @override
+  String errorInvalidEmailAddress(String email) {
+    return 'Invalid email address: $email';
+  }
+
+  @override
+  String get errorFailedToSendMail => 'Failed to send mail';
+
+  @override
+  String errorGeneric(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String errorFailedToReadFile(String filename) {
+    return 'Failed to read file: $filename';
+  }
+
+  @override
+  String errorFileSizeExceedsLimit(int maxSize, String filename) {
+    return 'File size exceeds ${maxSize}MB: $filename';
+  }
+
+  @override
+  String get errorFailedToPickFiles => 'Failed to pick files';
+
+  @override
+  String get errorFileAccessPermissionDenied => 'File access permission denied. Please grant permission in settings.';
+
+  @override
+  String get errorFileAccessPermissionDeniedGeneric => 'File access permission denied';
+
+  @override
+  String get errorFileSelectionCanceled => 'File selection was canceled';
+
+  @override
+  String get errorFileSelectionUnknown => 'Failed to pick files (unknown error)';
+
+  @override
+  String errorFileSelectionFailed(String message) {
+    return 'Failed to pick files: $message';
+  }
+
+  @override
+  String get noMail => 'No mail';
+
+  @override
+  String get smtpSettings => 'SMTP Settings';
+
+  @override
+  String get loadMore => 'Load more';
+
+  @override
+  String errorFailedToLoadAccounts(String error) {
+    return 'Failed to load accounts: $error';
+  }
 }

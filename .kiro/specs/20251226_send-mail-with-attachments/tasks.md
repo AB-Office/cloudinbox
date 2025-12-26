@@ -91,24 +91,30 @@
 
 ### 5. プラットフォーム対応と権限管理
 
-- [ ] 5.1 Android権限設定の確認
+- [x] 5.1 Android権限設定の確認
   - `apps/mobile_app/android/app/src/main/AndroidManifest.xml`を確認
   - `file_picker`パッケージが要求する権限が適切に設定されていることを確認
-  - 必要に応じて権限設定を追加（通常は`file_picker`が自動的に処理）
-  - スコープドストレージ制約に準拠していることを確認
+  - `file_picker` 8.0はSAF（Storage Access Framework）を使用するため、明示的なストレージ権限（READ_EXTERNAL_STORAGE等）は不要
+  - スコープドストレージ制約に準拠していることを確認（SAFにより自動的に準拠）
+  - 現在の設定は適切で、追加の権限設定は不要
   - _Requirements: 4.1, 4.3, 4.6, 4.7_
 
-- [ ] 5.2 iOS権限設定の確認
+- [x] 5.2 iOS権限設定の確認
   - `apps/mobile_app/ios/Runner/Info.plist`を確認
   - `file_picker`パッケージが要求する用途説明が適切に設定されていることを確認
-  - 必要に応じて用途説明を追加（通常は`file_picker`が自動的に処理）
-  - iOSのファイルアクセス権限に準拠していることを確認
+  - `file_picker` 8.0はiOS 14以降で`UIDocumentPickerViewController`を使用するため、用途説明（Usage Description）は不要
+  - `UIDocumentPickerViewController`はシステムのファイルピッカーを使用するため、アプリが直接ファイルシステムにアクセスしない
+  - 写真ライブラリやカメラロールにアクセスする場合は用途説明が必要だが、file_pickerは主にUIDocumentPickerViewControllerを使用するため不要
+  - iOSのファイルアクセス権限に準拠していることを確認（UIDocumentPickerViewControllerにより自動的に準拠）
+  - 現在の設定は適切で、追加の用途説明は不要
   - _Requirements: 4.2, 4.4, 4.6, 4.8_
 
-- [ ] 5.3 プラットフォーム固有エラーハンドリング
+- [x] 5.3 プラットフォーム固有エラーハンドリング
   - Android/iOSで異なるエラーメッセージが必要な場合の処理
-  - プラットフォーム固有のエラーコードの処理
-  - ファイルアクセス権限エラーの適切な処理
+  - プラットフォーム固有のエラーコードの処理（`_getPlatformSpecificErrorMessage`メソッドを実装）
+  - ファイルアクセス権限エラーの適切な処理（プラットフォーム別のメッセージを提供）
+  - エラーログにプラットフォーム情報を含める（`Platform.operatingSystem`）
+  - プラットフォーム固有のエラーコード（`user_canceled`、`pick_files_canceled`、`unknown`等）に対応
   - _Requirements: 4.5_
 
 ### 6. メール送信処理の確認

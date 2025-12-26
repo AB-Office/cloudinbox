@@ -227,4 +227,109 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get unarchive => 'アーカイブから復元';
+
+  @override
+  String get compose => 'メール作成';
+
+  @override
+  String get send => '送信';
+
+  @override
+  String get from => '送信元';
+
+  @override
+  String get to => '宛先';
+
+  @override
+  String get enterEmailAddress => 'メールアドレスを入力';
+
+  @override
+  String get showCcBcc => 'Cc/Bccを表示';
+
+  @override
+  String get hideCcBcc => 'Cc/Bccを隠す';
+
+  @override
+  String get subject => '件名';
+
+  @override
+  String get body => '本文';
+
+  @override
+  String get addAttachment => '添付ファイルを追加';
+
+  @override
+  String get discard => '破棄';
+
+  @override
+  String get discardInputConfirm => '入力内容を破棄しますか？';
+
+  @override
+  String get forwardedMessagePrefix => '-------- 転送メッセージ --------';
+
+  @override
+  String get errorPleaseEnterRecipient => '宛先を入力してください';
+
+  @override
+  String get errorPleaseEnterSubject => '件名を入力してください';
+
+  @override
+  String get errorPleaseSelectSenderAccount => '送信元アカウントを選択してください';
+
+  @override
+  String errorInvalidEmailAddress(String email) {
+    return '無効なメールアドレス: $email';
+  }
+
+  @override
+  String get errorFailedToSendMail => 'メール送信に失敗しました';
+
+  @override
+  String errorGeneric(String error) {
+    return 'エラー: $error';
+  }
+
+  @override
+  String errorFailedToReadFile(String filename) {
+    return 'ファイルの読み込みに失敗しました: $filename';
+  }
+
+  @override
+  String errorFileSizeExceedsLimit(int maxSize, String filename) {
+    return 'ファイルサイズが${maxSize}MBを超えています: $filename';
+  }
+
+  @override
+  String get errorFailedToPickFiles => 'ファイル選択に失敗しました';
+
+  @override
+  String get errorFileAccessPermissionDenied => 'ファイルへのアクセス権限がありません。設定から権限を許可してください。';
+
+  @override
+  String get errorFileAccessPermissionDeniedGeneric => 'ファイルへのアクセス権限がありません';
+
+  @override
+  String get errorFileSelectionCanceled => 'ファイル選択がキャンセルされました';
+
+  @override
+  String get errorFileSelectionUnknown => 'ファイル選択に失敗しました（不明なエラー）';
+
+  @override
+  String errorFileSelectionFailed(String message) {
+    return 'ファイル選択に失敗しました: $message';
+  }
+
+  @override
+  String get noMail => 'メールがありません';
+
+  @override
+  String get smtpSettings => 'SMTP設定';
+
+  @override
+  String get loadMore => 'もっと見る';
+
+  @override
+  String errorFailedToLoadAccounts(String error) {
+    return 'アカウントの読み込みに失敗しました: $error';
+  }
 }

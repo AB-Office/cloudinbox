@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'dart:typed_data';
 import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
 import 'package:cloudinbox_mobile_app/services/i18n_service.dart';
@@ -161,9 +162,10 @@ class _ComposeScreenState extends State<ComposeScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final locale = Localizations.localeOf(context);
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Failed to load accounts: $e';
+          _errorMessage = I18nService.translateErrorFailedToLoadAccounts(locale, e.toString());
         });
       }
     }
@@ -199,9 +201,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
       }
       if (widget.intent.body != null) {
         final locale = Localizations.localeOf(context);
-        final prefix = locale.languageCode == 'ja'
-            ? '-------- 転送メッセージ --------'
-            : '-------- Forwarded Message --------';
+        final prefix = I18nService.translateForwardedMessagePrefix(locale);
         _bodyController.text = '\n\n$prefix\n${widget.intent.body!}';
       }
     }
@@ -213,27 +213,21 @@ class _ComposeScreenState extends State<ComposeScreen> {
     final toAddresses = _parseEmailAddresses(_toController.text);
     if (toAddresses.isEmpty) {
       setState(() {
-        _errorMessage = locale.languageCode == 'ja'
-            ? '宛先を入力してください'
-            : 'Please enter recipient';
+        _errorMessage = I18nService.translateErrorPleaseEnterRecipient(locale);
       });
       return;
     }
 
     if (_subjectController.text.trim().isEmpty) {
       setState(() {
-        _errorMessage = locale.languageCode == 'ja'
-            ? '件名を入力してください'
-            : 'Please enter subject';
+        _errorMessage = I18nService.translateErrorPleaseEnterSubject(locale);
       });
       return;
     }
 
     if (_selectedAccountId == null) {
       setState(() {
-        _errorMessage = locale.languageCode == 'ja'
-            ? '送信元アカウントを選択してください'
-            : 'Please select sender account';
+        _errorMessage = I18nService.translateErrorPleaseSelectSenderAccount(locale);
       });
       return;
     }
@@ -249,9 +243,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
     for (final email in allRecipients) {
       if (!emailRegex.hasMatch(email)) {
         setState(() {
-          _errorMessage = locale.languageCode == 'ja'
-              ? '無効なメールアドレス: $email'
-              : 'Invalid email address: $email';
+          _errorMessage = I18nService.translateErrorInvalidEmailAddress(locale, email);
         });
         return;
       }
@@ -285,9 +277,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
           final locale = Localizations.localeOf(context);
           setState(() {
             _errorMessage = response.errorMessage ??
-                (locale.languageCode == 'ja'
-                    ? 'メール送信に失敗しました'
-                    : 'Failed to send mail');
+                I18nService.translateErrorFailedToSendMail(locale);
             _isSending = false;
           });
         }
@@ -296,9 +286,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
       if (mounted) {
         final locale = Localizations.localeOf(context);
         setState(() {
-          _errorMessage = locale.languageCode == 'ja'
-              ? 'エラー: $e'
-              : 'Error: $e';
+          _errorMessage = I18nService.translateErrorGeneric(locale, e.toString());
           _isSending = false;
         });
       }
@@ -308,15 +296,13 @@ class _ComposeScreenState extends State<ComposeScreen> {
   Future<void> _onCancelPressed() async {
     final locale = Localizations.localeOf(context);
     final cancelText = I18nService.translateCancel(locale);
-    final discardText = locale.languageCode == 'ja' ? '破棄' : 'Discard';
+    final discardText = I18nService.translateDiscard(locale);
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(discardText),
-        content: Text(locale.languageCode == 'ja'
-            ? '入力内容を破棄しますか？'
-            : 'Do you want to discard the input?'),
+        content: Text(I18nService.translateDiscardInputConfirm(locale)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -370,9 +356,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
               final locale = Localizations.localeOf(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(locale.languageCode == 'ja'
-                      ? 'ファイルの読み込みに失敗しました: ${platformFile.name}'
-                      : 'Failed to read file: ${platformFile.name}'),
+                  content: Text(I18nService.translateErrorFailedToReadFile(locale, platformFile.name)),
                 ),
               );
             }
@@ -387,9 +371,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
               final maxSizeMB = _maxAttachmentSizeBytes / (1024 * 1024);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(locale.languageCode == 'ja'
-                      ? 'ファイルサイズが${maxSizeMB.toInt()}MBを超えています: ${platformFile.name}'
-                      : 'File size exceeds ${maxSizeMB.toInt()}MB: ${platformFile.name}'),
+                  content: Text(I18nService.translateErrorFileSizeExceedsLimit(locale, maxSizeMB.toInt(), platformFile.name)),
                 ),
               );
             }
@@ -421,9 +403,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
             final locale = Localizations.localeOf(context);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(locale.languageCode == 'ja'
-                    ? 'ファイルの読み込みに失敗しました: ${platformFile.name}'
-                    : 'Failed to read file: ${platformFile.name}'),
+                content: Text(I18nService.translateErrorFailedToReadFile(locale, platformFile.name)),
               ),
             );
           }
@@ -443,26 +423,13 @@ class _ComposeScreenState extends State<ComposeScreen> {
       }
     } on PlatformException catch (e) {
       // プラットフォーム固有のエラー（権限エラー等）
-      debugPrint('[Attachment Error] Platform error: code=${e.code}, message=${e.message}, details=${e.details}');
+      debugPrint('[Attachment Error] Platform error: platform=${Platform.operatingSystem}, code=${e.code}, message=${e.message}, details=${e.details}');
       if (mounted) {
         setState(() {
           _isLoading = false; // エラー時も読み込み状態を解除
         });
         final locale = Localizations.localeOf(context);
-        String errorMessage;
-        // 権限エラーの場合
-        if (e.code == 'permission_denied' || 
-            e.message?.toLowerCase().contains('permission') == true ||
-            e.message?.toLowerCase().contains('権限') == true) {
-          errorMessage = locale.languageCode == 'ja'
-              ? 'ファイルへのアクセス権限がありません'
-              : 'File access permission denied';
-        } else {
-          // その他のプラットフォームエラー
-          errorMessage = locale.languageCode == 'ja'
-              ? 'ファイル選択に失敗しました'
-              : 'Failed to pick files';
-        }
+        String errorMessage = _getPlatformSpecificErrorMessage(e, locale);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
@@ -479,13 +446,44 @@ class _ComposeScreenState extends State<ComposeScreen> {
         final locale = Localizations.localeOf(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(locale.languageCode == 'ja'
-                ? 'ファイル選択に失敗しました'
-                : 'Failed to pick files'),
+            content: Text(I18nService.translateErrorFailedToPickFiles(locale)),
           ),
         );
       }
     }
+  }
+
+  /// プラットフォーム固有のエラーメッセージを取得
+  String _getPlatformSpecificErrorMessage(PlatformException e, Locale locale) {
+    final isAndroid = Platform.isAndroid;
+    final isIOS = Platform.isIOS;
+
+    // 権限エラーの場合
+    if (e.code == 'permission_denied' || 
+        e.message?.toLowerCase().contains('permission') == true ||
+        e.message?.toLowerCase().contains('権限') == true) {
+      if (isAndroid || isIOS) {
+        return I18nService.translateErrorFileAccessPermissionDenied(locale);
+      } else {
+        return I18nService.translateErrorFileAccessPermissionDeniedGeneric(locale);
+      }
+    }
+
+    // プラットフォーム固有のエラーコードの処理
+    if (isAndroid || isIOS) {
+      switch (e.code) {
+        case 'user_canceled':
+        case 'pick_files_canceled':
+          return I18nService.translateErrorFileSelectionCanceled(locale);
+        case 'unknown':
+          return I18nService.translateErrorFileSelectionUnknown(locale);
+        default:
+          return I18nService.translateErrorFileSelectionFailed(locale, e.message ?? e.code);
+      }
+    }
+
+    // その他のプラットフォームエラー
+    return I18nService.translateErrorFailedToPickFiles(locale);
   }
 
   /// 拡張子からコンテンツタイプを推測
@@ -542,7 +540,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(locale.languageCode == 'ja' ? 'メール作成' : 'Compose'),
+        title: Text(I18nService.translateCompose(locale)),
         actions: [
           if (_isSending)
             const Padding(
@@ -556,7 +554,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
           else
             TextButton(
               onPressed: _onSendPressed,
-              child: Text(locale.languageCode == 'ja' ? '送信' : 'Send'),
+              child: Text(I18nService.translateSend(locale)),
             ),
         ],
         leading: IconButton(
@@ -576,7 +574,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     DropdownButtonFormField<String>(
                       value: _selectedAccountId,
                       decoration: InputDecoration(
-                        labelText: locale.languageCode == 'ja' ? '送信元' : 'From',
+                        labelText: I18nService.translateFrom(locale),
                       ),
                       items: _accounts.map((account) {
                         return DropdownMenuItem(
@@ -596,10 +594,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
                   TextField(
                     controller: _toController,
                     decoration: InputDecoration(
-                      labelText: locale.languageCode == 'ja' ? '宛先' : 'To',
-                      hintText: locale.languageCode == 'ja'
-                          ? 'メールアドレスを入力'
-                          : 'Enter email address',
+                      labelText: I18nService.translateTo(locale),
+                      hintText: I18nService.translateEnterEmailAddress(locale),
                     ),
                     keyboardType: TextInputType.emailAddress,
                   ),
@@ -613,12 +609,8 @@ class _ComposeScreenState extends State<ComposeScreen> {
                     icon: Icon(
                         _showCcBcc ? Icons.expand_less : Icons.expand_more),
                     label: Text(_showCcBcc
-                        ? (locale.languageCode == 'ja'
-                            ? 'Cc/Bccを隠す'
-                            : 'Hide Cc/Bcc')
-                        : (locale.languageCode == 'ja'
-                            ? 'Cc/Bccを表示'
-                            : 'Show Cc/Bcc')),
+                        ? I18nService.translateHideCcBcc(locale)
+                        : I18nService.translateShowCcBcc(locale)),
                   ),
                   // Cc/Bccフィールド
                   if (_showCcBcc) ...[
@@ -626,9 +618,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       controller: _ccController,
                       decoration: InputDecoration(
                         labelText: 'Cc',
-                        hintText: locale.languageCode == 'ja'
-                            ? 'メールアドレスを入力'
-                            : 'Enter email address',
+                        hintText: I18nService.translateEnterEmailAddress(locale),
                       ),
                       keyboardType: TextInputType.emailAddress,
                     ),
@@ -636,9 +626,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                       controller: _bccController,
                       decoration: InputDecoration(
                         labelText: 'Bcc',
-                        hintText: locale.languageCode == 'ja'
-                            ? 'メールアドレスを入力'
-                            : 'Enter email address',
+                        hintText: I18nService.translateEnterEmailAddress(locale),
                       ),
                       keyboardType: TextInputType.emailAddress,
                     ),
@@ -647,14 +635,14 @@ class _ComposeScreenState extends State<ComposeScreen> {
                   TextField(
                     controller: _subjectController,
                     decoration: InputDecoration(
-                      labelText: locale.languageCode == 'ja' ? '件名' : 'Subject',
+                      labelText: I18nService.translateSubject(locale),
                     ),
                   ),
                   // 本文
                   TextField(
                     controller: _bodyController,
                     decoration: InputDecoration(
-                      labelText: locale.languageCode == 'ja' ? '本文' : 'Body',
+                      labelText: I18nService.translateBody(locale),
                       alignLabelWithHint: true,
                     ),
                     maxLines: null,
@@ -693,9 +681,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.attach_file),
-                    label: Text(locale.languageCode == 'ja'
-                        ? '添付ファイルを追加'
-                        : 'Add Attachment'),
+                    label: Text(I18nService.translateAddAttachment(locale)),
                   ),
                   // エラーメッセージ
                   if (_errorMessage != null)
