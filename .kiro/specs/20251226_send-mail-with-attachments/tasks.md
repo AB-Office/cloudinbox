@@ -119,12 +119,13 @@
 
 ### 6. メール送信処理の確認
 
-- [ ] 6.1 既存のメール送信処理の確認
+- [x] 6.1 既存のメール送信処理の確認
   - `apps/mobile_app/lib/main.dart`の`MailComposeRepository`実装を確認
-  - 添付ファイルがBase64エンコードされて送信されることを確認
-  - `SendMailRequest`の`attachments`フィールドが正しく使用されていることを確認
-  - メール送信成功時に添付ファイルデータが解放されることを確認
-  - メール送信失敗時に添付ファイルデータが保持されることを確認
+  - 添付ファイルがBase64エンコードされて送信されることを確認（`FirebaseMailComposeRepository.sendMail`で`base64Encode(att.content)`を使用）
+  - `SendMailRequest`の`attachments`フィールドが正しく使用されていることを確認（`compose_screen.dart`の`_onSendPressed`で`attachments: _attachments`を設定）
+  - メール送信成功時に添付ファイルデータが解放されることを確認（`Navigator.pop()`で画面が閉じられ、Stateが破棄されるため自動的に解放）
+  - メール送信失敗時に添付ファイルデータが保持されることを確認（画面が開いたままなので、`_attachments`が保持され、再送信可能）
+  - バックエンド（`sendMail.ts`）でBase64デコードが正しく処理されていることを確認
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9_
 
 ### 7. テスト実装
