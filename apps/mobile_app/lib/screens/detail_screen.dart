@@ -48,6 +48,7 @@ class MailMessageDetail {
     this.cc = const [],
     this.bcc = const [],
     this.threadId,
+    this.sentAtDateTime, // 実日時（引用形式用）
   });
 
   final String id;
@@ -56,9 +57,10 @@ class MailMessageDetail {
   final List<String> to;
   final List<String> cc;
   final List<String> bcc;
-  final String sentAt;
+  final String sentAt; // 表示用のフォーマット済み日時
   final String bodyText;
   final String? threadId;
+  final DateTime? sentAtDateTime; // 実日時（引用形式用）
 }
 
 /// メール詳細取得用リポジトリ抽象
@@ -163,6 +165,47 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
+  /// メールアドレス文字列から実際のメールアドレス部分を抽出する
+  /// 例: "表示名" <email@example.com> → email@example.com
+  /// 例: email@example.com → email@example.com
+  String _extractEmailAddress(String address) {
+    // RFC 5322形式（"表示名" <email@example.com>）を処理
+    final bracketMatch = RegExp(r'<([^>]+)>').firstMatch(address);
+    if (bracketMatch != null) {
+      return bracketMatch.group(1)!.trim();
+    }
+    
+    // 通常のメールアドレス形式の場合はそのまま返す
+    return address.trim();
+  }
+
+  /// 日時を実日時形式にフォーマットする（引用形式用）
+  String _formatDateTimeForQuote(DateTime dateTime) {
+    final year = dateTime.year;
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final day = dateTime.day.toString().padLeft(2, '0');
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '$year/$month/$day $hour:$minute';
+  }
+
+  /// 元のメール本文を引用形式に変換する
+  String _formatQuotedBody(String from, String bodyText, DateTime? sentAtDateTime) {
+    final emailAddress = _extractEmailAddress(from);
+    final quotedBody = bodyText
+        .split('\n')
+        .map((line) => '> $line')
+        .join('\n');
+    
+    // 実日時があればそれを使用、なければ現在時刻を使用（フォールバック）
+    final dateTimeStr = sentAtDateTime != null
+        ? _formatDateTimeForQuote(sentAtDateTime)
+        : DateTime.now().toString();
+    
+    // 引用の手前に空行を追加
+    return '\n$dateTimeStr <$emailAddress>\n$quotedBody';
+  }
+
   Future<void> _handleReply() async {
     if (_message == null ||
         widget.composeRepository == null ||
@@ -172,12 +215,20 @@ class _DetailScreenState extends State<DetailScreen> {
 
     if (!mounted) return;
 
+    // 元のメールを引用形式で本文に追加
+    final quotedBody = _formatQuotedBody(
+      _message!.from,
+      _message!.bodyText,
+      _message!.sentAtDateTime,
+    );
+
     final intent = ComposeIntent(
       type: ComposeType.reply,
       threadId: _message!.threadId,
       replyTo: _message!.from,
       subject: _message!.subject,
-      body: _message!.bodyText,
+      body: quotedBody,
+      inReplyToMessageId: _message!.id, // In-Reply-Toヘッダー用
     );
 
     await Navigator.push(
@@ -218,12 +269,20 @@ class _DetailScreenState extends State<DetailScreen> {
       .difference(selfEmails)
       .toList();
 
+    // 元のメールを引用形式で本文に追加
+    final quotedBody = _formatQuotedBody(
+      _message!.from,
+      _message!.bodyText,
+      _message!.sentAtDateTime,
+    );
+
     final intent = ComposeIntent(
       type: ComposeType.replyAll,
       threadId: _message!.threadId,
       replyToAll: uniqueReplyToAll,
       subject: _message!.subject,
-      body: _message!.bodyText,
+      body: quotedBody,
+      inReplyToMessageId: _message!.id, // In-Reply-Toヘッダー用
     );
 
     await Navigator.push(
@@ -247,11 +306,58 @@ class _DetailScreenState extends State<DetailScreen> {
 
     if (!mounted) return;
 
+    // 添付ファイルをダウンロードして転送用の添付ファイルリストを作成
+    List<AttachmentData> forwardAttachments = [];
+    if (_attachments.isNotEmpty) {
+      // ローディング表示（必要に応じて）
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        for (final attachment in _attachments) {
+          try {
+            final downloaded = await widget.repository.downloadAttachment(
+              _message!.id,
+              attachment.filename,
+            );
+            forwardAttachments.add(
+              AttachmentData(
+                filename: downloaded.filename,
+                content: downloaded.content,
+                contentType: downloaded.contentType,
+              ),
+            );
+          } catch (e) {
+            // 個別の添付ファイルのダウンロードに失敗した場合はスキップ
+            debugPrint('Failed to download attachment ${attachment.filename}: $e');
+          }
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    }
+
+    if (!mounted) return;
+
+    // 元のメールを引用形式で本文に追加
+    final quotedBody = _formatQuotedBody(
+      _message!.from,
+      _message!.bodyText,
+      _message!.sentAtDateTime,
+    );
+
     final intent = ComposeIntent(
       type: ComposeType.forward,
       threadId: _message!.threadId,
       subject: _message!.subject,
-      body: _message!.bodyText,
+      body: quotedBody,
+      inReplyToMessageId: _message!.id, // In-Reply-Toヘッダー用
+      attachments: forwardAttachments, // 転送時の添付ファイル
     );
 
     await Navigator.push(

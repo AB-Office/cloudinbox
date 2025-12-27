@@ -291,9 +291,8 @@ void main() {
       final subjectWidget = findTextFieldByLabel(tester, '件名');
       expect(subjectWidget.controller?.text, 'Fw: Test Subject');
 
-      // 本文に転送プレフィックスが付いていることを確認
+      // 本文が設定されていることを確認
       final bodyWidget = findTextFieldByLabel(tester, '本文');
-      expect(bodyWidget.controller?.text, contains('-------- 転送メッセージ --------'));
       expect(bodyWidget.controller?.text, contains('Original message body'));
     });
 

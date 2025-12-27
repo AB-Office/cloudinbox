@@ -381,7 +381,8 @@ describe('sendMail', () => {
         undefined,
         data.subject,
         data.body,
-        undefined
+        undefined,
+        undefined // headers parameter
       );
       expect(saveMail).toHaveBeenCalled();
       expect(result.success).toBe(true);
@@ -408,7 +409,8 @@ describe('sendMail', () => {
         data.bcc,
         data.subject,
         data.body,
-        undefined
+        undefined,
+        undefined // headers parameter
       );
       expect(result.success).toBe(true);
     });
@@ -444,7 +446,8 @@ describe('sendMail', () => {
             content: Buffer.from('test content'),
             contentType: 'text/plain',
           }),
-        ])
+        ]),
+        undefined // headers parameter
       );
       expect(result.success).toBe(true);
     });
@@ -620,6 +623,40 @@ describe('sendMail', () => {
       expect(mimeMessage).toBeTruthy();
       // BCCはMIMEヘッダーには含まれない（RFC 2822準拠）
       expect(mimeMessage).not.toContain('Bcc:');
+    });
+
+    it('inReplyToMessageIdが指定された場合、In-Reply-Toヘッダーが追加される', async () => {
+      const originalMessageId = 'original-message-id-123@example.com';
+      const data = {
+        accountId: mockAccountId,
+        to: ['recipient@example.com'],
+        subject: 'Re: Test Subject',
+        body: 'Test Body',
+        inReplyToMessageId: originalMessageId,
+      };
+
+      await sendMail(data, mockContext);
+
+      // MailParser.simpleParserが呼ばれていることを確認
+      expect(MailParser.simpleParser).toHaveBeenCalled();
+      const mimeMessage = (MailParser.simpleParser as jest.Mock).mock.calls[0][0];
+      expect(mimeMessage).toContain(`In-Reply-To: <${originalMessageId}>`);
+    });
+
+    it('inReplyToMessageIdが指定されていない場合、In-Reply-Toヘッダーが含まれない', async () => {
+      const data = {
+        accountId: mockAccountId,
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+
+      await sendMail(data, mockContext);
+
+      // MailParser.simpleParserが呼ばれていることを確認
+      expect(MailParser.simpleParser).toHaveBeenCalled();
+      const mimeMessage = (MailParser.simpleParser as jest.Mock).mock.calls[0][0];
+      expect(mimeMessage).not.toContain('In-Reply-To:');
     });
 
     it('添付ファイルがある場合、マルチパートMIMEメッセージが構築される', async () => {

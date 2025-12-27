@@ -1132,6 +1132,7 @@ class FirebaseDetailRepository implements MailDetailRepository {
       // メールを開いたときにisRead: trueに更新し、hasUnreadを再計算
       await _markAsRead(messageId, data['threadId'] as String);
 
+      final sentAtTimestamp = data['sentAt'] as Timestamp?;
       return MailMessageDetail(
         id: messageId,
         subject: data['subject'] as String? ?? '',
@@ -1139,11 +1140,12 @@ class FirebaseDetailRepository implements MailDetailRepository {
         to: (data['to'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
         cc: (data['cc'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
         bcc: (data['bcc'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-        sentAt: data['sentAt'] != null
-            ? _formatTimestamp(data['sentAt'] as Timestamp)
+        sentAt: sentAtTimestamp != null
+            ? _formatTimestamp(sentAtTimestamp)
             : '',
         bodyText: emailBody,
         threadId: data['threadId'] as String?,
+        sentAtDateTime: sentAtTimestamp?.toDate(), // 実日時を保持
       );
     } catch (e) {
       debugPrint('Error loading message: $e');
@@ -1560,6 +1562,7 @@ class FirebaseMailComposeRepository implements MailComposeRepository {
         'body': request.body,
         'attachments': attachments.isNotEmpty ? attachments : null,
         'threadId': request.threadId,
+        'inReplyToMessageId': request.inReplyToMessageId,
       });
 
       final dataResult = Map<String, dynamic>.from(result.data as Map);

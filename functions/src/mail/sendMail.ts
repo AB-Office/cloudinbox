@@ -37,6 +37,7 @@ interface SendMailRequest {
     contentType?: string;
   }>;
   threadId?: string; // 返信・転送の場合
+  inReplyToMessageId?: string; // 返信・転送時の元のメールID（In-Reply-Toヘッダー用）
 }
 
 /**
@@ -208,6 +209,14 @@ export const sendMail: any = functions
         // SMTP経由でメール送信
         functions.logger.info(`sendMail: Preparing to send mail - from: ${fromAddress}, auth user: ${smtpConfig.userName}, accountId: ${data.accountId}`);
         
+        // In-Reply-Toヘッダーを準備（返信・転送の場合）
+        const customHeaders: Record<string, string> = {};
+        if (data.inReplyToMessageId && data.inReplyToMessageId.trim() !== '') {
+          const sanitizeHeader = (v: string) => v.replace(/\r?\n/g, ' ').trim();
+          const inReplyToValue = `<${sanitizeHeader(data.inReplyToMessageId.trim())}>`;
+          customHeaders['In-Reply-To'] = inReplyToValue;
+        }
+        
         try {
           await sendSmtpMail(
             smtpSettings,
@@ -217,7 +226,8 @@ export const sendMail: any = functions
             data.bcc,
             data.subject,
             data.body,
-            attachments.length > 0 ? attachments : undefined
+            attachments.length > 0 ? attachments : undefined,
+            Object.keys(customHeaders).length > 0 ? customHeaders : undefined
           );
 
           functions.logger.info(`Mail sent successfully via SMTP for account: ${data.accountId}`);
@@ -260,7 +270,12 @@ export const sendMail: any = functions
           headers.push(`Cc: ${ccHeader}`);
         }
         headers.push(`Subject: ${encodeSubject(data.subject)}`);
-        headers.push('MIME-Version: 1.0');
+        // In-Reply-Toヘッダーを追加（返信・転送の場合）
+        if (data.inReplyToMessageId && data.inReplyToMessageId.trim() !== '') {
+          // Message-IDは<>で囲まれた形式で、保存時は<>が削除されているため、再度<>で囲む
+          const inReplyToValue = `<${sanitizeHeader(data.inReplyToMessageId.trim())}>`;
+          headers.push(`In-Reply-To: ${inReplyToValue}`);
+        }
         const normalizeCRLF = (v: string) => v.replace(/\r?\n/g, CRLF);
         // quoted-printableモジュールを使用してエンコード
         // UTF-8文字列をBufferに変換してからエンコード（quoted-printableはバイト列を期待）
