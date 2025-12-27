@@ -461,6 +461,10 @@
         "type": "String"
       }
     }
+  },
+  "errorOperationFailed": "Operation failed. Please try again.",
+  "@errorOperationFailed": {
+    "description": "Operation failed error message"
   }
 }
 

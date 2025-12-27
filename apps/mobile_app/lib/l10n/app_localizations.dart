@@ -700,6 +700,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to load accounts: {error}'**
   String errorFailedToLoadAccounts(String error);
+
+  /// Operation failed error message
+  ///
+  /// In en, this message translates to:
+  /// **'Operation failed. Please try again.'**
+  String get errorOperationFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

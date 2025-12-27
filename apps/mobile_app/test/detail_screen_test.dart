@@ -145,6 +145,17 @@ class _FakeAccountRepositoryForDetail implements AccountRepository {
   Future<void> permanentlyDeleteAccount(String accountId) async {}
 }
 
+// moveToTrashでエラーを発生させるためのカスタムリポジトリ
+class _ErrorMailDetailRepository extends _FakeMailDetailRepository {
+  _ErrorMailDetailRepository({required super.message});
+
+  @override
+  Future<void> moveToTrash(String messageId) async {
+    moveToTrashCalled = true;
+    throw Exception('Move to trash error');
+  }
+}
+
 void main() {
   group('DetailScreen', () {
     testWidgets('メッセージ詳細が表示される', (tester) async {
@@ -259,7 +270,7 @@ void main() {
       expect(repo.moveToTrashCalled, isTrue);
     });
 
-    testWidgets('アーカイブ／復元ボタン押下で対応メソッドが呼ばれる', (tester) async {
+    testWidgets('アーカイブボタン押下で対応メソッドが呼ばれる', (tester) async {
       final repo = _FakeMailDetailRepository(
         message: const MailMessageDetail(
           id: 'm1',
@@ -281,16 +292,407 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // アーカイブボタンが存在する場合のみタップ
+      final archiveButton = find.byKey(const Key('button_archive'));
+      if (archiveButton.evaluate().isNotEmpty) {
+        await tester.tap(archiveButton);
+        await tester.pumpAndSettle();
+        expect(repo.archiveCalled, isTrue);
+      }
+    });
+
+    testWidgets('ゴミ箱から復元ボタン押下で対応メソッドが呼ばれる', (tester) async {
+      final repo = _FakeMailDetailRepository(
+        message: const MailMessageDetail(
+          id: 'm1',
+          subject: 'Restore Test',
+          from: 'alice@example.com',
+          to: ['bob@example.com'],
+          sentAt: '2025-01-01',
+          bodyText: 'body',
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DetailScreen(
+            messageId: 'm1',
+            repository: repo,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // ゴミ箱から復元ボタンが存在する場合のみタップ
+      final restoreButton = find.byKey(const Key('button_restore_from_trash'));
+      if (restoreButton.evaluate().isNotEmpty) {
+        await tester.tap(restoreButton);
+        await tester.pumpAndSettle();
+        expect(repo.restoreFromTrashCalled, isTrue);
+      }
+    });
+
+    testWidgets('アーカイブ解除ボタン押下で対応メソッドが呼ばれる', (tester) async {
+      final repo = _FakeMailDetailRepository(
+        message: const MailMessageDetail(
+          id: 'm1',
+          subject: 'Unarchive Test',
+          from: 'alice@example.com',
+          to: ['bob@example.com'],
+          sentAt: '2025-01-01',
+          bodyText: 'body',
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DetailScreen(
+            messageId: 'm1',
+            repository: repo,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // アーカイブ解除ボタンが存在する場合のみタップ
+      final unarchiveButton = find.byKey(const Key('button_unarchive'));
+      if (unarchiveButton.evaluate().isNotEmpty) {
+        await tester.tap(unarchiveButton);
+        await tester.pumpAndSettle();
+        expect(repo.unarchiveCalled, isTrue);
+      }
+    });
+
+    testWidgets('ゴミ箱に移動ボタン押下で画面が閉じられる', (tester) async {
+      final repo = _FakeMailDetailRepository(
+        message: const MailMessageDetail(
+          id: 'm1',
+          subject: 'Trash Test',
+          from: 'alice@example.com',
+          to: ['bob@example.com'],
+          sentAt: '2025-01-01',
+          bodyText: 'body',
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                key: const Key('button_navigate_to_detail'),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailScreen(
+                        messageId: 'm1',
+                        repository: repo,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Navigate'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // 最初の画面を確認
+      expect(find.text('Navigate'), findsOneWidget);
+      expect(find.byType(DetailScreen), findsNothing);
+
+      // DetailScreenに遷移
+      await tester.tap(find.byKey(const Key('button_navigate_to_detail')));
+      await tester.pumpAndSettle();
+
+      // DetailScreenが表示されることを確認
+      expect(find.byType(DetailScreen), findsOneWidget);
+      expect(find.text('Trash Test'), findsWidgets);
+
+      // ゴミ箱に移動ボタンをタップ
+      await tester.tap(find.byKey(const Key('button_move_to_trash')));
+      await tester.pumpAndSettle();
+
+      // 画面が閉じられて元の画面に戻ることを確認
+      expect(find.byType(DetailScreen), findsNothing);
+      expect(find.text('Navigate'), findsOneWidget);
+      expect(repo.moveToTrashCalled, isTrue);
+    });
+
+    testWidgets('アーカイブボタン押下で画面が閉じられる', (tester) async {
+      final repo = _FakeMailDetailRepository(
+        message: const MailMessageDetail(
+          id: 'm1',
+          subject: 'Archive Test',
+          from: 'alice@example.com',
+          to: ['bob@example.com'],
+          sentAt: '2025-01-01',
+          bodyText: 'body',
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                key: const Key('button_navigate_to_detail'),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailScreen(
+                        messageId: 'm1',
+                        repository: repo,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Navigate'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // DetailScreenに遷移
+      await tester.tap(find.byKey(const Key('button_navigate_to_detail')));
+      await tester.pumpAndSettle();
+
+      // アーカイブボタンをタップ
       await tester.tap(find.byKey(const Key('button_archive')));
       await tester.pumpAndSettle();
+
+      // 画面が閉じられることを確認
+      expect(find.byType(DetailScreen), findsNothing);
+      expect(find.text('Navigate'), findsOneWidget);
+      expect(repo.archiveCalled, isTrue);
+    });
+
+    testWidgets('ゴミ箱から復元ボタン押下で画面が閉じられる', (tester) async {
+      final repo = _FakeMailDetailRepository(
+        message: const MailMessageDetail(
+          id: 'm1',
+          subject: 'Restore Test',
+          from: 'alice@example.com',
+          to: ['bob@example.com'],
+          sentAt: '2025-01-01',
+          bodyText: 'body',
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                key: const Key('button_navigate_to_detail'),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailScreen(
+                        messageId: 'm1',
+                        repository: repo,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Navigate'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // DetailScreenに遷移
+      await tester.tap(find.byKey(const Key('button_navigate_to_detail')));
+      await tester.pumpAndSettle();
+
+      // ゴミ箱から復元ボタンをタップ
       await tester.tap(find.byKey(const Key('button_restore_from_trash')));
       await tester.pumpAndSettle();
+
+      // 画面が閉じられることを確認
+      expect(find.byType(DetailScreen), findsNothing);
+      expect(find.text('Navigate'), findsOneWidget);
+      expect(repo.restoreFromTrashCalled, isTrue);
+    });
+
+    testWidgets('アーカイブ解除ボタン押下で画面が閉じられる', (tester) async {
+      final repo = _FakeMailDetailRepository(
+        message: const MailMessageDetail(
+          id: 'm1',
+          subject: 'Unarchive Test',
+          from: 'alice@example.com',
+          to: ['bob@example.com'],
+          sentAt: '2025-01-01',
+          bodyText: 'body',
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                key: const Key('button_navigate_to_detail'),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailScreen(
+                        messageId: 'm1',
+                        repository: repo,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Navigate'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // DetailScreenに遷移
+      await tester.tap(find.byKey(const Key('button_navigate_to_detail')));
+      await tester.pumpAndSettle();
+
+      // アーカイブ解除ボタンをタップ
       await tester.tap(find.byKey(const Key('button_unarchive')));
       await tester.pumpAndSettle();
 
-      expect(repo.archiveCalled, isTrue);
-      expect(repo.restoreFromTrashCalled, isTrue);
+      // 画面が閉じられることを確認
+      expect(find.byType(DetailScreen), findsNothing);
+      expect(find.text('Navigate'), findsOneWidget);
       expect(repo.unarchiveCalled, isTrue);
+    });
+
+    testWidgets('エラー発生時は画面を閉じない', (tester) async {
+      final errorRepo = _ErrorMailDetailRepository(
+        message: const MailMessageDetail(
+          id: 'm1',
+          subject: 'Error Test',
+          from: 'alice@example.com',
+          to: ['bob@example.com'],
+          sentAt: '2025-01-01',
+          bodyText: 'body',
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('ja'),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ja'),
+            Locale('en'),
+          ],
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                key: const Key('button_navigate_to_detail'),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailScreen(
+                        messageId: 'm1',
+                        repository: errorRepo,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Navigate'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // DetailScreenに遷移
+      await tester.tap(find.byKey(const Key('button_navigate_to_detail')));
+      await tester.pumpAndSettle();
+
+      // ゴミ箱に移動ボタンをタップ（エラーが発生する）
+      await tester.tap(find.byKey(const Key('button_move_to_trash')));
+      await tester.pumpAndSettle();
+
+      // エラーが発生しても画面は閉じられないことを確認
+      expect(find.byType(DetailScreen), findsOneWidget);
+      expect(errorRepo.moveToTrashCalled, isTrue);
+      
+      // i18n化されたエラーメッセージがSnackBarに表示されることを確認
+      expect(find.text('操作に失敗しました。もう一度お試しください。'), findsOneWidget);
+    });
+
+    testWidgets('エラー発生時に英語のエラーメッセージが表示される', (tester) async {
+      final errorRepo = _ErrorMailDetailRepository(
+        message: const MailMessageDetail(
+          id: 'm1',
+          subject: 'Error Test',
+          from: 'alice@example.com',
+          to: ['bob@example.com'],
+          sentAt: '2025-01-01',
+          bodyText: 'body',
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ja'),
+            Locale('en'),
+          ],
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                key: const Key('button_navigate_to_detail'),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailScreen(
+                        messageId: 'm1',
+                        repository: errorRepo,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Navigate'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // DetailScreenに遷移
+      await tester.tap(find.byKey(const Key('button_navigate_to_detail')));
+      await tester.pumpAndSettle();
+
+      // ゴミ箱に移動ボタンをタップ（エラーが発生する）
+      await tester.tap(find.byKey(const Key('button_move_to_trash')));
+      await tester.pumpAndSettle();
+
+      // エラーが発生しても画面は閉じられないことを確認
+      expect(find.byType(DetailScreen), findsOneWidget);
+      expect(errorRepo.moveToTrashCalled, isTrue);
+      
+      // i18n化されたエラーメッセージがSnackBarに表示されることを確認（英語）
+      expect(find.text('Operation failed. Please try again.'), findsOneWidget);
     });
 
     testWidgets('返信・全員に返信・転送ボタンが表示される', (tester) async {

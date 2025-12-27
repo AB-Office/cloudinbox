@@ -1,9 +1,9 @@
 {
-  "feature_name": "20251226_send-mail-with-attachments",
-  "created_at": "2025-12-26T14:05:18Z",
-  "updated_at": "2025-12-26T14:14:59Z",
+  "feature_name": "20251227_mail-screen-icon-buttons-implementation",
+  "created_at": "2025-12-26T22:36:37Z",
+  "updated_at": "2025-12-27T01:38:36Z",
   "language": "ja",
-  "phase": "tasks-generated",
+  "phase": "implementation-completed",
   "approvals": {
     "requirements": {
       "generated": true,

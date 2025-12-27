@@ -652,6 +652,12 @@ class I18nService {
     return localizations.errorFailedToLoadAccounts(error);
   }
 
+  /// ロケールから操作失敗エラーメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateErrorOperationFailed(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.errorOperationFailed;
+  }
+
   /// ロケールからAppLocalizationsインスタンスを取得するヘルパーメソッド
   static AppLocalizations _getLocalizations(Locale locale) {
     // AppLocalizationsのサブクラスを直接インスタンス化

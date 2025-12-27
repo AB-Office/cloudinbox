@@ -103,22 +103,64 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _handleMoveToTrash() async {
     if (_message == null) return;
-    await widget.repository.moveToTrash(_message!.id);
+    try {
+      setState(() => _isLoading = true);
+      await widget.repository.moveToTrash(_message!.id);
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        final locale = Localizations.localeOf(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(I18nService.translateErrorOperationFailed(locale))),
+        );
+      }
+      debugPrint('Error in _handleMoveToTrash: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   Future<void> _handleArchive() async {
     if (_message == null) return;
-    await widget.repository.archive(_message!.id);
+    try {
+      await widget.repository.archive(_message!.id);
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      // エラーは既にrepositoryで処理されているため、ここでは画面を閉じない
+      debugPrint('Error in _handleArchive: $e');
+    }
   }
 
   Future<void> _handleRestoreFromTrash() async {
     if (_message == null) return;
-    await widget.repository.restoreFromTrash(_message!.id);
+    try {
+      await widget.repository.restoreFromTrash(_message!.id);
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      // エラーは既にrepositoryで処理されているため、ここでは画面を閉じない
+      debugPrint('Error in _handleRestoreFromTrash: $e');
+    }
   }
 
   Future<void> _handleUnarchive() async {
     if (_message == null) return;
-    await widget.repository.unarchive(_message!.id);
+    try {
+      await widget.repository.unarchive(_message!.id);
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      // エラーは既にrepositoryで処理されているため、ここでは画面を閉じない
+      debugPrint('Error in _handleUnarchive: $e');
+    }
   }
 
   Future<void> _handleReply() async {

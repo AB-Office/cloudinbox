@@ -78,6 +78,18 @@ void main() {
         ),
       );
     });
+
+    test('translateErrorOperationFailed returns correct Japanese text', () {
+      final locale = const Locale('ja');
+      final result = I18nService.translateErrorOperationFailed(locale);
+      expect(result, '操作に失敗しました。もう一度お試しください。');
+    });
+
+    test('translateErrorOperationFailed returns correct English text', () {
+      final locale = const Locale('en');
+      final result = I18nService.translateErrorOperationFailed(locale);
+      expect(result, 'Operation failed. Please try again.');
+    });
   });
 }
 

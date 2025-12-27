@@ -431,7 +431,15 @@ class FirebaseInboxRepository implements InboxRepository {
           docs = docs.where((doc) {
             final data = doc.data() as Map<String, dynamic>;
             final labels = data['labels'] as List<dynamic>? ?? [];
-            return labels.contains(label);
+            if (label == 'inbox') {
+              // 受信トレイ: 'inbox'ラベルを含み、'trash'ラベルを含まない
+              return labels.contains('inbox') && !labels.contains('trash');
+            } else if (label == 'trash') {
+              return labels.contains('trash');
+            } else {
+              // その他のラベル（sent等）: 指定ラベルを含む
+              return labels.contains(label) && !labels.contains('trash');
+            }
           }).toList();
         }
         
@@ -500,7 +508,13 @@ class FirebaseInboxRepository implements InboxRepository {
         docs = docs.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
           final labels = data['labels'] as List<dynamic>? ?? [];
-          return labels.contains(label);
+          if (label == 'inbox') {
+            // 受信トレイ: 'inbox'ラベルを含み、'trash'ラベルを含まない
+            return labels.contains('inbox') && !labels.contains('trash');
+          } else {
+            // その他のラベル（trash, sent等）: 指定ラベルを含む
+            return labels.contains(label);
+          }
         }).toList();
       }
       
@@ -1259,26 +1273,224 @@ class FirebaseDetailRepository implements MailDetailRepository {
 
   @override
   Future<void> moveToTrash(String messageId) async {
-    // TODO: 実装
-    throw UnimplementedError();
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      // メールメッセージドキュメントを取得してthreadIdを取得
+      final messageRef = _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('mailMessages')
+          .doc(messageId);
+
+      final messageDoc = await messageRef.get();
+      if (!messageDoc.exists) {
+        throw Exception('Message not found');
+      }
+
+      final data = messageDoc.data() as Map<String, dynamic>;
+      final threadId = data['threadId'] as String?;
+      if (threadId == null || threadId.isEmpty) {
+        throw Exception('Thread ID not found');
+      }
+
+      // Firestoreのバッチ更新を作成
+      final batch = _firestore.batch();
+
+      // メールメッセージドキュメントの更新
+      batch.update(messageRef, {
+        'labels': FieldValue.arrayUnion(['trash']),
+        'deletedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // メールスレッドドキュメントの更新は行わない（スレッド全体の誤ラベリング防止）
+      // 必要であればサーバー側集約ロジックで対応する
+      // メールスレッドドキュメントの更新
+
+      // バッチ更新をコミット
+      await batch.commit();
+
+      debugPrint('Message moved to trash: messageId=$messageId, threadId=$threadId');
+    } catch (e) {
+      debugPrint('Error moving message to trash: $e');
+      rethrow;
+    }
   }
 
   @override
   Future<void> archive(String messageId) async {
-    // TODO: 実装
-    throw UnimplementedError();
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      // メールメッセージドキュメントを取得してthreadIdを取得
+      final messageRef = _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('mailMessages')
+          .doc(messageId);
+
+      final messageDoc = await messageRef.get();
+      if (!messageDoc.exists) {
+        throw Exception('Message not found');
+      }
+
+      final data = messageDoc.data() as Map<String, dynamic>;
+      final threadId = data['threadId'] as String?;
+      if (threadId == null || threadId.isEmpty) {
+        throw Exception('Thread ID not found');
+      }
+
+      // Firestoreのバッチ更新を作成
+      final batch = _firestore.batch();
+
+      // メールメッセージドキュメントの更新
+      batch.update(messageRef, {
+        'labels': FieldValue.arrayRemove(['inbox']),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // メールスレッドドキュメントの更新
+      final threadRef = _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('mailThreads')
+          .doc(threadId);
+
+      batch.update(threadRef, {
+        'labels': FieldValue.arrayRemove(['inbox']),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // バッチ更新をコミット
+      await batch.commit();
+
+      debugPrint('Message archived: messageId=$messageId, threadId=$threadId');
+    } catch (e) {
+      debugPrint('Error archiving message: $e');
+      rethrow;
+    }
   }
 
   @override
   Future<void> restoreFromTrash(String messageId) async {
-    // TODO: 実装
-    throw UnimplementedError();
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      // メールメッセージドキュメントを取得してthreadIdを取得
+      final messageRef = _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('mailMessages')
+          .doc(messageId);
+
+      final messageDoc = await messageRef.get();
+      if (!messageDoc.exists) {
+        throw Exception('Message not found');
+      }
+
+      final data = messageDoc.data() as Map<String, dynamic>;
+      final threadId = data['threadId'] as String?;
+      if (threadId == null || threadId.isEmpty) {
+        throw Exception('Thread ID not found');
+      }
+
+      // Firestoreのバッチ更新を作成
+      final batch = _firestore.batch();
+
+      // メールメッセージドキュメントの更新
+      batch.update(messageRef, {
+        'labels': FieldValue.arrayRemove(['trash']),
+        'deletedAt': FieldValue.delete(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // メールスレッドドキュメントの更新
+      final threadRef = _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('mailThreads')
+          .doc(threadId);
+
+      batch.update(threadRef, {
+        'labels': FieldValue.arrayRemove(['trash']),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // バッチ更新をコミット
+      await batch.commit();
+
+      debugPrint('Message restored from trash: messageId=$messageId, threadId=$threadId');
+    } catch (e) {
+      debugPrint('Error restoring message from trash: $e');
+      rethrow;
+    }
   }
 
   @override
   Future<void> unarchive(String messageId) async {
-    // TODO: 実装
-    throw UnimplementedError();
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      // メールメッセージドキュメントを取得してthreadIdを取得
+      final messageRef = _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('mailMessages')
+          .doc(messageId);
+
+      final messageDoc = await messageRef.get();
+      if (!messageDoc.exists) {
+        throw Exception('Message not found');
+      }
+
+      final data = messageDoc.data() as Map<String, dynamic>;
+      final threadId = data['threadId'] as String?;
+      if (threadId == null || threadId.isEmpty) {
+        throw Exception('Thread ID not found');
+      }
+
+      // Firestoreのバッチ更新を作成
+      final batch = _firestore.batch();
+
+      // メールメッセージドキュメントの更新
+      batch.update(messageRef, {
+        'labels': FieldValue.arrayUnion(['inbox']),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // メールスレッドドキュメントの更新
+      final threadRef = _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('mailThreads')
+          .doc(threadId);
+
+      batch.update(threadRef, {
+        'labels': FieldValue.arrayUnion(['inbox']),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // バッチ更新をコミット
+      await batch.commit();
+
+      debugPrint('Message unarchived: messageId=$messageId, threadId=$threadId');
+    } catch (e) {
+      debugPrint('Error unarchiving message: $e');
+      rethrow;
+    }
   }
 }
 
