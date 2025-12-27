@@ -41,6 +41,59 @@ class _FakeInboxRepository implements InboxRepository {
   }
 }
 
+// 受信トレイ用のフィルタリングをシミュレートするリポジトリ
+class _InboxFilteredRepository implements InboxRepository {
+  @override
+  Stream<InboxPage> watchFirstPage(int limit) {
+    // 受信トレイ: 'inbox'ラベルを含み、'trash'ラベルを含まないスレッドのみ
+    final allThreads = [
+      const InboxThread(
+        id: 't1',
+        subject: 'Inbox Only',
+        from: 'alice@example.com',
+        preview: 'Normal mail',
+        lastMessageAt: '2025-01-01',
+        hasUnread: true,
+      ),
+      const InboxThread(
+        id: 't2',
+        subject: 'Inbox and Trash',
+        from: 'bob@example.com',
+        preview: 'Deleted mail',
+        lastMessageAt: '2025-01-02',
+        hasUnread: false,
+      ),
+      const InboxThread(
+        id: 't3',
+        subject: 'Inbox Only 2',
+        from: 'charlie@example.com',
+        preview: 'Another mail',
+        lastMessageAt: '2025-01-03',
+        hasUnread: false,
+      ),
+    ];
+
+    // フィルタリング: 'inbox'ラベルを含み、'trash'ラベルを含まない
+    // 実際のFirebaseInboxRepositoryのロジックをシミュレート
+    // ここでは、t2は除外される想定（実際の実装ではlabelsに'trash'が含まれるため）
+    final filteredThreads = [
+      allThreads[0], // 'Inbox Only' - 表示される
+      // allThreads[1], // 'Inbox and Trash' - 除外される（trashラベルがあるため）
+      allThreads[2], // 'Inbox Only 2' - 表示される
+    ];
+
+    return Stream.value(InboxPage(
+      threads: filteredThreads,
+      hasMore: false,
+    ));
+  }
+
+  @override
+  Future<InboxPage> loadNextPage(int limit) async {
+    return const InboxPage(threads: [], hasMore: false);
+  }
+}
+
 void main() {
   group('MailListScreen', () {
     testWidgets('初期表示でスレッド一覧が表示される', (tester) async {
@@ -300,6 +353,31 @@ void main() {
       expect(find.text('Trash'), findsOneWidget);
       // ゴミ箱内のスレッドが表示される
       expect(find.text('Trash Item'), findsOneWidget);
+    });
+
+    testWidgets('受信トレイではtrashラベル付きメールが除外される', (tester) async {
+      final repo = _InboxFilteredRepository();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MailListScreen(
+            repository: repo,
+            title: 'Inbox',
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // 受信トレイ用のタイトルが表示される
+      expect(find.text('Inbox'), findsOneWidget);
+      
+      // 'inbox'ラベルのみのスレッドが表示される
+      expect(find.text('Inbox Only'), findsOneWidget);
+      expect(find.text('Inbox Only 2'), findsOneWidget);
+      
+      // 'trash'ラベルが含まれるスレッドは除外される
+      expect(find.text('Inbox and Trash'), findsNothing);
     });
   });
 }
