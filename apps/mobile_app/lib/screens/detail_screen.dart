@@ -362,6 +362,67 @@ class _DetailScreenState extends State<DetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_message?.subject ?? 'Mail Detail'),
+        actions: [
+          // 返信・転送機能が利用可能な場合のみケバブメニューを表示
+          if (widget.composeRepository != null &&
+              widget.accountRepository != null)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                switch (value) {
+                  case 'reply':
+                    _handleReply();
+                    break;
+                  case 'reply_all':
+                    _handleReplyAll();
+                    break;
+                  case 'forward':
+                    _handleForward();
+                    break;
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                final locale = Localizations.localeOf(context);
+                final isEnabled = _message != null;
+
+                return [
+                  PopupMenuItem<String>(
+                    value: 'reply',
+                    enabled: isEnabled,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.reply),
+                        const SizedBox(width: 8),
+                        Text(I18nService.translateReply(locale)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'reply_all',
+                    enabled: isEnabled,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.reply_all),
+                        const SizedBox(width: 8),
+                        Text(I18nService.translateReplyAll(locale)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'forward',
+                    enabled: isEnabled,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.forward),
+                        const SizedBox(width: 8),
+                        Text(I18nService.translateForward(locale)),
+                      ],
+                    ),
+                  ),
+                ];
+              },
+            ),
+        ],
       ),
       bottomNavigationBar: _message == null
           ? null
