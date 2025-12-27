@@ -104,13 +104,23 @@ class _DetailScreenState extends State<DetailScreen> {
   Future<void> _handleMoveToTrash() async {
     if (_message == null) return;
     try {
+      setState(() => _isLoading = true);
       await widget.repository.moveToTrash(_message!.id);
       if (mounted) {
         Navigator.pop(context);
       }
     } catch (e) {
-      // エラーは既にrepositoryで処理されているため、ここでは画面を閉じない
+      if (mounted) {
+        final locale = Localizations.localeOf(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(I18nService.translateErrorOperationFailed(locale))),
+        );
+      }
       debugPrint('Error in _handleMoveToTrash: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

@@ -434,9 +434,11 @@ class FirebaseInboxRepository implements InboxRepository {
             if (label == 'inbox') {
               // 受信トレイ: 'inbox'ラベルを含み、'trash'ラベルを含まない
               return labels.contains('inbox') && !labels.contains('trash');
+            } else if (label == 'trash') {
+              return labels.contains('trash');
             } else {
-              // その他のラベル（trash, sent等）: 指定ラベルを含む
-              return labels.contains(label);
+              // その他のラベル（sent等）: 指定ラベルを含む
+              return labels.contains(label) && !labels.contains('trash');
             }
           }).toList();
         }
@@ -1305,17 +1307,9 @@ class FirebaseDetailRepository implements MailDetailRepository {
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
+      // メールスレッドドキュメントの更新は行わない（スレッド全体の誤ラベリング防止）
+      // 必要であればサーバー側集約ロジックで対応する
       // メールスレッドドキュメントの更新
-      final threadRef = _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('mailThreads')
-          .doc(threadId);
-
-      batch.update(threadRef, {
-        'labels': FieldValue.arrayUnion(['trash']),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
 
       // バッチ更新をコミット
       await batch.commit();

@@ -585,6 +585,16 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          locale: const Locale('ja'),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ja'),
+            Locale('en'),
+          ],
           home: Scaffold(
             body: Builder(
               builder: (context) => ElevatedButton(
@@ -618,6 +628,71 @@ void main() {
       // エラーが発生しても画面は閉じられないことを確認
       expect(find.byType(DetailScreen), findsOneWidget);
       expect(errorRepo.moveToTrashCalled, isTrue);
+      
+      // i18n化されたエラーメッセージがSnackBarに表示されることを確認
+      expect(find.text('操作に失敗しました。もう一度お試しください。'), findsOneWidget);
+    });
+
+    testWidgets('エラー発生時に英語のエラーメッセージが表示される', (tester) async {
+      final errorRepo = _ErrorMailDetailRepository(
+        message: const MailMessageDetail(
+          id: 'm1',
+          subject: 'Error Test',
+          from: 'alice@example.com',
+          to: ['bob@example.com'],
+          sentAt: '2025-01-01',
+          bodyText: 'body',
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ja'),
+            Locale('en'),
+          ],
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                key: const Key('button_navigate_to_detail'),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailScreen(
+                        messageId: 'm1',
+                        repository: errorRepo,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Navigate'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // DetailScreenに遷移
+      await tester.tap(find.byKey(const Key('button_navigate_to_detail')));
+      await tester.pumpAndSettle();
+
+      // ゴミ箱に移動ボタンをタップ（エラーが発生する）
+      await tester.tap(find.byKey(const Key('button_move_to_trash')));
+      await tester.pumpAndSettle();
+
+      // エラーが発生しても画面は閉じられないことを確認
+      expect(find.byType(DetailScreen), findsOneWidget);
+      expect(errorRepo.moveToTrashCalled, isTrue);
+      
+      // i18n化されたエラーメッセージがSnackBarに表示されることを確認（英語）
+      expect(find.text('Operation failed. Please try again.'), findsOneWidget);
     });
 
     testWidgets('返信・全員に返信・転送ボタンが表示される', (tester) async {

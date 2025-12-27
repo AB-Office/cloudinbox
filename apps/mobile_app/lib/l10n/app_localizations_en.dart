@@ -332,4 +332,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String errorFailedToLoadAccounts(String error) {
     return 'Failed to load accounts: $error';
   }
+
+  @override
+  String get errorOperationFailed => 'Operation failed. Please try again.';
 }

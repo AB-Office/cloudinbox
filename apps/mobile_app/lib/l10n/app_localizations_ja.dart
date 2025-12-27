@@ -332,4 +332,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String errorFailedToLoadAccounts(String error) {
     return 'アカウントの読み込みに失敗しました: $error';
   }
+
+  @override
+  String get errorOperationFailed => '操作に失敗しました。もう一度お試しください。';
 }

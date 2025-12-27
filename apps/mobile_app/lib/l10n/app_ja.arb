@@ -461,6 +461,10 @@
         "type": "String"
       }
     }
+  },
+  "errorOperationFailed": "操作に失敗しました。もう一度お試しください。",
+  "@errorOperationFailed": {
+    "description": "操作失敗エラーメッセージ"
   }
 }
 
