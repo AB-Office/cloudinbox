@@ -28,5 +28,56 @@
   "navigation": {
     "settings": "Settings",
     "menu": "Menu"
+  },
+  "errors": {
+    "generic": "An error occurred",
+    "network": "Network error occurred",
+    "firebase": {
+      "authFailed": "Authentication failed",
+      "permissionDenied": "Access denied",
+      "notFound": "Resource not found",
+      "unavailable": "Service unavailable",
+      "unknown": "Unknown error occurred"
+    },
+    "firestore": {
+      "queryFailed": "Failed to fetch data",
+      "writeFailed": "Failed to save data",
+      "permissionDenied": "Access denied to data"
+    },
+    "functions": {
+      "callFailed": "Failed to call function",
+      "timeout": "Request timeout",
+      "unknown": "Unknown error occurred"
+    },
+    "mail": {
+      "fetchFailed": "Failed to fetch mail",
+      "decryptFailed": "Failed to decrypt mail",
+      "notFound": "Mail not found"
+    },
+    "account": {
+      "fetchFailed": "Failed to fetch account",
+      "saveFailed": "Failed to save account",
+      "deleteFailed": "Failed to delete account",
+      "testFailed": "Failed to test account connection"
+    }
+  },
+  "dateTime": {
+    "justNow": "Just now",
+    "minutesAgo": "{count} minutes ago",
+    "hoursAgo": "{count} hours ago",
+    "daysAgo": "{count} days ago",
+    "weeksAgo": "{count} weeks ago",
+    "monthsAgo": "{count} months ago",
+    "yearsAgo": "{count} years ago",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow"
+  },
+  "fileSize": {
+    "bytes": "{size} B",
+    "kilobytes": "{size} KB",
+    "megabytes": "{size} MB",
+    "gigabytes": "{size} GB",
+    "terabytes": "{size} TB"
   }
 }
