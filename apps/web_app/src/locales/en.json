@@ -1,0 +1,17 @@
+{
+  "common": {
+    "login": "Login",
+    "logout": "Logout",
+    "loading": "Loading...",
+    "error": "An error occurred"
+  },
+  "mail": {
+    "inbox": "Inbox",
+    "all": "All Mail",
+    "trash": "Trash",
+    "subject": "Subject",
+    "from": "From",
+    "date": "Date"
+  }
+}
+

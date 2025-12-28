@@ -1,31 +1,31 @@
 # Implementation Plan
 
-- [ ] 1. Vue+Vuetifyプロジェクトのセットアップ
-- [ ] 1.1 (P) `apps/web_app/`ディレクトリにVue 3プロジェクトを初期化する
+- [x] 1. Vue+Vuetifyプロジェクトのセットアップ
+- [x] 1.1 (P) `apps/web_app/`ディレクトリにVue 3プロジェクトを初期化する
   - Viteを使用してVue 3プロジェクトを作成する
   - TypeScriptを有効にする
   - Composition APIを使用する設定にする
   - _Requirements: 1.1,1.2,1.4,1.5,1.8_
-- [ ] 1.2 (P) Vuetify 3をインストール・設定する
+- [x] 1.2 (P) Vuetify 3をインストール・設定する
   - Vuetify 3を依存関係に追加する
   - Vuetifyプラグインを`main.ts`に登録する
   - テーマ設定を追加する
   - _Requirements: 1.3_
-- [ ] 1.3 (P) Firebase SDKをインストール・設定する
+- [x] 1.3 (P) Firebase SDKをインストール・設定する
   - `firebase`パッケージを依存関係に追加する
   - Firebase Auth、Firestore、Cloud FunctionsのSDKをインストールする
   - _Requirements: 1.6_
-- [ ] 1.4 (P) vue-router、vue-i18n、Piniaをインストール・設定する
+- [x] 1.4 (P) vue-router、vue-i18n、Piniaをインストール・設定する
   - `vue-router`、`vue-i18n`、`pinia`を依存関係に追加する
   - 各ライブラリの基本設定を行う
   - _Requirements: 1.7_
-- [ ] 1.5 (P) 開発環境とビルド設定を整備する
+- [x] 1.5 (P) 開発環境とビルド設定を整備する
   - ESLintとPrettierを設定する
   - TypeScriptのstrict modeを有効にする
   - Viteのビルド設定を調整する（ソースマップ生成を含む）
   - `npm run dev`と`npm run build`コマンドが動作することを確認する
   - _Requirements: 1.9,1.10,10.4,10.5,10.6_
-- [ ] 1.6 (P) プロジェクト構造を作成する
+- [x] 1.6 (P) プロジェクト構造を作成する
   - `src/stores/`、`src/services/`、`src/views/`、`src/components/`、`src/composables/`、`src/locales/`、`src/types/`ディレクトリを作成する
   - 既存のモバイルアプリ構造と一貫性を保つ
   - _Requirements: 1.8,1.11_
