@@ -213,8 +213,9 @@ export const sendMail: any = functions
         const customHeaders: Record<string, string> = {};
         if (data.inReplyToMessageId && data.inReplyToMessageId.trim() !== '') {
           const sanitizeHeader = (v: string) => v.replace(/\r?\n/g, ' ').trim();
-          const inReplyToValue = `<${sanitizeHeader(data.inReplyToMessageId.trim())}>`;
-          customHeaders['In-Reply-To'] = inReplyToValue;
+          const id = `<${sanitizeHeader(data.inReplyToMessageId.trim())}>`;
+          customHeaders['In-Reply-To'] = id;
+          customHeaders['References'] = id;
         }
         
         try {
@@ -270,11 +271,11 @@ export const sendMail: any = functions
           headers.push(`Cc: ${ccHeader}`);
         }
         headers.push(`Subject: ${encodeSubject(data.subject)}`);
-        // In-Reply-Toヘッダーを追加（返信・転送の場合）
+        // In-Reply-To/References ヘッダーを追加（返信・転送の場合）
         if (data.inReplyToMessageId && data.inReplyToMessageId.trim() !== '') {
-          // Message-IDは<>で囲まれた形式で、保存時は<>が削除されているため、再度<>で囲む
-          const inReplyToValue = `<${sanitizeHeader(data.inReplyToMessageId.trim())}>`;
-          headers.push(`In-Reply-To: ${inReplyToValue}`);
+          const id = `<${sanitizeHeader(data.inReplyToMessageId.trim())}>`;
+          headers.push(`In-Reply-To: ${id}`);
+          headers.push(`References: ${id}`);
         }
         const normalizeCRLF = (v: string) => v.replace(/\r?\n/g, CRLF);
         // quoted-printableモジュールを使用してエンコード
