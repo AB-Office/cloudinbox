@@ -120,6 +120,7 @@ export async function testSmtpConnection(
  * @param subject - 件名
  * @param body - 本文（HTML形式またはテキスト形式）
  * @param attachments - 添付ファイル配列（オプション）
+ * @param headers - カスタムヘッダー（オプション）
  * @returns Promise<void>
  */
 export async function sendSmtpMail(
@@ -130,7 +131,8 @@ export async function sendSmtpMail(
   bcc?: string[],
   subject?: string,
   body?: string,
-  attachments?: Attachment[]
+  attachments?: Attachment[],
+  headers?: Record<string, string>
 ): Promise<void> {
   // SSL/TLS必須チェック
   if (!config.useSsl) {
@@ -179,6 +181,7 @@ export async function sendSmtpMail(
           contentType: att.contentType,
         })),
       }),
+      ...(headers && Object.keys(headers).length > 0 && { headers }),
       envelope: {
         from: from, // MAIL FROMコマンドで使用するアドレス（fromパラメータを使用）
         to: to, // RCPT TOコマンドで使用するアドレス

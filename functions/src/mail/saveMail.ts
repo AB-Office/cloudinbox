@@ -212,29 +212,16 @@ export async function saveMail(
 
   if (threadDoc.exists) {
     // 既存スレッドを更新
+    // スレッドのラベルは既存のラベルを保持（メッセージレベルのラベルとは独立）
+    // メッセージレベルのラベルは各メッセージに個別に設定されるため、スレッドのラベルは変更しない
     const updateData: any = {
       latestMessageId: messageId,
       preview: bodyPreview,
-      hasUnread: true,
+      hasUnread: !isSentMail, // 受信メールの場合は未読、送信済みメールの場合は既読
       lastMessageAt: receivedAt,
       sentAt: sentAt, // 最新メッセージの送信日時を更新
       updatedAt: now,
     };
-
-    // ラベルを決定
-    const existingLabels = threadDoc.data()?.labels || [];
-    let newLabels: string[];
-    if (isSentMail) {
-      // 送信済みメールの場合、inboxラベルを削除してsentラベルを追加
-      newLabels = existingLabels.filter((label: string) => label !== 'inbox');
-      if (!newLabels.includes('sent')) {
-        newLabels.push('sent');
-      }
-    } else {
-      // 受信メールの場合、既存ラベルにinboxを追加（重複を避ける）
-      newLabels = Array.from(new Set([...existingLabels, 'inbox']));
-    }
-    updateData.labels = newLabels;
 
     await threadRef.update(updateData);
   } else {
@@ -246,7 +233,7 @@ export async function saveMail(
       from,
       to,
       preview: bodyPreview,
-      hasUnread: true,
+      hasUnread: !isSentMail, // 送信済みメールの場合は未読フラグをfalseにする
       labels: initialLabels,
       lastMessageAt: receivedAt,
       sentAt: sentAt, // 最新メッセージの送信日時
@@ -309,7 +296,7 @@ export async function saveMail(
     hasLargeBody,
     hasAttachments: parsed.attachments && parsed.attachments.length > 0,
     storage: storageData,
-    isRead: false,
+    isRead: isSentMail, // 送信済みメールの場合は既読にする
     labels: initialLabels,
     deletedAt: null,
     createdAt: now,

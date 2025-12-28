@@ -464,6 +464,126 @@ describe('saveMail', () => {
       expect(messageData.isRead).toBe(false);
       expect(messageData.labels).toContain('inbox');
     });
+
+    it('送信済みメール（isSentMail=true）の場合はisReadがtrueで保存される', async () => {
+      (canStoreMail as jest.Mock).mockResolvedValue(true);
+      (encryption.encryptForUser as jest.Mock).mockResolvedValue({
+        ciphertext: 'encrypted',
+        nonce: 'nonce',
+        tag: 'tag',
+      });
+
+      const mockThreadRef = {
+        get: jest.fn().mockResolvedValue({ exists: false }),
+        set: jest.fn().mockResolvedValue(undefined),
+      };
+
+      const mockMessageRef = {
+        set: jest.fn().mockResolvedValue(undefined),
+      };
+
+      const mockUserRef = {
+        get: jest.fn().mockResolvedValue({
+          exists: true,
+          data: () => ({
+            plan: { maxStorageBytes: 2147483648 },
+            usage: { storageBytes: 0 },
+          }),
+        }),
+        update: jest.fn().mockResolvedValue(undefined),
+        collection: jest.fn((subPath: string) => {
+          if (subPath === 'mailThreads') {
+            return { doc: jest.fn(() => mockThreadRef) };
+          }
+          if (subPath === 'mailMessages') {
+            return { doc: jest.fn(() => mockMessageRef) };
+          }
+          return { doc: jest.fn() };
+        }),
+      };
+
+      mockFirestore.collection = jest.fn(() => ({
+        doc: jest.fn(() => mockUserRef),
+      }));
+
+      await saveMail(
+        mockUid,
+        mockMessageId,
+        mockThreadId,
+        mockRawMessage,
+        mockParsed,
+        mockFirestore,
+        mockStorage,
+        true // isSentMail=true
+      );
+
+      expect(mockMessageRef.set).toHaveBeenCalled();
+      const setCall = mockMessageRef.set.mock.calls[0];
+      const messageData = setCall[0];
+      expect(messageData.messageId).toBe(mockMessageId);
+      expect(messageData.threadId).toBe(mockThreadId);
+      expect(messageData.isRead).toBe(true); // 送信済みメールは既読
+      expect(messageData.labels).toContain('sent');
+      expect(messageData.labels).not.toContain('inbox');
+    });
+
+    it('送信済みメール（isSentMail=true）の場合、スレッドのhasUnreadがfalseになる', async () => {
+      (canStoreMail as jest.Mock).mockResolvedValue(true);
+      (encryption.encryptForUser as jest.Mock).mockResolvedValue({
+        ciphertext: 'encrypted',
+        nonce: 'nonce',
+        tag: 'tag',
+      });
+
+      const mockThreadRef = {
+        get: jest.fn().mockResolvedValue({ exists: false }),
+        set: jest.fn().mockResolvedValue(undefined),
+      };
+
+      const mockMessageRef = {
+        set: jest.fn().mockResolvedValue(undefined),
+      };
+
+      const mockUserRef = {
+        get: jest.fn().mockResolvedValue({
+          exists: true,
+          data: () => ({
+            plan: { maxStorageBytes: 2147483648 },
+            usage: { storageBytes: 0 },
+          }),
+        }),
+        update: jest.fn().mockResolvedValue(undefined),
+        collection: jest.fn((subPath: string) => {
+          if (subPath === 'mailThreads') {
+            return { doc: jest.fn(() => mockThreadRef) };
+          }
+          if (subPath === 'mailMessages') {
+            return { doc: jest.fn(() => mockMessageRef) };
+          }
+          return { doc: jest.fn() };
+        }),
+      };
+
+      mockFirestore.collection = jest.fn(() => ({
+        doc: jest.fn(() => mockUserRef),
+      }));
+
+      await saveMail(
+        mockUid,
+        mockMessageId,
+        mockThreadId,
+        mockRawMessage,
+        mockParsed,
+        mockFirestore,
+        mockStorage,
+        true // isSentMail=true
+      );
+
+      expect(mockThreadRef.set).toHaveBeenCalled();
+      const setCall = mockThreadRef.set.mock.calls[0];
+      const threadData = setCall[0];
+      expect(threadData.hasUnread).toBe(false); // 送信済みメールのスレッドは未読フラグがfalse
+    });
   });
 
   describe('使用量更新', () => {

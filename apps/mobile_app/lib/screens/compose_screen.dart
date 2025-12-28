@@ -18,6 +18,7 @@ class SendMailRequest {
     this.bcc = const [],
     this.attachments = const [],
     this.threadId,
+    this.inReplyToMessageId, // 返信・転送時の元のメールID（In-Reply-Toヘッダー用）
   });
 
   final String accountId;
@@ -28,6 +29,7 @@ class SendMailRequest {
   final String body;
   final List<AttachmentData> attachments;
   final String? threadId;
+  final String? inReplyToMessageId; // 返信・転送時の元のメールID（In-Reply-Toヘッダー用）
 }
 
 /// 添付ファイルデータ
@@ -71,6 +73,8 @@ class ComposeIntent {
     this.replyToAll,
     this.subject,
     this.body,
+    this.inReplyToMessageId, // 返信・転送時の元のメールID（In-Reply-Toヘッダー用）
+    this.attachments, // 転送時の添付ファイル
   });
 
   final ComposeType type;
@@ -79,6 +83,8 @@ class ComposeIntent {
   final List<String>? replyToAll; // 返信先（全員に返信の場合）
   final String? subject;
   final String? body;
+  final String? inReplyToMessageId; // 返信・転送時の元のメールID（In-Reply-Toヘッダー用）
+  final List<AttachmentData>? attachments; // 転送時の添付ファイル
 
   static const ComposeIntent newMail = ComposeIntent();
 }
@@ -175,22 +181,40 @@ class _ComposeScreenState extends State<ComposeScreen> {
     if (widget.intent.type == ComposeType.reply) {
       // 返信
       if (widget.intent.replyTo != null) {
-        _toController.text = widget.intent.replyTo!;
+        // 表示名付きメールアドレスからメールアドレス部分のみを抽出
+        _toController.text = _extractEmailAddress(widget.intent.replyTo!);
       }
       if (widget.intent.subject != null) {
         _subjectController.text = widget.intent.subject!.startsWith('Re: ')
             ? widget.intent.subject!
             : 'Re: ${widget.intent.subject!}';
+      }
+      // 引用形式の本文を設定
+      if (widget.intent.body != null) {
+        _bodyController.text = widget.intent.body!;
+        // カーソルを先頭に設定
+        _bodyController.selection = TextSelection.collapsed(offset: 0);
       }
     } else if (widget.intent.type == ComposeType.replyAll) {
       // 全員に返信
       if (widget.intent.replyToAll != null) {
-        _toController.text = widget.intent.replyToAll!.join(', ');
+        // 表示名付きメールアドレスからメールアドレス部分のみを抽出
+        final emailAddresses = widget.intent.replyToAll!
+            .map((address) => _extractEmailAddress(address))
+            .where((email) => email.isNotEmpty)
+            .toList();
+        _toController.text = emailAddresses.join(', ');
       }
       if (widget.intent.subject != null) {
         _subjectController.text = widget.intent.subject!.startsWith('Re: ')
             ? widget.intent.subject!
             : 'Re: ${widget.intent.subject!}';
+      }
+      // 引用形式の本文を設定
+      if (widget.intent.body != null) {
+        _bodyController.text = widget.intent.body!;
+        // カーソルを先頭に設定
+        _bodyController.selection = TextSelection.collapsed(offset: 0);
       }
     } else if (widget.intent.type == ComposeType.forward) {
       // 転送
@@ -199,10 +223,17 @@ class _ComposeScreenState extends State<ComposeScreen> {
             ? widget.intent.subject!
             : 'Fw: ${widget.intent.subject!}';
       }
+      // 引用形式の本文を設定（転送プレフィックスは既に本文に含まれているため、そのまま設定）
       if (widget.intent.body != null) {
-        final locale = Localizations.localeOf(context);
-        final prefix = I18nService.translateForwardedMessagePrefix(locale);
-        _bodyController.text = '\n\n$prefix\n${widget.intent.body!}';
+        _bodyController.text = widget.intent.body!;
+        // カーソルを先頭に設定
+        _bodyController.selection = TextSelection.collapsed(offset: 0);
+      }
+      // 転送時の添付ファイルを追加
+      if (widget.intent.attachments != null && widget.intent.attachments!.isNotEmpty) {
+        setState(() {
+          _attachments.addAll(widget.intent.attachments!);
+        });
       }
     }
   }
@@ -266,6 +297,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
         body: _bodyController.text,
         attachments: _attachments,
         threadId: widget.intent.threadId,
+        inReplyToMessageId: widget.intent.inReplyToMessageId,
       );
 
       final response = await widget.repository.sendMail(request);
@@ -526,12 +558,30 @@ class _ComposeScreenState extends State<ComposeScreen> {
     });
   }
 
+  /// メールアドレス文字列をパースして、メールアドレス部分のみを抽出する
+  /// RFC 5322形式（"表示名" <email@example.com>）も対応
   List<String> _parseEmailAddresses(String text) {
     return text
         .split(',')
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
+        .map((address) => _extractEmailAddress(address))
+        .where((email) => email.isNotEmpty)
         .toList();
+  }
+
+  /// メールアドレス文字列から実際のメールアドレス部分を抽出する
+  /// 例: "XXXX" <email@example.com> → email@example.com
+  /// 例: email@example.com → email@example.com
+  String _extractEmailAddress(String address) {
+    // RFC 5322形式（"表示名" <email@example.com>）を処理
+    final bracketMatch = RegExp(r'<([^>]+)>').firstMatch(address);
+    if (bracketMatch != null) {
+      return bracketMatch.group(1)!.trim();
+    }
+    
+    // 通常のメールアドレス形式の場合はそのまま返す
+    return address.trim();
   }
 
   @override

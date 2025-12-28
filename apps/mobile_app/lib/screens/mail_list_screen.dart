@@ -267,6 +267,8 @@ class _MailListScreenState extends State<MailListScreen> {
                                     messageId: messageId,
                                     repository: detailRepository,
                                     planId: widget.planId,
+                                    composeRepository: widget.composeRepository,
+                                    accountRepository: widget.accountRepository,
                                   ),
                                 ),
                               );
