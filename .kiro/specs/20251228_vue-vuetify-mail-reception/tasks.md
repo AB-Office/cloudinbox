@@ -89,27 +89,27 @@
   - 日付・時刻、数値のフォーマット関数を実装する
   - _Requirements: 7.4,7.8,7.9_
 
-- [ ] 6. メール一覧機能の実装
-- [ ] 6.1 (P) Mail Serviceを実装する
+- [x] 6. メール一覧機能の実装
+- [x] 6.1 (P) Mail Serviceを実装する
   - `src/services/mail.ts`を作成する
   - Firestoreからメールスレッド一覧を取得する関数を実装する（ページネーション対応）
   - 画面サイズに応じた表示可能件数を計算する関数を実装する
   - リアルタイム更新（`onSnapshot`）を監視する関数を実装する
   - _Requirements: 3.1,3.2,3.6,3.7,3.14,9.7_
-- [ ] 6.2 (P) Mail Storeを実装する
+- [x] 6.2 (P) Mail Storeを実装する
   - `src/stores/mail.ts`を作成する
   - Piniaストアでメール一覧と詳細の状態を管理する
   - `fetchThreads`、`loadMore`、`calculateItemsPerPage`関数を実装する
   - `selectedThreadId`を追加して2列レイアウト用の選択状態を管理する
   - `selectThread`関数を実装する
   - _Requirements: 3.6,3.7,3.8,3.9,6.5,8.3,8.10_
-- [ ] 6.3 (P) MailListItemコンポーネントを実装する
+- [x] 6.3 (P) MailListItemコンポーネントを実装する
   - `src/components/MailListItem.vue`を作成する
   - 件名、送信者、プレビュー、日時、未読状態、ラベルを表示する
   - 未読メールの件名を太字で表示する
   - Vuetifyの`v-list-item`を使用する
   - _Requirements: 3.3,3.4,3.17_
-- [ ] 6.4 (P) MailListPanelコンポーネントを実装する
+- [x] 6.4 (P) MailListPanelコンポーネントを実装する
   - `src/components/MailListPanel.vue`を作成する
   - メール一覧を表示する（2列レイアウト用）
   - 選択中のスレッドをハイライト表示する
@@ -117,7 +117,7 @@
   - 無限スクロールの追加読み込みを実装する
   - ローディングインジケーターと「すべてのメールを読み込みました」メッセージを表示する
   - _Requirements: 3.8,3.10,3.11,3.15,3.18,6.6_
-- [ ] 6.5 (P) MailListViewコンポーネントを実装する
+- [x] 6.5 (P) MailListViewコンポーネントを実装する
   - `src/views/MailListView.vue`を作成する
   - レスポンシブ対応：モバイルは1列、デスクトップは2列レイアウト
   - モバイル：メール一覧のみ表示

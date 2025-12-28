@@ -23,7 +23,9 @@
     "trash": "ゴミ箱",
     "subject": "件名",
     "from": "送信者",
-    "date": "日時"
+    "date": "日時",
+    "allMailLoaded": "すべてのメールを読み込みました",
+    "selectMessage": "メールを選択してください"
   },
   "navigation": {
     "settings": "設定",

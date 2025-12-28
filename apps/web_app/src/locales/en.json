@@ -23,7 +23,9 @@
     "trash": "Trash",
     "subject": "Subject",
     "from": "From",
-    "date": "Date"
+    "date": "Date",
+    "allMailLoaded": "All mail loaded",
+    "selectMessage": "Select a message"
   },
   "navigation": {
     "settings": "Settings",
