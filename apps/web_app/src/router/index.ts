@@ -1,14 +1,67 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 
 const router = createRouter({
   history: createWebHistory('/mail'),
   routes: [
     {
+      path: '/login',
+      name: 'login',
+      component: () => import('@/views/LoginView.vue'),
+    },
+    {
       path: '/',
-      name: 'home',
-      component: () => import('../App.vue'),
+      name: 'mail-list',
+      component: () => import('@/views/MailListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/:threadId',
+      name: 'mail-detail',
+      component: () => import('@/views/MailDetailView.vue'),
+      meta: { requiresAuth: true },
+      // モバイル・タブレット専用（1列レイアウト時のみ使用）
+    },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: () => import('@/views/SettingsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/settings/accounts',
+      name: 'account-list',
+      component: () => import('@/views/AccountListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/settings/accounts/new',
+      name: 'account-new',
+      component: () => import('@/views/AccountFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/settings/accounts/:accountId',
+      name: 'account-edit',
+      component: () => import('@/views/AccountFormView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('@/views/NotFoundView.vue'),
     },
   ],
+});
+
+router.beforeEach((to, _from, next) => {
+  const authStore = useAuthStore();
+  // 認証が必要なルートかつ未認証の場合、ログイン画面にリダイレクト
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next('/login');
+  } else {
+    next();
+  }
 });
 
 export default router;

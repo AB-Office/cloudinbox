@@ -3,7 +3,13 @@
     "login": "Login",
     "logout": "Logout",
     "loading": "Loading...",
-    "error": "An error occurred"
+    "error": "An error occurred",
+    "notFound": {
+      "title": "404",
+      "heading": "Page Not Found",
+      "message": "The page you are looking for does not exist or may have been moved or deleted.",
+      "backToHome": "Back to Home"
+    }
   },
   "auth": {
     "loginWithGoogle": "Sign in with Google",
@@ -18,5 +24,9 @@
     "subject": "Subject",
     "from": "From",
     "date": "Date"
+  },
+  "navigation": {
+    "settings": "Settings",
+    "menu": "Menu"
   }
 }
