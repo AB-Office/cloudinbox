@@ -43,20 +43,20 @@
   - `src/types/firebase.ts`にFirebase関連の型定義を追加する
   - _Requirements: 3.1,3.2,3.3,4.2,12.1,12.2_
 
-- [ ] 3. 認証機能の実装
-- [ ] 3.1 (P) Auth Serviceを実装する
+- [x] 3. 認証機能の実装
+- [x] 3.1 (P) Auth Serviceを実装する
   - `src/services/auth.ts`を作成する
   - Firebase AuthのGoogle Sign-Inを実装する
   - 認証状態の監視機能を実装する
   - ログアウト機能を実装する
   - _Requirements: 2.3,2.4,2.9,2.12,9.3,9.4,9.5_
-- [ ] 3.2 (P) Auth Storeを実装する
+- [x] 3.2 (P) Auth Storeを実装する
   - `src/stores/auth.ts`を作成する
   - Piniaストアで認証状態を管理する
   - `signInWithGoogle`、`signOut`、`setUser`関数を実装する
   - `isAuthenticated` computed propertyを実装する
   - _Requirements: 2.1,2.2,2.4,2.6,8.1,8.2_
-- [ ] 3.3 (P) LoginViewコンポーネントを実装する
+- [x] 3.3 (P) LoginViewコンポーネントを実装する
   - `src/views/LoginView.vue`を作成する
   - Google Sign-Inボタンを実装する
   - ローディング状態とエラーメッセージを表示する

@@ -5,6 +5,12 @@
     "loading": "Loading...",
     "error": "An error occurred"
   },
+  "auth": {
+    "loginWithGoogle": "Sign in with Google",
+    "loginCancelled": "Login cancelled",
+    "loginFailed": "Login failed",
+    "appTitle": "CloudInbox"
+  },
   "mail": {
     "inbox": "Inbox",
     "all": "All Mail",
@@ -14,4 +20,3 @@
     "date": "Date"
   }
 }
-

@@ -18,4 +18,3 @@ export interface FirebaseServices {
   storage: FirebaseStorage;
   analytics: Analytics | null;
 }
-

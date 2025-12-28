@@ -60,4 +60,3 @@ export interface MailAccount {
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
-

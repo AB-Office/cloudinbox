@@ -70,4 +70,3 @@ export interface DecryptedMailBody {
   bodyText?: string;
   bodyHtml?: string;
 }
-
