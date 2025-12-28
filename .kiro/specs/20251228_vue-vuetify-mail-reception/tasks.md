@@ -30,14 +30,14 @@
   - 既存のモバイルアプリ構造と一貫性を保つ
   - _Requirements: 1.8,1.11_
 
-- [ ] 2. Firebase初期化と型定義の実装
-- [ ] 2.1 (P) Firebase初期化サービスを実装する
+- [x] 2. Firebase初期化と型定義の実装
+- [x] 2.1 (P) Firebase初期化サービスを実装する
   - `src/services/firebase.ts`を作成する
   - 開発環境用と本番環境用のFirebase設定ファイルを用意する
   - 環境変数に基づいて適切な設定を読み込む
   - Firebase Appを初期化する
   - _Requirements: 9.7,9.8,10.1,10.2,10.3_
-- [ ] 2.2 (P) 型定義ファイルを作成する
+- [x] 2.2 (P) 型定義ファイルを作成する
   - `src/types/mail.ts`にメール関連の型定義を追加する（MailThread、MailMessage等）
   - `src/types/account.ts`にアカウント関連の型定義を追加する（MailAccount、AccountFormData、AccountTestResult等）
   - `src/types/firebase.ts`にFirebase関連の型定義を追加する
