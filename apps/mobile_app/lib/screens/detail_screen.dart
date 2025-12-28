@@ -197,10 +197,8 @@ class _DetailScreenState extends State<DetailScreen> {
         .map((line) => '> $line')
         .join('\n');
     
-    // 実日時があればそれを使用、なければ現在時刻を使用（フォールバック）
-    final dateTimeStr = sentAtDateTime != null
-        ? _formatDateTimeForQuote(sentAtDateTime)
-        : DateTime.now().toString();
+    // 実日時があればそれを使用、なければ現在時刻を同フォーマットで使用（フォールバック）
+    final dateTimeStr = _formatDateTimeForQuote(sentAtDateTime ?? DateTime.now());
     
     // 引用の手前に空行を追加
     return '\n$dateTimeStr <$emailAddress>\n$quotedBody';
