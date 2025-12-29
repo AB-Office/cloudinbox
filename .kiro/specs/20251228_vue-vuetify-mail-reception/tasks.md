@@ -202,23 +202,23 @@
   - エラーメッセージを国際化対応する
   - _Requirements: 8.5,8.6,8.7,8.8,8.9,7.7_
 
-- [ ] 10. Firebase Hostingデプロイ設定
-- [ ] 10.1 (P) Viteのビルド設定を調整する
+- [x] 10. Firebase Hostingデプロイ設定
+- [x] 10.1 (P) Viteのビルド設定を調整する
   - `vite.config.ts`で`base: '/mail/'`を設定する
   - ビルド出力ディレクトリを設定する
   - _Requirements: 11.5_
-- [ ] 10.2 (P) `firebase.json`を設定する
+- [x] 10.2 (P) `firebase.json`を設定する
   - Firebase Hostingの設定を追加する
   - `public`ディレクトリ（またはビルド出力ディレクトリ）を`/mail`にマッピングする
   - `rewrites`設定を追加して`/mail/*`へのアクセスを`index.html`にリライトする
   - キャッシュヘッダーを設定する（静的アセットは長期キャッシュ、HTMLは短期キャッシュ）
   - _Requirements: 11.3,11.4,11.7,11.8,11.13,11.14_
-- [ ] 10.3 (P) ルートパスのリダイレクトページを実装する
+- [x] 10.3 (P) ルートパスのリダイレクトページを実装する
   - `public/index.html`を作成する
   - `/mail`にリダイレクトするページを実装する（JavaScriptまたはHTMLメタタグを使用）
   - 将来のランディングページ実装に対応できる構造にする
   - _Requirements: 11.9,11.10,11.11,11.12_
-- [ ] 10.4 (P) デプロイスクリプトを確認する
+- [x] 10.4 (P) デプロイスクリプトを確認する
   - `firebase deploy --only hosting`コマンドが動作することを確認する
   - _Requirements: 11.6_
 
