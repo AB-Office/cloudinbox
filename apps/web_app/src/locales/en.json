@@ -6,6 +6,7 @@
     "error": "An error occurred",
     "back": "Back",
     "cancel": "Cancel",
+    "open": "Open",
     "notFound": {
       "title": "404",
       "heading": "Page Not Found",
@@ -40,6 +41,9 @@
   "navigation": {
     "settings": "Settings",
     "menu": "Menu"
+  },
+  "settings": {
+    "accountDescription": "Add, edit, or delete mail accounts"
   },
   "account": {
     "title": "Account Settings",

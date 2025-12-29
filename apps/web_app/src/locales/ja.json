@@ -6,6 +6,7 @@
     "error": "エラーが発生しました",
     "back": "戻る",
     "cancel": "キャンセル",
+    "open": "開く",
     "notFound": {
       "title": "404",
       "heading": "ページが見つかりません",
@@ -40,6 +41,9 @@
   "navigation": {
     "settings": "設定",
     "menu": "メニュー"
+  },
+  "settings": {
+    "accountDescription": "メールアカウントの追加、編集、削除を行います"
   },
   "account": {
     "title": "アカウント設定",
