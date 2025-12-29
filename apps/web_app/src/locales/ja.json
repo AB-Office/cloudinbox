@@ -115,7 +115,11 @@
       "fetchFailed": "アカウントの取得に失敗しました",
       "saveFailed": "アカウントの保存に失敗しました",
       "deleteFailed": "アカウントの削除に失敗しました",
-      "testFailed": "アカウントの接続テストに失敗しました"
+      "testFailed": "アカウントの接続テストに失敗しました",
+      "limitReached": "アカウント数の上限に達しています。プランをアップグレードしてください。"
+    },
+    "firestore": {
+      "notFound": "リソースが見つかりません"
     }
   },
   "dateTime": {

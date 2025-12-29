@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { MailAccount, AccountFormData, AccountTestResult } from '@/types/account';
 import { accountService } from '@/services/account';
+import { parseError } from '@/utils/errorHandler';
 
 export const useAccountStore = defineStore('account', () => {
   const accounts = ref<MailAccount[]>([]);
@@ -21,8 +22,8 @@ export const useAccountStore = defineStore('account', () => {
     try {
       accounts.value = await accountService.listAccounts(includeInactive);
     } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      error.value = errorMessage;
+      const { message } = parseError(e);
+      error.value = message;
     } finally {
       isLoading.value = false;
     }
@@ -38,8 +39,8 @@ export const useAccountStore = defineStore('account', () => {
     try {
       currentAccount.value = await accountService.getAccount(accountId);
     } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      error.value = errorMessage;
+      const { message } = parseError(e);
+      error.value = message;
     } finally {
       isLoading.value = false;
     }
@@ -62,11 +63,11 @@ export const useAccountStore = defineStore('account', () => {
     try {
       testResult.value = await accountService.testConnection(protocol, formData, accountId);
     } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      error.value = errorMessage;
+      const { message } = parseError(e);
+      error.value = message;
       testResult.value = {
         success: false,
-        errorMessage: errorMessage,
+        errorMessage: message,
       };
     } finally {
       isTesting.value = false;
@@ -85,8 +86,8 @@ export const useAccountStore = defineStore('account', () => {
       // 作成後、アカウント一覧を再取得
       await fetchAccounts();
     } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      error.value = errorMessage;
+      const { message } = parseError(e);
+      error.value = message;
       throw e;
     } finally {
       isLoading.value = false;
@@ -110,8 +111,8 @@ export const useAccountStore = defineStore('account', () => {
         await fetchAccount(accountId);
       }
     } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      error.value = errorMessage;
+      const { message } = parseError(e);
+      error.value = message;
       throw e;
     } finally {
       isLoading.value = false;
@@ -134,8 +135,8 @@ export const useAccountStore = defineStore('account', () => {
         currentAccount.value = null;
       }
     } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      error.value = errorMessage;
+      const { message } = parseError(e);
+      error.value = message;
       throw e;
     } finally {
       isLoading.value = false;
@@ -154,8 +155,8 @@ export const useAccountStore = defineStore('account', () => {
       // 復元後、アカウント一覧を再取得
       await fetchAccounts();
     } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      error.value = errorMessage;
+      const { message } = parseError(e);
+      error.value = message;
       throw e;
     } finally {
       isLoading.value = false;
@@ -178,8 +179,8 @@ export const useAccountStore = defineStore('account', () => {
         currentAccount.value = null;
       }
     } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      error.value = errorMessage;
+      const { message } = parseError(e);
+      error.value = message;
       throw e;
     } finally {
       isLoading.value = false;

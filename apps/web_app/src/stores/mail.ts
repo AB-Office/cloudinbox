@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import type { MailThread, MailMessage, AttachmentListItem } from '@/types/mail';
 import { mailService, calculateItemsPerPage } from '@/services/mail';
+import { parseError } from '@/utils/errorHandler';
 
 export const useMailStore = defineStore('mail', () => {
   const threads = ref<MailThread[]>([]);
@@ -37,8 +38,8 @@ export const useMailStore = defineStore('mail', () => {
       lastDocument.value = result.lastDocument;
       hasMore.value = result.hasMore;
     } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      error.value = errorMessage;
+      const { message } = parseError(e);
+      error.value = message;
     } finally {
       isLoading.value = false;
     }
@@ -66,8 +67,8 @@ export const useMailStore = defineStore('mail', () => {
     try {
       currentMessage.value = await mailService.fetchMessage(messageId);
     } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      error.value = errorMessage;
+      const { message } = parseError(e);
+      error.value = message;
     } finally {
       isLoading.value = false;
     }

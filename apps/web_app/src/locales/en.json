@@ -115,7 +115,11 @@
       "fetchFailed": "Failed to fetch account",
       "saveFailed": "Failed to save account",
       "deleteFailed": "Failed to delete account",
-      "testFailed": "Failed to test account connection"
+      "testFailed": "Failed to test account connection",
+      "limitReached": "Account limit reached. Please upgrade your plan."
+    },
+    "firestore": {
+      "notFound": "Resource not found"
     }
   },
   "dateTime": {
