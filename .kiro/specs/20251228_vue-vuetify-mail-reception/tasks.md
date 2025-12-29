@@ -162,27 +162,27 @@
   - ローディング状態とエラーメッセージを表示する
   - _Requirements: 4.1,4.13,4.14,4.15,4.16,6.7_
 
-- [ ] 8. アカウント設定機能の実装
-- [ ] 8.1 (P) Account Serviceを実装する
+- [x] 8. アカウント設定機能の実装
+- [x] 8.1 (P) Account Serviceを実装する
   - `src/services/account.ts`を作成する
   - `listAccounts`、`getAccount`、`createAccount`、`updateAccount`、`deleteAccount`、`restoreAccount`、`permanentlyDeleteAccount`関数を実装する
   - `testConnection`関数を実装する（Cloud Functions `accountTest`を呼び出す）
   - プラン上限チェックを実装する
   - パスワード暗号化処理を実装する（既存のFirebase Functionsのロジックを使用）
   - _Requirements: 12.1,12.2,12.7,12.13,12.14,12.15,12.16,12.20,12.21,12.22,12.23,12.24,9.3_
-- [ ] 8.2 (P) Account Storeを実装する
+- [x] 8.2 (P) Account Storeを実装する
   - `src/stores/account.ts`を作成する
   - Piniaストアでアカウント一覧と状態を管理する
   - `fetchAccounts`、`fetchAccount`、`testConnection`、`createAccount`、`updateAccount`、`deleteAccount`、`restoreAccount`、`permanentlyDeleteAccount`関数を実装する
   - _Requirements: 12.1,12.2,12.7,12.13,12.18,12.20,12.22,12.23,12.24,8.1_
-- [ ] 8.3 (P) AccountListViewコンポーネントを実装する
+- [x] 8.3 (P) AccountListViewコンポーネントを実装する
   - `src/views/AccountListView.vue`を作成する
   - アクティブなアカウントと削除済みアカウントの両方を表示する
   - アカウント追加、編集、削除、復元、完全削除のアクションを実装する
   - ローディング状態とエラーメッセージを表示する
   - Vuetifyのコンポーネントを使用する
   - _Requirements: 12.2,12.3,12.18,12.22,12.23,12.24,12.25,12.26,12.27,12.28_
-- [ ] 8.4 (P) AccountFormViewコンポーネントを実装する
+- [x] 8.4 (P) AccountFormViewコンポーネントを実装する
   - `src/views/AccountFormView.vue`を作成する
   - アカウント追加・編集フォームを実装する
   - ラベル、メールアドレス、POP3設定、SMTP設定の入力フィールドを追加する
