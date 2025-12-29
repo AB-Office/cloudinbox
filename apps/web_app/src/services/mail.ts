@@ -66,11 +66,13 @@ export const mailService = {
     );
 
     if (label === 'inbox') {
+      // 受信トレイ: 'inbox'ラベルを含むものを取得（'trash'除外はクライアント側でフィルタリング）
+      // フィルタリングで件数が減る可能性があるため、多めに取得
       q = query(
         collection(db, 'users', uid, 'mailThreads'),
         where('labels', 'array-contains', 'inbox'),
         orderBy('lastMessageAt', 'desc'),
-        limit(limitCount + 1)
+        limit((limitCount + 1) * 2) // フィルタリングのため多めに取得
       );
     } else if (label === 'trash') {
       q = query(
@@ -88,9 +90,20 @@ export const mailService = {
     }
 
     const snapshot = await getDocs(q);
-    const docs = snapshot.docs;
+    let docs = snapshot.docs;
+
+    // 受信トレイの場合は、クライアント側で'trash'ラベルを含まないものだけをフィルタリング
+    // （Firestoreでは複数のarray-contains条件を組み合わせられないため）
+    if (label === 'inbox') {
+      docs = docs.filter(doc => {
+        const data = doc.data();
+        const labels = (data.labels as string[]) || [];
+        return labels.includes('inbox') && !labels.includes('trash');
+      });
+    }
+
+    // ページネーション判定: フィルタリング後の件数で判定
     const hasMore = docs.length > limitCount;
-    // hasMoreがtrueの場合は最後の1件を除外（次のページ判定用に保持）
     const threadsToReturn = hasMore ? docs.slice(0, limitCount) : docs;
 
     const threads = threadsToReturn.map(doc => ({
@@ -99,6 +112,8 @@ export const mailService = {
       ...doc.data(),
     })) as MailThread[];
 
+    // lastDocumentは、フィルタリング後の最後のドキュメントを使用
+    // （次のクエリのstartAfterで使用される。フィルタリング後のドキュメントでも問題ない）
     return {
       threads,
       lastDocument: threadsToReturn.length > 0 ? threadsToReturn[threadsToReturn.length - 1] : null,
@@ -135,7 +150,18 @@ export const mailService = {
     // label === 'all' の場合はフィルタリングなし
 
     return onSnapshot(q, snapshot => {
-      const threads = snapshot.docs.map(doc => ({
+      let docs = snapshot.docs;
+
+      // 受信トレイの場合は、クライアント側で'trash'ラベルを含まないものだけをフィルタリング
+      if (label === 'inbox') {
+        docs = docs.filter(doc => {
+          const data = doc.data();
+          const labels = (data.labels as string[]) || [];
+          return labels.includes('inbox') && !labels.includes('trash');
+        });
+      }
+
+      const threads = docs.map(doc => ({
         id: doc.id,
         threadId: doc.id,
         ...doc.data(),
@@ -197,6 +223,13 @@ export const mailService = {
    */
   async markAsRead(messageId: string, threadId: string): Promise<void> {
     const markAsRead = httpsCallable(functions, 'markAsRead');
-    await markAsRead({ messageId, threadId });
+    try {
+      await markAsRead({ messageId, threadId });
+    } catch (e: unknown) {
+      // CORSエラーやその他のエラーを無視（開発環境などでエミュレーターが動いていない場合など）
+      // エラーをログに記録するが、ユーザーには表示しない
+      console.warn('Failed to mark message as read:', e);
+      // エラーを再スローしない（UIの動作を妨げないため）
+    }
   },
 };

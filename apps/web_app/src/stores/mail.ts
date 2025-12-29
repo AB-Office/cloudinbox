@@ -100,16 +100,22 @@ export const useMailStore = defineStore('mail', () => {
    * @param threadId スレッドID
    */
   async function markAsRead(messageId: string, threadId: string) {
-    await mailService.markAsRead(messageId, threadId);
-    // スレッドのhasUnreadを再計算
-    const thread = threads.value.find(t => t.threadId === threadId);
-    if (thread) {
-      // スレッド内のすべてのメッセージを確認してhasUnreadを再計算
-      // （実装詳細はmailServiceに委譲）
-      // ここでは、既読にしたメッセージが最新メッセージの場合、hasUnreadをfalseにする
-      if (thread.latestMessageId === messageId) {
-        thread.hasUnread = false;
+    try {
+      await mailService.markAsRead(messageId, threadId);
+      // スレッドのhasUnreadを再計算
+      const thread = threads.value.find(t => t.threadId === threadId);
+      if (thread) {
+        // スレッド内のすべてのメッセージを確認してhasUnreadを再計算
+        // （実装詳細はmailServiceに委譲）
+        // ここでは、既読にしたメッセージが最新メッセージの場合、hasUnreadをfalseにする
+        if (thread.latestMessageId === messageId) {
+          thread.hasUnread = false;
+        }
       }
+    } catch (e: unknown) {
+      // エラーは無視（CORSエラーなど、開発環境でエミュレーターが動いていない場合など）
+      // コンソールに警告を出力するが、ユーザーには表示しない
+      console.warn('Failed to mark message as read:', e);
     }
   }
 

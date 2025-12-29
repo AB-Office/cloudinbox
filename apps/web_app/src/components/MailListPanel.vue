@@ -1,13 +1,14 @@
 <template>
   <div class="mail-list-panel">
     <v-list v-if="threads.length > 0" class="pa-0">
-      <mail-list-item
-        v-for="thread in threads"
-        :key="thread.threadId"
-        :thread="thread"
-        :class="{ 'mail-item-selected': thread.threadId === selectedThreadId }"
-        @click="handleThreadClick"
-      />
+      <template v-for="(thread, index) in threads" :key="thread.threadId">
+        <mail-list-item
+          :thread="thread"
+          :class="{ 'mail-item-selected': thread.threadId === selectedThreadId }"
+          @click="handleThreadClick"
+        />
+        <v-divider v-if="index < threads.length - 1" />
+      </template>
     </v-list>
 
     <!-- ローディングインジケーター -->
@@ -138,6 +139,7 @@ onUnmounted(() => {
 .mail-list-panel {
   height: 100%;
   overflow-y: auto;
+  padding-top: 8px;
 }
 
 .mail-item-selected {

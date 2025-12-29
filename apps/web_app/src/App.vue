@@ -11,17 +11,27 @@ const { t } = useI18n();
 const { mdAndUp } = useDisplay();
 const authStore = useAuthStore();
 
-// ナビゲーションドロワーの開閉状態
-const drawer = ref(false);
-
 // ログイン画面ではナビゲーションを表示しない
 const showNavigation = computed(() => {
   return authStore.isAuthenticated && route.name !== 'login';
 });
 
-// デスクトップでは常に表示、モバイルではハンバーガーメニューで制御
+// デスクトップかモバイルかを判定
 const isMobile = computed(() => !mdAndUp.value);
-const permanent = computed(() => mdAndUp.value);
+
+// ナビゲーションドロワーの開閉状態
+// デフォルト: デスクトップ（2列）は開く、モバイル（1列）は閉じる
+const drawer = ref(mdAndUp.value);
+
+// 画面サイズ変更時にデフォルト状態を更新
+watch(
+  () => mdAndUp.value,
+  newValue => {
+    // 画面サイズが変わったとき、初期状態にリセット
+    // （ユーザーが手動で開閉した場合は保持したいが、簡単のためデフォルトにリセット）
+    drawer.value = newValue;
+  }
+);
 
 // モバイルでは、ルート変更時にドロワーを閉じる
 watch(
@@ -96,7 +106,6 @@ async function handleLogout() {
     <!-- ナビゲーションバー（App Bar） -->
     <v-app-bar v-if="showNavigation" color="primary" prominent>
       <v-app-bar-nav-icon
-        v-if="isMobile"
         variant="text"
         @click.stop="drawer = !drawer"
       ></v-app-bar-nav-icon>
@@ -115,7 +124,7 @@ async function handleLogout() {
     <v-navigation-drawer
       v-if="showNavigation"
       v-model="drawer"
-      :permanent="permanent"
+      :permanent="!isMobile"
       :temporary="isMobile"
     >
       <v-list nav density="comfortable">
