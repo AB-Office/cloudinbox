@@ -70,3 +70,12 @@ export interface DecryptedMailBody {
   bodyText?: string;
   bodyHtml?: string;
 }
+
+/**
+ * 添付ファイル情報
+ */
+export interface AttachmentListItem {
+  filename: string;
+  size: number; // bytes
+  contentType: string;
+}

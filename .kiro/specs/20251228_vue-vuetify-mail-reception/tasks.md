@@ -126,36 +126,36 @@
   - ゴミ箱と「すべてのメール」の表示を実装する
   - _Requirements: 3.12,3.13,5.5,5.6,6.2,6.3,6.4,6.5,6.11_
 
-- [ ] 7. メール詳細機能の実装
-- [ ] 7.1 (P) Mail Serviceにメール詳細取得機能を追加する
+- [x] 7. メール詳細機能の実装
+- [x] 7.1 (P) Mail Serviceにメール詳細取得機能を追加する
   - `fetchMessage`関数を実装する
   - `decryptMailBody`関数を実装する（Cloud Functions `decryptMail`を呼び出す）
   - `getAttachmentsList`関数を実装する（Cloud Functions `getAttachmentsList`を呼び出す）
   - `markAsRead`関数を実装する（未読状態の更新とスレッドの`hasUnread`再計算）
   - _Requirements: 4.2,4.4,4.5,4.6,4.9,4.10,4.11,9.1,9.2,9.3,9.4,9.5,9.6_
-- [ ] 7.2 (P) Mail Storeにメール詳細管理機能を追加する
+- [x] 7.2 (P) Mail Storeにメール詳細管理機能を追加する
   - `fetchMessage`、`decryptMailBody`、`markAsRead`関数を実装する
   - `currentMessage`の状態管理を追加する
   - _Requirements: 4.1,4.11,8.4_
-- [ ] 7.3 (P) MailHeaderコンポーネントを実装する
+- [x] 7.3 (P) MailHeaderコンポーネントを実装する
   - `src/components/MailHeader.vue`を作成する
   - 件名、送信者、受信者（to、cc、bcc）、送信日時、添付ファイル情報を表示する
   - Vuetifyのコンポーネントを使用する
   - _Requirements: 4.3,4.16_
-- [ ] 7.4 (P) MailBodyコンポーネントを実装する
+- [x] 7.4 (P) MailBodyコンポーネントを実装する
   - `src/components/MailBody.vue`を作成する
   - HTML形式の本文を優先的に表示し、HTML形式がない場合はテキスト形式を表示する
   - HTMLコンテンツを安全にレンダリングする（XSS対策）
   - 復号済みのメール本文をクライアント側でキャッシュしない
   - _Requirements: 4.7,4.8,4.12_
-- [ ] 7.5 (P) MailDetailPanelコンポーネントを実装する
+- [x] 7.5 (P) MailDetailPanelコンポーネントを実装する
   - `src/components/MailDetailPanel.vue`を作成する
   - メール詳細を表示する（2列レイアウト用）
   - MailHeaderとMailBodyを使用する
   - ローディング状態とエラーメッセージを表示する
   - プレースホルダー（「メールを選択してください」）を表示する
   - _Requirements: 4.13,4.14,4.15,4.16,6.12_
-- [ ] 7.6 (P) MailDetailViewコンポーネントを実装する
+- [x] 7.6 (P) MailDetailViewコンポーネントを実装する
   - `src/views/MailDetailView.vue`を作成する
   - メール詳細を全画面で表示する（モバイル専用）
   - MailHeaderとMailBodyを使用する

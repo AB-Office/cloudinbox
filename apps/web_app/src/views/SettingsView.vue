@@ -8,4 +8,3 @@
 <script setup lang="ts">
 // Settings View - 後続タスクで実装
 </script>
-

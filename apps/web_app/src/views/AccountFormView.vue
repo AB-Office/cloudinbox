@@ -8,4 +8,3 @@
 <script setup lang="ts">
 // Account Form View - 後続タスクで実装
 </script>
-

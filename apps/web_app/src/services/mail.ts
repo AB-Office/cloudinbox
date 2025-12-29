@@ -15,7 +15,7 @@ import {
 import { getAuth } from 'firebase/auth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from './firebase';
-import type { MailThread, MailMessage } from '@/types/mail';
+import type { MailThread, MailMessage, AttachmentListItem } from '@/types/mail';
 
 const db = getFirestore(firebaseApp);
 const functions = getFunctions(firebaseApp, 'asia-northeast1');
@@ -176,6 +176,18 @@ export const mailService = {
     const decryptMail = httpsCallable(functions, 'decryptMail');
     const result = await decryptMail({ messageId });
     return result.data as { bodyText?: string; bodyHtml?: string };
+  },
+
+  /**
+   * 添付ファイル一覧を取得する
+   * @param messageId メッセージID
+   * @returns 添付ファイル一覧
+   */
+  async getAttachmentsList(messageId: string): Promise<AttachmentListItem[]> {
+    const getAttachmentsList = httpsCallable(functions, 'getAttachmentsList');
+    const result = await getAttachmentsList({ messageId });
+    const response = result.data as { attachments: AttachmentListItem[] };
+    return response.attachments || [];
   },
 
   /**

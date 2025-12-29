@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
-import type { MailThread, MailMessage } from '@/types/mail';
+import type { MailThread, MailMessage, AttachmentListItem } from '@/types/mail';
 import { mailService, calculateItemsPerPage } from '@/services/mail';
 
 export const useMailStore = defineStore('mail', () => {
@@ -85,6 +85,15 @@ export const useMailStore = defineStore('mail', () => {
   }
 
   /**
+   * 添付ファイル一覧を取得する
+   * @param messageId メッセージID
+   * @returns 添付ファイル一覧
+   */
+  async function getAttachmentsList(messageId: string): Promise<AttachmentListItem[]> {
+    return await mailService.getAttachmentsList(messageId);
+  }
+
+  /**
    * メールを既読にする
    * @param messageId メッセージID
    * @param threadId スレッドID
@@ -145,6 +154,7 @@ export const useMailStore = defineStore('mail', () => {
     loadMore,
     fetchMessage,
     decryptMailBody,
+    getAttachmentsList,
     markAsRead,
     selectThread,
     reset,

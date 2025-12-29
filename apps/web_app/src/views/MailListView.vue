@@ -7,16 +7,12 @@
       </v-col>
 
       <!-- メール詳細パネル（デスクトップのみ表示） -->
-      <v-col v-if="isDesktop" cols="8" md="8" lg="8">
+      <v-col v-if="isDesktop" cols="8" md="8" lg="8" class="fill-height">
         <mail-detail-panel
-          v-if="selectedThreadId && currentMessage"
           :message="currentMessage"
+          :is-loading="mailStore.isLoading"
+          :error="mailStore.error"
         />
-        <v-container v-else class="d-flex align-center justify-center fill-height">
-          <v-card-text class="text-center text--secondary">
-            {{ t('mail.selectMessage') }}
-          </v-card-text>
-        </v-container>
       </v-col>
     </v-row>
   </v-container>
@@ -26,7 +22,6 @@
 import { computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDisplay } from 'vuetify';
-import { useI18n } from 'vue-i18n';
 import { useMailStore } from '@/stores/mail';
 import MailListPanel from '@/components/MailListPanel.vue';
 import MailDetailPanel from '@/components/MailDetailPanel.vue';
@@ -34,11 +29,9 @@ import MailDetailPanel from '@/components/MailDetailPanel.vue';
 const route = useRoute();
 const router = useRouter();
 const { mdAndUp } = useDisplay();
-const { t } = useI18n();
 const mailStore = useMailStore();
 
 const isDesktop = computed(() => mdAndUp.value);
-const selectedThreadId = computed(() => mailStore.selectedThreadId);
 const currentMessage = computed(() => mailStore.currentMessage);
 
 // ルートのクエリパラメータからラベルを取得（デフォルトは'inbox'）

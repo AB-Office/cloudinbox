@@ -16,7 +16,10 @@
     </div>
 
     <!-- すべてのメールを読み込みましたメッセージ -->
-    <div v-if="!hasMore && !isLoading && threads.length > 0" class="text-center pa-4 text-caption text-grey">
+    <div
+      v-if="!hasMore && !isLoading && threads.length > 0"
+      class="text-center pa-4 text-caption text-grey"
+    >
       {{ t('mail.allMailLoaded') }}
     </div>
 
@@ -29,7 +32,10 @@
     </v-alert>
 
     <!-- 空の状態 -->
-    <div v-if="!isLoading && threads.length === 0 && !error" class="d-flex align-center justify-center pa-8">
+    <div
+      v-if="!isLoading && threads.length === 0 && !error"
+      class="d-flex align-center justify-center pa-8"
+    >
       <div class="text-center text-grey">
         <v-icon size="large" class="mb-2">mdi-email-outline</v-icon>
         <p>{{ t('mail.inbox') }}</p>
@@ -143,4 +149,3 @@ onUnmounted(() => {
   width: 100%;
 }
 </style>
-
