@@ -79,9 +79,9 @@
                 v-model="formData.pop3Password"
                 :label="t('account.password')"
                 type="password"
-                :rules="[rules.required(t('account.passwordRequired'))]"
+                :rules="isEditMode ? [] : [rules.required(t('account.passwordRequired'))]"
                 :hint="isEditMode ? t('account.passwordHint') : undefined"
-                required
+                :required="!isEditMode"
                 class="mb-2"
               ></v-text-field>
 
@@ -267,7 +267,7 @@ const canTestPop3 = computed(() => {
   );
 });
 
-const canTestSmtp = computed(() => {
+const canTestSmtp1 = computed(() => {
   return !!(
     formData.value.smtpHost &&
     formData.value.smtpPort &&
@@ -276,13 +276,20 @@ const canTestSmtp = computed(() => {
   );
 });
 
+const canTestSmtp = computed(() => {
+  const port = formData.value.smtpPort;
+  const hasBasics =
+    !!formData.value.smtpHost &&
+    !!port &&
+    !!formData.value.smtpUsername &&
+    !!formData.value.smtpPassword;
+  const isValidPort = typeof port === 'number' && port >= 1 && port <= 65535;
+  return hasBasics && isValidPort;
+});
+
 // POP3設定からコピーが可能かどうか
 const canCopyFromPop3 = computed(() => {
-  return !!(
-    formData.value.pop3Host &&
-    formData.value.pop3Username &&
-    formData.value.pop3Password
-  );
+  return !!(formData.value.pop3Host && formData.value.pop3Username && formData.value.pop3Password);
 });
 
 /**

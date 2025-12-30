@@ -234,11 +234,12 @@ describe('mailService', () => {
   });
 
   describe('moveToTrash', () => {
-    it('should add trash label to message and set deletedAt', async () => {
+    it('should add trash label to message and thread, and set deletedAt', async () => {
       const messageId = 'test-message-id';
       const threadId = 'test-thread-id';
 
       const mockMessageRef = {};
+      const mockThreadRef = {};
       const mockMessageDoc = {
         exists: () => true,
         data: () => ({ threadId }),
@@ -249,7 +250,9 @@ describe('mailService', () => {
         commit: vi.fn().mockResolvedValue(undefined),
       };
 
-      vi.mocked(doc).mockReturnValue(mockMessageRef as any);
+      vi.mocked(doc)
+        .mockReturnValueOnce(mockMessageRef as any)
+        .mockReturnValueOnce(mockThreadRef as any);
       vi.mocked(getDoc).mockResolvedValue(mockMessageDoc as any);
       vi.mocked(writeBatch).mockReturnValue(mockBatch as any);
 
@@ -260,6 +263,13 @@ describe('mailService', () => {
         expect.objectContaining({
           labels: expect.objectContaining({ type: 'arrayUnion' }),
           deletedAt: expect.anything(),
+          updatedAt: expect.anything(),
+        })
+      );
+      expect(mockBatch.update).toHaveBeenCalledWith(
+        mockThreadRef,
+        expect.objectContaining({
+          labels: expect.objectContaining({ type: 'arrayUnion' }),
           updatedAt: expect.anything(),
         })
       );

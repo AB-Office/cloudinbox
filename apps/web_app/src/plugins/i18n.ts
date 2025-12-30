@@ -100,7 +100,10 @@ const numberFormats = {
 const i18n: I18n = createI18n({
   legacy: false, // Composition APIを使用するため
   globalInjection: true, // テンプレート内で$tを使用可能にする
-  locale: navigator.language.split('-')[0] || 'ja',
+  locale:
+    typeof navigator !== 'undefined' && navigator.language
+      ? navigator.language.split('-')[0]
+      : 'ja',
   fallbackLocale: 'ja',
   messages: {
     ja,

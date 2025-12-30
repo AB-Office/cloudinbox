@@ -296,7 +296,9 @@ describe('mailStore', () => {
     it('should call mailService.getAttachmentsList', async () => {
       const store = useMailStore();
       const messageId = 'test-message-id';
-      const mockAttachments = [{ filename: 'test.pdf', size: 1024, contentType: 'application/pdf' }];
+      const mockAttachments = [
+        { filename: 'test.pdf', size: 1024, contentType: 'application/pdf' },
+      ];
 
       vi.mocked(mailService.mailService.getAttachmentsList).mockResolvedValue(mockAttachments);
 

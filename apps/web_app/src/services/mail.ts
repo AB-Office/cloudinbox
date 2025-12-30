@@ -31,10 +31,10 @@ export function calculateItemsPerPage(): number {
   // 画面サイズとメール一覧アイテムの高さから表示可能件数を計算
   // デフォルトは15件、画面が大きい場合は20件、小さい場合は10件
   if (typeof window === 'undefined') return 15;
-  const viewportHeight = window.innerHeight;
+  const viewportHeight = window.innerHeight || 0;
   const itemHeight = 80; // メール一覧アイテムの推定高さ（px）
   const headerHeight = 100; // ヘッダー・ナビゲーションの推定高さ（px）
-  const availableHeight = viewportHeight - headerHeight;
+  const availableHeight = Math.max(0, viewportHeight - headerHeight);
   const calculatedItems = Math.floor(availableHeight / itemHeight);
   // 10-20件の範囲に制限し、若干の余裕を持たせる
   return Math.max(10, Math.min(20, calculatedItems + 3));
@@ -229,10 +229,25 @@ export const mailService = {
   async downloadAttachment(
     messageId: string,
     filename: string
-  ): Promise<{ content: string; filename: string; contentType: string; size: number }> {
+  ): Promise<{
+    content: string;
+    filename: string;
+    contentType: string;
+    size: number;
+  }> {
     const downloadAttachment = httpsCallable(functions, 'downloadAttachment');
-    const result = await downloadAttachment({ messageId, filename });
-    return result.data as { content: string; filename: string; contentType: string; size: number };
+    try {
+      const result = await downloadAttachment({ messageId, filename });
+      return result.data as {
+        content: string;
+        filename: string;
+        contentType: string;
+        size: number;
+      };
+    } catch (e) {
+      console.error('Failed to download attachment:', e);
+      throw e;
+    }
   },
 
   /**
@@ -285,8 +300,12 @@ export const mailService = {
       updatedAt: serverTimestamp(),
     });
 
-    // メールスレッドドキュメントの更新は行わない（スレッド全体の誤ラベリング防止）
-    // 必要であればサーバー側集約ロジックで対応する
+    // スレッド側にもtrashを付与（一覧整合性のため）
+    const threadRef = doc(db, 'users', uid, 'mailThreads', threadId);
+    batch.update(threadRef, {
+      labels: arrayUnion('trash'),
+      updatedAt: serverTimestamp(),
+    });
 
     // バッチ更新をコミット
     await batch.commit();

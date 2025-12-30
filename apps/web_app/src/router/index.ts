@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { authService } from '@/services/auth';
 
 const router = createRouter({
   history: createWebHistory('/mail'),
@@ -54,9 +55,18 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
-  // 認証が必要なルートかつ未認証の場合、ログイン画面にリダイレクト
+  // 認証状態の初期化待ち（未確定時のみ）
+  if (to.meta.requiresAuth && authStore.user === null) {
+    await new Promise<void>(resolve => {
+      const unsub = authService.onAuthStateChanged(user => {
+        authStore.setUser(user);
+        unsub();
+        resolve();
+      });
+    });
+  }
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login');
   } else {

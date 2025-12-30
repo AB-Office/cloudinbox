@@ -192,9 +192,7 @@ describe('accountService', () => {
         currentUser: null,
       } as any);
 
-      await expect(accountService.getAccount('account1')).rejects.toThrow(
-        'User not authenticated'
-      );
+      await expect(accountService.getAccount('account1')).rejects.toThrow('User not authenticated');
     });
   });
 
@@ -366,9 +364,7 @@ describe('accountService', () => {
         pop3Password: 'password',
       } as any;
 
-      await expect(accountService.createAccount(formData)).rejects.toThrow(
-        'Account limit reached'
-      );
+      await expect(accountService.createAccount(formData)).rejects.toThrow('Account limit reached');
     });
   });
 
@@ -540,4 +536,3 @@ describe('accountService', () => {
     });
   });
 });
-
