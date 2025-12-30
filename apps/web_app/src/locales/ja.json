@@ -6,6 +6,7 @@
     "error": "エラーが発生しました",
     "back": "戻る",
     "cancel": "キャンセル",
+    "close": "閉じる",
     "open": "開く",
     "notFound": {
       "title": "404",

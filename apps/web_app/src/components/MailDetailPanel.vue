@@ -94,6 +94,14 @@
         <span class="text-caption">{{ t('mail.restoreFromTrash') }}</span>
       </v-btn>
     </v-bottom-navigation>
+
+    <!-- スナックバー（エラー表示用） -->
+    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="5000" location="bottom">
+      {{ snackbarText }}
+      <template #actions>
+        <v-btn variant="text" @click="snackbar = false">{{ t('common.close') }}</v-btn>
+      </template>
+    </v-snackbar>
   </v-card>
 </template>
 
@@ -104,6 +112,7 @@ import type { MailMessage, DecryptedMailBody, AttachmentListItem } from '@/types
 import { useMailStore } from '@/stores/mail';
 import MailHeader from './MailHeader.vue';
 import MailBody from './MailBody.vue';
+import { useSnackbar } from '@/composables/useSnackbar';
 
 interface Props {
   message: MailMessage | null;
@@ -116,6 +125,7 @@ const props = defineProps<Props>();
 
 const { t } = useI18n();
 const mailStore = useMailStore();
+const { snackbar, snackbarText, snackbarColor, showError } = useSnackbar();
 
 // 復号化されたメール本文（キャッシュしない - 表示用の一時的な状態のみ）
 const decryptedBody = ref<DecryptedMailBody | null>(null);
@@ -206,9 +216,7 @@ async function handleMoveToTrash() {
   try {
     await mailStore.moveToTrash(props.message.messageId);
   } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-    console.error('Failed to move message to trash:', errorMessage);
-    // TODO: エラーメッセージをユーザーに表示
+    showError(e);
   }
 }
 
@@ -221,9 +229,7 @@ async function handleArchive() {
   try {
     await mailStore.archive(props.message.messageId);
   } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-    console.error('Failed to archive message:', errorMessage);
-    // TODO: エラーメッセージをユーザーに表示
+    showError(e);
   }
 }
 
@@ -236,9 +242,7 @@ async function handleUnarchive() {
   try {
     await mailStore.restoreToInbox(props.message.messageId);
   } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-    console.error('Failed to restore message to inbox:', errorMessage);
-    // TODO: エラーメッセージをユーザーに表示
+    showError(e);
   }
 }
 
@@ -251,9 +255,7 @@ async function handleRestoreFromTrash() {
   try {
     await mailStore.restoreFromTrash(props.message.messageId);
   } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-    console.error('Failed to restore message from trash:', errorMessage);
-    // TODO: エラーメッセージをユーザーに表示
+    showError(e);
   }
 }
 

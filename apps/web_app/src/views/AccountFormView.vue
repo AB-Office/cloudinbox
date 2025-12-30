@@ -205,6 +205,14 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- スナックバー（エラー表示用） -->
+    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="5000" location="bottom">
+      {{ snackbarText }}
+      <template #actions>
+        <v-btn variant="text" @click="snackbar = false">{{ t('common.close') }}</v-btn>
+      </template>
+    </v-snackbar>
   </v-container>
 </template>
 
@@ -214,11 +222,13 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/stores/account';
 import type { AccountFormData, AccountTestResult } from '@/types/account';
+import { useSnackbar } from '@/composables/useSnackbar';
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const accountStore = useAccountStore();
+const { snackbar, snackbarText, snackbarColor, showError } = useSnackbar();
 
 const formRef = ref();
 const formValid = ref(false);
@@ -233,7 +243,7 @@ const formData = ref<AccountFormData>({
   pop3Username: '',
   pop3Password: '',
   smtpHost: '',
-  smtpPort: 465,
+  smtpPort: 587,
   smtpUsername: '',
   smtpPassword: '',
 });
@@ -267,15 +277,6 @@ const canTestPop3 = computed(() => {
   );
 });
 
-const canTestSmtp1 = computed(() => {
-  return !!(
-    formData.value.smtpHost &&
-    formData.value.smtpPort &&
-    formData.value.smtpUsername &&
-    formData.value.smtpPassword
-  );
-});
-
 const canTestSmtp = computed(() => {
   const port = formData.value.smtpPort;
   const hasBasics =
@@ -301,7 +302,7 @@ function handleCopyFromPop3() {
   formData.value.smtpHost = formData.value.pop3Host;
   formData.value.smtpUsername = formData.value.pop3Username;
   formData.value.smtpPassword = formData.value.pop3Password;
-  // ポートは通常SMTPは465または587だが、デフォルト値465を維持
+  // ポートは通常SMTPは465または587だが、デフォルト値587を維持
 }
 
 /**
@@ -323,7 +324,7 @@ async function handleTestConnection(protocol: 'pop3' | 'smtp') {
       smtpTestResult.value = accountStore.testResult;
     }
   } catch (error) {
-    console.error('Connection test failed:', error);
+    showError(error);
     if (protocol === 'pop3') {
       pop3TestResult.value = {
         success: false,
@@ -358,8 +359,7 @@ async function handleSave() {
     // 成功後、アカウント一覧に戻る
     router.push('/settings/accounts');
   } catch (error) {
-    // エラーはストアで管理されているため、ここでは処理しない
-    console.error('Failed to save account:', error);
+    showError(error);
   }
 }
 
@@ -389,7 +389,7 @@ async function loadAccount() {
       pop3Username: account.pop3.userName,
       pop3Password: '', // 編集時は空のまま
       smtpHost: account.smtp?.host || '',
-      smtpPort: account.smtp?.port || 465,
+      smtpPort: account.smtp?.port || 587,
       smtpUsername: account.smtp?.userName || '',
       smtpPassword: '', // 編集時は空のまま
     };

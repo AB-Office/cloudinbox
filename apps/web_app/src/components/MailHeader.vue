@@ -67,6 +67,7 @@ import type { Timestamp } from 'firebase/firestore';
 import type { MailMessage, AttachmentListItem } from '@/types/mail';
 import { formatFileSize } from '@/plugins/i18n';
 import { useMailStore } from '@/stores/mail';
+import { useSnackbar } from '@/composables/useSnackbar';
 
 interface Props {
   message: MailMessage;
@@ -77,6 +78,7 @@ const props = defineProps<Props>();
 
 const { t, d } = useI18n();
 const mailStore = useMailStore();
+const { showError } = useSnackbar();
 
 const downloadingFiles = ref<string[]>([]);
 const isDownloading = computed(() => downloadingFiles.value.length > 0);
@@ -107,8 +109,7 @@ async function handleAttachmentClick(attachment: AttachmentListItem) {
   try {
     await mailStore.downloadAttachment(props.message.messageId, attachment.filename);
   } catch (e) {
-    console.error('Failed to download attachment:', e);
-    // エラーはmailStoreで管理されているため、ここではログ出力のみ
+    showError(e);
   } finally {
     const index = downloadingFiles.value.indexOf(attachment.filename);
     if (index > -1) {

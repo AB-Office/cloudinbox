@@ -150,6 +150,14 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- スナックバー（エラー表示用） -->
+    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="5000" location="bottom">
+      {{ snackbarText }}
+      <template #actions>
+        <v-btn variant="text" @click="snackbar = false">{{ t('common.close') }}</v-btn>
+      </template>
+    </v-snackbar>
   </v-container>
 </template>
 
@@ -158,10 +166,12 @@ import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/stores/account';
+import { useSnackbar } from '@/composables/useSnackbar';
 
 const router = useRouter();
 const { t } = useI18n();
 const accountStore = useAccountStore();
+const { snackbar, snackbarText, snackbarColor, showError } = useSnackbar();
 
 // アカウント一覧を分類
 const activeAccounts = computed(() =>
@@ -207,8 +217,7 @@ async function confirmDelete() {
     await accountStore.deleteAccount(deleteDialog.value.accountId);
     deleteDialog.value = { show: false, accountId: null };
   } catch (error) {
-    // エラーはストアで管理されているため、ここではダイアログを閉じるだけ
-    console.error('Failed to delete account:', error);
+    showError(error);
   }
 }
 
@@ -229,8 +238,7 @@ async function confirmPermanentlyDelete() {
     await accountStore.permanentlyDeleteAccount(permanentlyDeleteDialog.value.accountId);
     permanentlyDeleteDialog.value = { show: false, accountId: null };
   } catch (error) {
-    // エラーはストアで管理されているため、ここではダイアログを閉じるだけ
-    console.error('Failed to permanently delete account:', error);
+    showError(error);
   }
 }
 
@@ -251,8 +259,7 @@ async function confirmRestore() {
     await accountStore.restoreAccount(restoreDialog.value.accountId);
     restoreDialog.value = { show: false, accountId: null };
   } catch (error) {
-    // エラーはストアで管理されているため、ここではダイアログを閉じるだけ
-    console.error('Failed to restore account:', error);
+    showError(error);
   }
 }
 

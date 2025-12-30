@@ -6,6 +6,7 @@
     "error": "An error occurred",
     "back": "Back",
     "cancel": "Cancel",
+    "close": "Close",
     "open": "Open",
     "notFound": {
       "title": "404",

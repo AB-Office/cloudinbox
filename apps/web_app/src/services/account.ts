@@ -177,7 +177,7 @@ export const accountService = {
       smtp: formData.smtpHost
         ? {
             host: formData.smtpHost,
-            port: formData.smtpPort || 465,
+            port: formData.smtpPort || 587,
             useSsl: true,
             userName: formData.smtpUsername || formData.pop3Username,
             passwordEnc: smtpPasswordEnc,
@@ -228,7 +228,7 @@ export const accountService = {
     if (formData.smtpHost) {
       const smtpData: Record<string, unknown> = {
         host: formData.smtpHost,
-        port: formData.smtpPort || 465,
+        port: formData.smtpPort || 587,
         useSsl: true,
         userName: formData.smtpUsername || formData.pop3Username,
       };

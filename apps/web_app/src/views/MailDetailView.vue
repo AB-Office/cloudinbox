@@ -94,6 +94,14 @@
         <span class="text-caption">{{ t('mail.restoreFromTrash') }}</span>
       </v-btn>
     </v-bottom-navigation>
+
+    <!-- スナックバー（エラー表示用） -->
+    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="5000" location="bottom">
+      {{ snackbarText }}
+      <template #actions>
+        <v-btn variant="text" @click="snackbar = false">{{ t('common.close') }}</v-btn>
+      </template>
+    </v-snackbar>
   </v-container>
 </template>
 
@@ -105,11 +113,13 @@ import type { MailMessage, DecryptedMailBody, AttachmentListItem } from '@/types
 import { useMailStore } from '@/stores/mail';
 import MailHeader from '@/components/MailHeader.vue';
 import MailBody from '@/components/MailBody.vue';
+import { useSnackbar } from '@/composables/useSnackbar';
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const mailStore = useMailStore();
+const { snackbar, snackbarText, snackbarColor, showError } = useSnackbar();
 
 // メールメッセージの状態
 const message = ref<MailMessage | null>(null);
@@ -226,6 +236,9 @@ async function handleMoveToTrash() {
 
   try {
     await mailStore.moveToTrash(message.value.messageId);
+    // 画面反映: ラベル更新または一覧へ戻る
+    message.value = { ...message.value, labels: [...(message.value.labels || []), 'trash'] };
+    // 必要に応じて一覧へ戻る: router.push('/') など
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : 'Unknown error';
     console.error('Failed to move message to trash:', errorMessage);
@@ -242,9 +255,7 @@ async function handleArchive() {
   try {
     await mailStore.archive(message.value.messageId);
   } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-    console.error('Failed to archive message:', errorMessage);
-    // TODO: エラーメッセージをユーザーに表示
+    showError(e);
   }
 }
 
@@ -257,9 +268,7 @@ async function handleUnarchive() {
   try {
     await mailStore.restoreToInbox(message.value.messageId);
   } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-    console.error('Failed to restore message to inbox:', errorMessage);
-    // TODO: エラーメッセージをユーザーに表示
+    showError(e);
   }
 }
 
@@ -272,9 +281,7 @@ async function handleRestoreFromTrash() {
   try {
     await mailStore.restoreFromTrash(message.value.messageId);
   } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-    console.error('Failed to restore message from trash:', errorMessage);
-    // TODO: エラーメッセージをユーザーに表示
+    showError(e);
   }
 }
 
