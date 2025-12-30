@@ -203,7 +203,7 @@ describe('accountStore', () => {
         pop3Username: 'user',
         pop3Password: 'password',
         smtpHost: 'smtp.example.com',
-        smtpPort: 465,
+        smtpPort: 587,
         smtpUsername: 'user',
         smtpPassword: 'password',
       };

@@ -701,7 +701,6 @@ export const useMailStore = defineStore('mail', () => {
     selectThread,
     fetchMessage,
     decryptMailBody,
-    getAttachmentsList,
     downloadAttachment,
     markAsRead,
     reset,
@@ -752,28 +751,11 @@ export const authService = {
 
 ```typescript
 // services/mail.ts
-import { 
-  getFirestore, 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
-  startAfter,
-  getDocs,
-  doc,
-  getDoc,
-  updateDoc,
-  onSnapshot,
-  QueryDocumentSnapshot,
-  Timestamp 
-} from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { firebaseApp } from './firebase';
-import { MailThread, MailMessage } from '@/types/mail';
+import { getAuth } from 'firebase/auth';
 
 const db = getFirestore(firebaseApp);
 const functions = getFunctions(firebaseApp, 'asia-northeast1');
+const auth = getAuth(firebaseApp);
 
 export const mailService = {
   async fetchThreads(
@@ -781,7 +763,6 @@ export const mailService = {
     limitCount: number,
     lastDoc: QueryDocumentSnapshot | null
   ): Promise<{ threads: MailThread[]; lastDocument: QueryDocumentSnapshot | null; hasMore: boolean }> {
-    const auth = getAuth(firebaseApp);
     const uid = auth.currentUser?.uid;
     if (!uid) throw new Error('User not authenticated');
 

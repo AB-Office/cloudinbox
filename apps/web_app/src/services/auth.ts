@@ -27,9 +27,11 @@ export const authService = {
         error &&
         typeof error === 'object' &&
         'code' in error &&
-        error.code === 'auth/popup-closed-by-user'
+        (error as any).code === 'auth/popup-closed-by-user'
       ) {
-        throw new Error('Login cancelled');
+        const e = new Error('Login cancelled');
+        (e as any).code = 'auth/popup-closed-by-user';
+        throw e;
       }
       throw error;
     }

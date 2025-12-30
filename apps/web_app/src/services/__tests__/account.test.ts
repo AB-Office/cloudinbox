@@ -226,7 +226,7 @@ describe('accountService', () => {
 
       const formData = {
         smtpHost: 'smtp.example.com',
-        smtpPort: 465,
+        smtpPort: 587,
         smtpUsername: 'user',
         smtpPassword: 'password',
       } as any;
@@ -320,6 +320,71 @@ describe('accountService', () => {
       expect(addDoc).toHaveBeenCalled();
     });
 
+    it('should use default SMTP port 587 when smtpPort is not specified', async () => {
+      // プラン上限チェックのモック
+      const mockUserDoc = {
+        exists: () => true,
+        data: () => ({
+          plan: {
+            maxAccounts: 10,
+          },
+        }),
+      };
+
+      const mockAccountsQuery = {
+        size: 5,
+      };
+
+      const mockDocRef = { path: 'users/test-uid' };
+      vi.mocked(doc).mockImplementation((db: any, ...pathSegments: string[]) => {
+        const path = pathSegments.join('/');
+        if (path === 'users/test-uid') {
+          return mockDocRef as any;
+        }
+        return { path } as any;
+      });
+      vi.mocked(getDoc).mockImplementation((ref: any) => {
+        if (ref.path === 'users/test-uid') {
+          return Promise.resolve(mockUserDoc as any);
+        }
+        return Promise.resolve({ exists: () => false } as any);
+      });
+
+      vi.mocked(collection).mockReturnValue({} as any);
+      vi.mocked(query).mockReturnValue({} as any);
+      vi.mocked(where).mockReturnValue({} as any);
+      vi.mocked(getDocs).mockResolvedValue(mockAccountsQuery as any);
+
+      // パスワード暗号化のモック
+      mockCallableFunction.mockResolvedValue({
+        data: {
+          encryptedPassword: 'encrypted-password',
+        },
+      });
+
+      // アカウント作成のモック
+      vi.mocked(addDoc).mockResolvedValue({ id: 'new-account-id' } as any);
+
+      const formData = {
+        label: 'Test Account',
+        email: 'test@example.com',
+        pop3Host: 'pop.example.com',
+        pop3Port: 995,
+        pop3Username: 'user',
+        pop3Password: 'password',
+        smtpHost: 'smtp.example.com',
+        // smtpPort is not specified - should default to 587
+        smtpUsername: 'user',
+        smtpPassword: 'password',
+      } as any;
+
+      await accountService.createAccount(formData);
+
+      expect(addDoc).toHaveBeenCalled();
+      const callArgs = vi.mocked(addDoc).mock.calls[0][1] as any;
+      expect(callArgs.smtp?.port).toBe(587);
+    });
+
     it('should throw error when account limit is reached', async () => {
       // プラン上限チェックのモック（上限に達している場合）
       const mockUserDoc = {
@@ -392,6 +457,30 @@ describe('accountService', () => {
       await accountService.updateAccount('account1', formData);
 
       expect(updateDoc).toHaveBeenCalled();
+    });
+
+    it('should use default SMTP port 587 when smtpPort is not specified in updateAccount', async () => {
+      vi.mocked(doc).mockReturnValue({} as any);
+      vi.mocked(updateDoc).mockResolvedValue(undefined);
+
+      const formData = {
+        label: 'Updated Account',
+        email: 'updated@example.com',
+        pop3Host: 'pop.example.com',
+        pop3Port: 995,
+        pop3Username: 'user',
+        pop3Password: 'newpassword',
+        smtpHost: 'smtp.example.com',
+        // smtpPort is not specified - should default to 587
+        smtpUsername: 'user',
+        smtpPassword: 'password',
+      } as any;
+
+      await accountService.updateAccount('account1', formData);
+
+      expect(updateDoc).toHaveBeenCalled();
+      const callArgs = vi.mocked(updateDoc).mock.calls[0][1] as any;
+      expect(callArgs.smtp?.port).toBe(587);
     });
 
     it('should not update password when password is empty', async () => {

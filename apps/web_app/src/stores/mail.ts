@@ -4,6 +4,7 @@ import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import type { MailThread, MailMessage, AttachmentListItem } from '@/types/mail';
 import { mailService, calculateItemsPerPage } from '@/services/mail';
 import { parseError } from '@/utils/errorHandler';
+import { fi } from 'vuetify/locale';
 
 export const useMailStore = defineStore('mail', () => {
   const threads = ref<MailThread[]>([]);
@@ -103,19 +104,20 @@ export const useMailStore = defineStore('mail', () => {
     try {
       const result = await mailService.downloadAttachment(messageId, filename);
 
-      // Base64をBlobに変換
-      const binaryString = atob(result.content);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
+      // Base64(含むURL-safe)を安全にBlobへ変換
+      const base64 = result.content.replace(/-/g, '+').replace(/_/g, '/');
+      const padLen = (4 - (base64.length % 4)) % 4;
+      const padded = base64 + '='.repeat(padLen);
+      const binary = atob(padded);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
       const blob = new Blob([bytes], { type: result.contentType });
 
       // ダウンロードリンクを作成してクリック
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = result.filename;
+      link.download = result.filename || filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

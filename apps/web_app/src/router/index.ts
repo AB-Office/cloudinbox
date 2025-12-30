@@ -57,6 +57,12 @@ const router = createRouter({
 
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
+  if (to.path === '/login') {
+    if (authStore.isAuthenticated) {
+      return next({ name: 'mail-list' });
+    }
+    return next();
+  }
   // 認証状態の初期化待ち（未確定時のみ）
   if (to.meta.requiresAuth && authStore.user === null) {
     await new Promise<void>(resolve => {
@@ -68,7 +74,7 @@ router.beforeEach(async (to, _from, next) => {
     });
   }
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next('/login');
+    next({ name: 'login' });
   } else {
     next();
   }
