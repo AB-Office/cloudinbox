@@ -1,0 +1,239 @@
+# Implementation Plan
+
+- [x] 1. Vue+Vuetifyプロジェクトのセットアップ
+- [x] 1.1 (P) `apps/web_app/`ディレクトリにVue 3プロジェクトを初期化する
+  - Viteを使用してVue 3プロジェクトを作成する
+  - TypeScriptを有効にする
+  - Composition APIを使用する設定にする
+  - _Requirements: 1.1,1.2,1.4,1.5,1.8_
+- [x] 1.2 (P) Vuetify 3をインストール・設定する
+  - Vuetify 3を依存関係に追加する
+  - Vuetifyプラグインを`main.ts`に登録する
+  - テーマ設定を追加する
+  - _Requirements: 1.3_
+- [x] 1.3 (P) Firebase SDKをインストール・設定する
+  - `firebase`パッケージを依存関係に追加する
+  - Firebase Auth、Firestore、Cloud FunctionsのSDKをインストールする
+  - _Requirements: 1.6_
+- [x] 1.4 (P) vue-router、vue-i18n、Piniaをインストール・設定する
+  - `vue-router`、`vue-i18n`、`pinia`を依存関係に追加する
+  - 各ライブラリの基本設定を行う
+  - _Requirements: 1.7_
+- [x] 1.5 (P) 開発環境とビルド設定を整備する
+  - ESLintとPrettierを設定する
+  - TypeScriptのstrict modeを有効にする
+  - Viteのビルド設定を調整する（ソースマップ生成を含む）
+  - `npm run dev`と`npm run build`コマンドが動作することを確認する
+  - _Requirements: 1.9,1.10,10.4,10.5,10.6_
+- [x] 1.6 (P) プロジェクト構造を作成する
+  - `src/stores/`、`src/services/`、`src/views/`、`src/components/`、`src/composables/`、`src/locales/`、`src/types/`ディレクトリを作成する
+  - 既存のモバイルアプリ構造と一貫性を保つ
+  - _Requirements: 1.8,1.11_
+
+- [x] 2. Firebase初期化と型定義の実装
+- [x] 2.1 (P) Firebase初期化サービスを実装する
+  - `src/services/firebase.ts`を作成する
+  - 開発環境用と本番環境用のFirebase設定ファイルを用意する
+  - 環境変数に基づいて適切な設定を読み込む
+  - Firebase Appを初期化する
+  - _Requirements: 9.7,9.8,10.1,10.2,10.3_
+- [x] 2.2 (P) 型定義ファイルを作成する
+  - `src/types/mail.ts`にメール関連の型定義を追加する（MailThread、MailMessage等）
+  - `src/types/account.ts`にアカウント関連の型定義を追加する（MailAccount、AccountFormData、AccountTestResult等）
+  - `src/types/firebase.ts`にFirebase関連の型定義を追加する
+  - _Requirements: 3.1,3.2,3.3,4.2,12.1,12.2_
+
+- [x] 3. 認証機能の実装
+- [x] 3.1 (P) Auth Serviceを実装する
+  - `src/services/auth.ts`を作成する
+  - Firebase AuthのGoogle Sign-Inを実装する
+  - 認証状態の監視機能を実装する
+  - ログアウト機能を実装する
+  - _Requirements: 2.3,2.4,2.9,2.12,9.3,9.4,9.5_
+- [x] 3.2 (P) Auth Storeを実装する
+  - `src/stores/auth.ts`を作成する
+  - Piniaストアで認証状態を管理する
+  - `signInWithGoogle`、`signOut`、`setUser`関数を実装する
+  - `isAuthenticated` computed propertyを実装する
+  - _Requirements: 2.1,2.2,2.4,2.6,8.1,8.2_
+- [x] 3.3 (P) LoginViewコンポーネントを実装する
+  - `src/views/LoginView.vue`を作成する
+  - Google Sign-Inボタンを実装する
+  - ローディング状態とエラーメッセージを表示する
+  - ログインキャンセル時の処理を実装する
+  - _Requirements: 2.2,2.3,2.7,2.8,8.5,8.9,8.10_
+
+- [x] 4. ルーティングとナビゲーションの実装
+- [x] 4.1 (P) Vue Routerを設定する
+  - `src/router/index.ts`を作成する
+  - ベースパスを`/mail`に設定する
+  - ルート定義を追加する（`/login`、`/`、`/:threadId`、`/settings`、`/settings/accounts`等）
+  - ルートガードを実装する（認証が必要なルートの保護）
+  - 404エラーページを実装する
+  - _Requirements: 5.1,5.2,5.3,5.4,5.7,5.10,5.11_
+- [x] 4.2 (P) ナビゲーションバー/サイドバーを実装する
+  - `v-navigation-drawer`または`v-app-bar`を使用してナビゲーションUIを実装する
+  - 受信トレイ、すべてのメール、ゴミ箱、設定へのリンクを追加する
+  - レスポンシブ対応（デスクトップ：常時表示、モバイル：ハンバーガーメニュー）
+  - _Requirements: 5.8,5.9,6.8_
+
+- [x] 5. 国際化（i18n）の実装
+- [x] 5.1 (P) vue-i18nを設定する
+  - `src/locales/ja.json`と`src/locales/en.json`を作成する
+  - vue-i18nプラグインを`main.ts`に登録する
+  - ブラウザの言語設定に基づいて初期言語を選択する
+  - _Requirements: 7.1,7.2,7.3,7.5_
+- [x] 5.2 (P) 国際化リソースファイルを作成する
+  - 日本語と英語のリソースを定義する
+  - 共通メッセージ、メール関連、エラーメッセージ等を追加する
+  - 日付・時刻、数値のフォーマット関数を実装する
+  - _Requirements: 7.4,7.8,7.9_
+
+- [x] 6. メール一覧機能の実装
+- [x] 6.1 (P) Mail Serviceを実装する
+  - `src/services/mail.ts`を作成する
+  - Firestoreからメールスレッド一覧を取得する関数を実装する（ページネーション対応）
+  - 画面サイズに応じた表示可能件数を計算する関数を実装する
+  - リアルタイム更新（`onSnapshot`）を監視する関数を実装する
+  - _Requirements: 3.1,3.2,3.6,3.7,3.14,9.7_
+- [x] 6.2 (P) Mail Storeを実装する
+  - `src/stores/mail.ts`を作成する
+  - Piniaストアでメール一覧と詳細の状態を管理する
+  - `fetchThreads`、`loadMore`、`calculateItemsPerPage`関数を実装する
+  - `selectedThreadId`を追加して2列レイアウト用の選択状態を管理する
+  - `selectThread`関数を実装する
+  - _Requirements: 3.6,3.7,3.8,3.9,6.5,8.3,8.10_
+- [x] 6.3 (P) MailListItemコンポーネントを実装する
+  - `src/components/MailListItem.vue`を作成する
+  - 件名、送信者、プレビュー、日時、未読状態、ラベルを表示する
+  - 未読メールの件名を太字で表示する
+  - Vuetifyの`v-list-item`を使用する
+  - _Requirements: 3.3,3.4,3.17_
+- [x] 6.4 (P) MailListPanelコンポーネントを実装する
+  - `src/components/MailListPanel.vue`を作成する
+  - メール一覧を表示する（2列レイアウト用）
+  - 選択中のスレッドをハイライト表示する
+  - スクロール位置の検知にIntersection Observer APIを使用する
+  - 無限スクロールの追加読み込みを実装する
+  - ローディングインジケーターと「すべてのメールを読み込みました」メッセージを表示する
+  - _Requirements: 3.8,3.10,3.11,3.15,3.18,6.6_
+- [x] 6.5 (P) MailListViewコンポーネントを実装する
+  - `src/views/MailListView.vue`を作成する
+  - レスポンシブ対応：モバイルは1列、デスクトップは2列レイアウト
+  - モバイル：メール一覧のみ表示
+  - デスクトップ：左側にMailListPanel、右側にMailDetailPanelを表示
+  - メールスレッドクリック時の処理を実装する（モバイル：画面遷移、デスクトップ：同一画面内更新）
+  - ゴミ箱と「すべてのメール」の表示を実装する
+  - _Requirements: 3.12,3.13,5.5,5.6,6.2,6.3,6.4,6.5,6.11_
+
+- [x] 7. メール詳細機能の実装
+- [x] 7.1 (P) Mail Serviceにメール詳細取得機能を追加する
+  - `fetchMessage`関数を実装する
+  - `decryptMailBody`関数を実装する（Cloud Functions `decryptMail`を呼び出す）
+  - `getAttachmentsList`関数を実装する（Cloud Functions `getAttachmentsList`を呼び出す）
+  - `markAsRead`関数を実装する（未読状態の更新とスレッドの`hasUnread`再計算）
+  - _Requirements: 4.2,4.4,4.5,4.6,4.9,4.10,4.11,9.1,9.2,9.3,9.4,9.5,9.6_
+- [x] 7.2 (P) Mail Storeにメール詳細管理機能を追加する
+  - `fetchMessage`、`decryptMailBody`、`markAsRead`関数を実装する
+  - `currentMessage`の状態管理を追加する
+  - _Requirements: 4.1,4.11,8.4_
+- [x] 7.3 (P) MailHeaderコンポーネントを実装する
+  - `src/components/MailHeader.vue`を作成する
+  - 件名、送信者、受信者（to、cc、bcc）、送信日時、添付ファイル情報を表示する
+  - Vuetifyのコンポーネントを使用する
+  - _Requirements: 4.3,4.16_
+- [x] 7.4 (P) MailBodyコンポーネントを実装する
+  - `src/components/MailBody.vue`を作成する
+  - HTML形式の本文を優先的に表示し、HTML形式がない場合はテキスト形式を表示する
+  - HTMLコンテンツを安全にレンダリングする（XSS対策）
+  - 復号済みのメール本文をクライアント側でキャッシュしない
+  - _Requirements: 4.7,4.8,4.12_
+- [x] 7.5 (P) MailDetailPanelコンポーネントを実装する
+  - `src/components/MailDetailPanel.vue`を作成する
+  - メール詳細を表示する（2列レイアウト用）
+  - MailHeaderとMailBodyを使用する
+  - ローディング状態とエラーメッセージを表示する
+  - プレースホルダー（「メールを選択してください」）を表示する
+  - _Requirements: 4.13,4.14,4.15,4.16,6.12_
+- [x] 7.6 (P) MailDetailViewコンポーネントを実装する
+  - `src/views/MailDetailView.vue`を作成する
+  - メール詳細を全画面で表示する（モバイル専用）
+  - MailHeaderとMailBodyを使用する
+  - ローディング状態とエラーメッセージを表示する
+  - _Requirements: 4.1,4.13,4.14,4.15,4.16,6.7_
+
+- [x] 8. アカウント設定機能の実装
+- [x] 8.1 (P) Account Serviceを実装する
+  - `src/services/account.ts`を作成する
+  - `listAccounts`、`getAccount`、`createAccount`、`updateAccount`、`deleteAccount`、`restoreAccount`、`permanentlyDeleteAccount`関数を実装する
+  - `testConnection`関数を実装する（Cloud Functions `accountTest`を呼び出す）
+  - プラン上限チェックを実装する
+  - パスワード暗号化処理を実装する（既存のFirebase Functionsのロジックを使用）
+  - _Requirements: 12.1,12.2,12.7,12.13,12.14,12.15,12.16,12.20,12.21,12.22,12.23,12.24,9.3_
+- [x] 8.2 (P) Account Storeを実装する
+  - `src/stores/account.ts`を作成する
+  - Piniaストアでアカウント一覧と状態を管理する
+  - `fetchAccounts`、`fetchAccount`、`testConnection`、`createAccount`、`updateAccount`、`deleteAccount`、`restoreAccount`、`permanentlyDeleteAccount`関数を実装する
+  - _Requirements: 12.1,12.2,12.7,12.13,12.18,12.20,12.22,12.23,12.24,8.1_
+- [x] 8.3 (P) AccountListViewコンポーネントを実装する
+  - `src/views/AccountListView.vue`を作成する
+  - アクティブなアカウントと削除済みアカウントの両方を表示する
+  - アカウント追加、編集、削除、復元、完全削除のアクションを実装する
+  - ローディング状態とエラーメッセージを表示する
+  - Vuetifyのコンポーネントを使用する
+  - _Requirements: 12.2,12.3,12.18,12.22,12.23,12.24,12.25,12.26,12.27,12.28_
+- [x] 8.4 (P) AccountFormViewコンポーネントを実装する
+  - `src/views/AccountFormView.vue`を作成する
+  - アカウント追加・編集フォームを実装する
+  - ラベル、メールアドレス、POP3設定、SMTP設定の入力フィールドを追加する
+  - POP3/SMTP接続テスト機能を実装する（`accountTest` Cloud Functionsを呼び出す）
+  - テスト結果（成功/失敗、エラーメッセージ）を表示する
+  - SSL/TLS必須のバリデーションを実装する
+  - パスワードフィールドは編集時は空のまま表示する
+  - プラン上限チェックとエラーメッセージを実装する
+  - Vuetifyの`v-form`、`v-text-field`、`v-btn`等を使用する
+  - _Requirements: 12.3,12.4,12.5,12.6,12.7,12.8,12.9,12.10,12.11,12.12,12.14,12.19,12.21,12.28_
+
+- [x] 9. エラーハンドリングの実装
+- [x] 9.1 (P) エラーハンドリングを統合する
+  - 認証エラー、Firestoreクエリエラー、Cloud Functions呼び出しエラーの処理を実装する
+  - ユーザーに分かりやすいエラーメッセージを表示する（技術的な詳細は非表示）
+  - Vuetifyの`v-alert`、`v-snackbar`を使用してエラーメッセージを表示する
+  - エラーメッセージを国際化対応する
+  - _Requirements: 8.5,8.6,8.7,8.8,8.9,7.7_
+
+- [x] 10. Firebase Hostingデプロイ設定
+- [x] 10.1 (P) Viteのビルド設定を調整する
+  - `vite.config.ts`で`base: '/mail/'`を設定する
+  - ビルド出力ディレクトリを設定する
+  - _Requirements: 11.5_
+- [x] 10.2 (P) `firebase.json`を設定する
+  - Firebase Hostingの設定を追加する
+  - `public`ディレクトリ（またはビルド出力ディレクトリ）を`/mail`にマッピングする
+  - `rewrites`設定を追加して`/mail/*`へのアクセスを`index.html`にリライトする
+  - キャッシュヘッダーを設定する（静的アセットは長期キャッシュ、HTMLは短期キャッシュ）
+  - _Requirements: 11.3,11.4,11.7,11.8,11.13,11.14_
+- [x] 10.3 (P) ルートパスのリダイレクトページを実装する
+  - `public/index.html`を作成する
+  - `/mail`にリダイレクトするページを実装する（JavaScriptまたはHTMLメタタグを使用）
+  - 将来のランディングページ実装に対応できる構造にする
+  - _Requirements: 11.9,11.10,11.11,11.12_
+- [x] 10.4 (P) デプロイスクリプトを確認する
+  - `firebase deploy --only hosting`コマンドが動作することを確認する
+  - _Requirements: 11.6_
+
+- [x] 11. レスポンシブデザインの最終調整
+- [x] 11.1 (P) レスポンシブレイアウトを完成させる
+  - Vuetifyのレスポンシブグリッドシステム（`v-row`、`v-col`）を使用する
+  - ブレークポイント（`xs`、`sm`、`md`、`lg`、`xl`）を活用する
+  - 画面サイズ変更時にレイアウトを動的に切り替える（1列↔2列）
+  - デスクトップ（1024px以上）、タブレット（768px-1023px）、モバイル（767px以下）の各画面サイズに対応する
+  - _Requirements: 6.1,6.9,6.10,6.11_
+
+- [x] 12. SettingsViewコンポーネントの実装
+- [x] 12.1 (P) SettingsViewコンポーネントを実装する
+  - `src/views/SettingsView.vue`を作成する
+  - アカウント設定へのナビゲーションを実装する
+  - その他の設定項目へのアクセスを提供する
+  - _Requirements: 5.10,12.29_
+
