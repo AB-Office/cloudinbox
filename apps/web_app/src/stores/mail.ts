@@ -14,6 +14,8 @@ export const useMailStore = defineStore('mail', () => {
   const error = ref<string | null>(null);
   const lastDocument = ref<QueryDocumentSnapshot | null>(null);
   const hasMore = ref(true);
+  const isSending = ref(false);
+  const sendError = ref<string | null>(null);
 
   /**
    * メールスレッド一覧を取得する
@@ -236,6 +238,31 @@ export const useMailStore = defineStore('mail', () => {
   }
 
   /**
+   * メールを送信する
+   * @param request メール送信リクエスト
+   */
+  async function sendMail(request: SendMailRequest): Promise<void> {
+    isSending.value = true;
+    sendError.value = null;
+    try {
+      await mailService.sendMail(request);
+    } catch (e: unknown) {
+      const { message } = parseError(e);
+      sendError.value = message;
+      throw e;
+    } finally {
+      isSending.value = false;
+    }
+  }
+
+  /**
+   * 送信エラーをクリアする
+   */
+  function clearSendError() {
+    sendError.value = null;
+  }
+
+  /**
    * ストアの状態をリセットする
    */
   function reset() {
@@ -256,6 +283,8 @@ export const useMailStore = defineStore('mail', () => {
     error,
     lastDocument,
     hasMore,
+    isSending,
+    sendError,
     // actions
     fetchThreads,
     loadMore,
@@ -269,6 +298,8 @@ export const useMailStore = defineStore('mail', () => {
     restoreFromTrash,
     archive,
     restoreToInbox,
+    sendMail,
+    clearSendError,
     reset,
   };
 });

@@ -19,7 +19,13 @@ import {
 import { getAuth } from 'firebase/auth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from './firebase';
-import type { MailThread, MailMessage, AttachmentListItem } from '@/types/mail';
+import type {
+  MailThread,
+  MailMessage,
+  AttachmentListItem,
+  SendMailRequest,
+  SendMailResponse,
+} from '@/types/mail';
 
 const db = getFirestore(firebaseApp);
 const functions = getFunctions(firebaseApp, 'asia-northeast1');
@@ -439,5 +445,16 @@ export const mailService = {
 
     // バッチ更新をコミット
     await batch.commit();
+  },
+
+  /**
+   * メールを送信する
+   * @param request メール送信リクエスト
+   * @returns メール送信レスポンス
+   */
+  async sendMail(request: SendMailRequest): Promise<SendMailResponse> {
+    const sendMailFunction = httpsCallable(functions, 'sendMail');
+    const result = await sendMailFunction(request);
+    return result.data as SendMailResponse;
   },
 };

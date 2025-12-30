@@ -15,6 +15,7 @@ vi.mock('@/services/mail', () => ({
     restoreFromTrash: vi.fn(),
     archive: vi.fn(),
     restoreToInbox: vi.fn(),
+    sendMail: vi.fn(),
   },
   calculateItemsPerPage: vi.fn(() => 15),
 }));
@@ -394,6 +395,113 @@ describe('mailStore', () => {
       expect(store.selectedThreadId).toBeNull();
       expect(store.error).toBeNull();
       expect(store.hasMore).toBe(true);
+    });
+  });
+
+  describe('sendMail', () => {
+    it('should call mailService.sendMail and set isSending to true during execution', async () => {
+      const store = useMailStore();
+      const request: SendMailRequest = {
+        accountId: 'test-account-id',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+      const mockResponse = {
+        success: true,
+        messageId: 'test-message-id',
+      };
+
+      vi.mocked(mailService.mailService.sendMail).mockResolvedValue(mockResponse);
+
+      const sendPromise = store.sendMail(request);
+      expect(store.isSending).toBe(true);
+      await sendPromise;
+
+      expect(mailService.mailService.sendMail).toHaveBeenCalledWith(request);
+      expect(store.isSending).toBe(false);
+      expect(store.sendError).toBeNull();
+    });
+
+    it('should set sendError when sendMail fails', async () => {
+      const store = useMailStore();
+      const request: SendMailRequest = {
+        accountId: 'test-account-id',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+      const error = new Error('Failed to send mail');
+
+      vi.mocked(mailService.mailService.sendMail).mockRejectedValue(error);
+
+      await expect(store.sendMail(request)).rejects.toThrow();
+      expect(store.sendError).toBeTruthy();
+      expect(store.isSending).toBe(false);
+    });
+
+    it('should clear sendError before sending', async () => {
+      const store = useMailStore();
+      const request: SendMailRequest = {
+        accountId: 'test-account-id',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+      const mockResponse = {
+        success: true,
+        messageId: 'test-message-id',
+      };
+
+      // 最初にエラーを設定
+      store.sendError = 'Previous error';
+      vi.mocked(mailService.mailService.sendMail).mockResolvedValue(mockResponse);
+
+      await store.sendMail(request);
+
+      expect(store.sendError).toBeNull();
+    });
+
+    it('should include optional parameters (cc, bcc, attachments, threadId, inReplyToMessageId)', async () => {
+      const store = useMailStore();
+      const request: SendMailRequest = {
+        accountId: 'test-account-id',
+        to: ['recipient@example.com'],
+        cc: ['cc@example.com'],
+        bcc: ['bcc@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+        attachments: [
+          {
+            filename: 'test.pdf',
+            content: 'base64content',
+            contentType: 'application/pdf',
+          },
+        ],
+        threadId: 'test-thread-id',
+        inReplyToMessageId: 'test-message-id',
+      };
+      const mockResponse = {
+        success: true,
+        messageId: 'test-message-id',
+      };
+
+      vi.mocked(mailService.mailService.sendMail).mockResolvedValue(mockResponse);
+
+      await store.sendMail(request);
+
+      expect(mailService.mailService.sendMail).toHaveBeenCalledWith(request);
+    });
+  });
+
+  describe('clearSendError', () => {
+    it('should clear sendError', () => {
+      const store = useMailStore();
+      store.sendError = 'Some error';
+
+      store.clearSendError();
+
+      expect(store.sendError).toBeNull();
     });
   });
 });

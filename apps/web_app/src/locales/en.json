@@ -45,7 +45,30 @@
     "archive": "Archive",
     "unarchive": "Unarchive",
     "restoreToInbox": "Restore to Inbox",
-    "restoreFromTrash": "Restore from Trash"
+    "restoreFromTrash": "Restore from Trash",
+    "sent": "Sent",
+    "compose": {
+      "title": "Compose Mail",
+      "to": "To",
+      "cc": "Cc",
+      "bcc": "Bcc",
+      "subject": "Subject",
+      "body": "Body",
+      "attachFile": "Attach File",
+      "send": "Send",
+      "sending": "Sending...",
+      "sendSuccess": "Mail sent successfully",
+      "sendError": "Failed to send mail",
+      "cancel": "Cancel",
+      "cancelConfirm": "Discard changes?",
+      "discard": "Discard",
+      "validation": {
+        "toRequired": "Please enter recipient",
+        "toInvalid": "Please enter a valid email address",
+        "subjectRequired": "Please enter subject",
+        "bodyRequired": "Please enter body"
+      }
+    }
   },
   "navigation": {
     "settings": "Settings",
@@ -131,9 +154,6 @@
       "deleteFailed": "Failed to delete account",
       "testFailed": "Failed to test account connection",
       "limitReached": "Account limit reached. Please upgrade your plan."
-    },
-    "firestore": {
-      "notFound": "Resource not found"
     }
   },
   "dateTime": {

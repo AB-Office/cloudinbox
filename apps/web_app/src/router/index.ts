@@ -17,6 +17,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/compose',
+      name: 'compose',
+      component: () => import('@/views/ComposeView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/:threadId',
       name: 'mail-detail',
       component: () => import('@/views/MailDetailView.vue'),

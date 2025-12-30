@@ -1,7 +1,7 @@
 # Implementation Plan
 
-- [ ] 1. 型定義の追加
-- [ ] 1.1 (P) メール送信関連の型定義を追加する
+- [x] 1. 型定義の追加
+- [x] 1.1 (P) メール送信関連の型定義を追加する
   - `apps/web_app/src/types/mail.ts`に`SendMailRequest`インターフェースを追加する
   - `apps/web_app/src/types/mail.ts`に`SendMailResponse`インターフェースを追加する
   - `apps/web_app/src/types/mail.ts`に`ComposeAttachment`インターフェースを追加する
@@ -9,8 +9,8 @@
   - TypeScriptのstrict modeでコンパイルエラーが発生しないことを確認する
   - _Requirements: 6.1,6.2,6.3,6.4,6.5,6.6_
 
-- [ ] 2. サービス層の実装
-- [ ] 2.1 (P) mailServiceにsendMail関数を追加する
+- [x] 2. サービス層の実装
+- [x] 2.1 (P) mailServiceにsendMail関数を追加する
   - `apps/web_app/src/services/mail.ts`に`sendMail`関数を実装する
   - Firebase Cloud Functions SDK（`httpsCallable`）を使用して`sendMail` Cloud Functionを呼び出す
   - リージョン（`asia-northeast1`）を指定する
@@ -20,8 +20,8 @@
   - エラーハンドリングを実装し、適切なエラーメッセージを返す
   - _Requirements: 2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,2.10,2.11,2.12,2.13,2.14,2.15,2.16_
 
-- [ ] 3. ストアの拡張
-- [ ] 3.1 (P) mailStoreにメール送信関連の状態とメソッドを追加する
+- [x] 3. ストアの拡張
+- [x] 3.1 (P) mailStoreにメール送信関連の状態とメソッドを追加する
   - `apps/web_app/src/stores/mail.ts`に`isSending` refを追加する
   - `apps/web_app/src/stores/mail.ts`に`sendError` refを追加する
   - `sendMail`関数を実装する（mailService.sendMailを呼び出す）
@@ -29,16 +29,16 @@
   - エラーハンドリングを実装する
   - _Requirements: 5.1,5.2,5.3,5.4,5.5,5.6,5.7,5.8,5.9,5.10_
 
-- [ ] 4. ルーティングの追加
-- [ ] 4.1 (P) メール作成画面のルートを追加する
+- [x] 4. ルーティングの追加
+- [x] 4.1 (P) メール作成画面のルートを追加する
   - `apps/web_app/src/router/index.ts`に`/compose`ルートを追加する
   - ルート名は`compose`とする
   - `meta: { requiresAuth: true }`を設定する
   - クエリパラメータ（`reply`、`replyAll`、`forward`）をサポートする
   - _Requirements: 4.1,4.2,4.10_
 
-- [ ] 5. 国際化リソースの追加
-- [ ] 5.1 (P) メール送信関連の翻訳キーを追加する
+- [x] 5. 国際化リソースの追加
+- [x] 5.1 (P) メール送信関連の翻訳キーを追加する
   - `apps/web_app/src/locales/ja.json`にメール作成画面の日本語翻訳を追加する
   - `apps/web_app/src/locales/en.json`にメール作成画面の英語翻訳を追加する
   - `mail.compose.*`キーを使用する（既存の命名規則に従う）
