@@ -5,10 +5,12 @@
         <v-card>
           <v-card-title>
             <div class="d-flex align-center">
-              <v-btn icon variant="text" @click="handleBack" class="mr-2">
+              <v-btn icon variant="text" class="mr-2" @click="handleBack">
                 <v-icon>mdi-arrow-left</v-icon>
               </v-btn>
-              <span>{{ isEditMode ? t('account.updateAccount') : t('account.createAccount') }}</span>
+              <span>{{
+                isEditMode ? t('account.updateAccount') : t('account.createAccount')
+              }}</span>
             </div>
           </v-card-title>
 
@@ -92,8 +94,8 @@
                 variant="outlined"
                 :loading="accountStore.isTesting && testProtocol === 'pop3'"
                 :disabled="!canTestPop3"
-                @click="handleTestConnection('pop3')"
                 class="mb-4"
+                @click="handleTestConnection('pop3')"
               >
                 <v-icon start>mdi-connection</v-icon>
                 {{ t('account.testPop3') }}
@@ -115,7 +117,19 @@
               <v-divider class="my-4"></v-divider>
 
               <!-- SMTP設定（オプション） -->
-              <h3 class="text-h6 mb-4">{{ t('account.smtpSettings') }}</h3>
+              <div class="d-flex align-center justify-space-between mb-4">
+                <h3 class="text-h6 mb-0">{{ t('account.smtpSettings') }}</h3>
+                <v-btn
+                  color="primary"
+                  variant="text"
+                  size="small"
+                  :disabled="!canCopyFromPop3"
+                  @click="handleCopyFromPop3"
+                >
+                  <v-icon start size="small">mdi-content-copy</v-icon>
+                  {{ t('account.copyFromPop3') }}
+                </v-btn>
+              </div>
 
               <v-text-field
                 v-model="formData.smtpHost"
@@ -124,7 +138,6 @@
               ></v-text-field>
 
               <v-text-field
-                v-if="formData.smtpHost"
                 v-model.number="formData.smtpPort"
                 :label="t('account.port')"
                 type="number"
@@ -133,14 +146,12 @@
               ></v-text-field>
 
               <v-text-field
-                v-if="formData.smtpHost"
                 v-model="formData.smtpUsername"
                 :label="t('account.username')"
                 class="mb-2"
               ></v-text-field>
 
               <v-text-field
-                v-if="formData.smtpHost"
                 v-model="formData.smtpPassword"
                 :label="t('account.password')"
                 type="password"
@@ -153,13 +164,12 @@
               </v-alert>
 
               <v-btn
-                v-if="formData.smtpHost"
                 color="primary"
                 variant="outlined"
                 :loading="accountStore.isTesting && testProtocol === 'smtp'"
                 :disabled="!canTestSmtp"
-                @click="handleTestConnection('smtp')"
                 class="mb-4"
+                @click="handleTestConnection('smtp')"
               >
                 <v-icon start>mdi-connection</v-icon>
                 {{ t('account.testSmtp') }}
@@ -265,6 +275,27 @@ const canTestSmtp = computed(() => {
     formData.value.smtpPassword
   );
 });
+
+// POP3設定からコピーが可能かどうか
+const canCopyFromPop3 = computed(() => {
+  return !!(
+    formData.value.pop3Host &&
+    formData.value.pop3Username &&
+    formData.value.pop3Password
+  );
+});
+
+/**
+ * POP3設定からSMTP設定をコピーする
+ */
+function handleCopyFromPop3() {
+  if (!canCopyFromPop3.value) return;
+
+  formData.value.smtpHost = formData.value.pop3Host;
+  formData.value.smtpUsername = formData.value.pop3Username;
+  formData.value.smtpPassword = formData.value.pop3Password;
+  // ポートは通常SMTPは465または587だが、デフォルト値465を維持
+}
 
 /**
  * 接続テストを実行する

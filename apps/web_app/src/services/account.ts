@@ -296,4 +296,3 @@ export const accountService = {
     await deleteDoc(accountRef);
   },
 };
-

@@ -105,10 +105,7 @@ async function handleLogout() {
   <v-app>
     <!-- ナビゲーションバー（App Bar） -->
     <v-app-bar v-if="showNavigation" color="primary" prominent>
-      <v-app-bar-nav-icon
-        variant="text"
-        @click.stop="drawer = !drawer"
-      ></v-app-bar-nav-icon>
+      <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
 
       <v-toolbar-title>{{ t('auth.appTitle') }}</v-toolbar-title>
 

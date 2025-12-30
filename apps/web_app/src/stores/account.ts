@@ -217,4 +217,3 @@ export const useAccountStore = defineStore('account', () => {
     reset,
   };
 });
-

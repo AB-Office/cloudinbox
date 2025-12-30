@@ -180,7 +180,11 @@ function parseStandardError(
   }
 
   // ネットワークエラー
-  if (message.includes('network') || message.includes('NetworkError') || message.includes('Failed to fetch')) {
+  if (
+    message.includes('network') ||
+    message.includes('NetworkError') ||
+    message.includes('Failed to fetch')
+  ) {
     return {
       messageKey: { category: ErrorCategory.NETWORK, key: 'errors.network' },
       message: t ? t('errors.network') : 'Network error occurred',
@@ -210,4 +214,3 @@ function parseStandardError(
     message: message,
   };
 }
-

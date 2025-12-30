@@ -27,6 +27,22 @@ npm run dev
 npm run build
 ```
 
+## テスト
+
+```bash
+# テストを実行
+npm test
+
+# テストをウォッチモードで実行
+npm test -- --watch
+
+# テストカバレッジを取得
+npm run test:coverage
+
+# テストUIを起動
+npm run test:ui
+```
+
 ## プロジェクト構造
 
 ```

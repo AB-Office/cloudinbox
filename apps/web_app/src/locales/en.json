@@ -36,7 +36,15 @@
     "noBody": "No body content",
     "detail": "Mail Detail",
     "allMailLoaded": "All mail loaded",
-    "selectMessage": "Select a message"
+    "selectMessage": "Select a message",
+    "reply": "Reply",
+    "replyAll": "Reply All",
+    "forward": "Forward",
+    "moveToTrash": "Move to Trash",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "restoreToInbox": "Restore to Inbox",
+    "restoreFromTrash": "Restore from Trash"
   },
   "navigation": {
     "settings": "Settings",
@@ -74,6 +82,7 @@
     "testConnection": "Test Connection",
     "testPop3": "Test POP3 Connection",
     "testSmtp": "Test SMTP Connection",
+    "copyFromPop3": "Copy from POP3 Settings",
     "testSuccess": "Connection test successful",
     "testFailed": "Connection test failed",
     "sslRequired": "SSL/TLS connection is required",

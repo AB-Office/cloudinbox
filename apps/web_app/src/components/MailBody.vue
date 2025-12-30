@@ -2,7 +2,7 @@
   <v-card class="mail-body" variant="outlined">
     <v-card-text>
       <!-- HTML形式の本文を優先的に表示 -->
-      <div v-if="sanitizedHtml" v-html="sanitizedHtml" class="mail-body-content"></div>
+      <div v-if="sanitizedHtml" class="mail-body-content" v-html="sanitizedHtml"></div>
       <!-- HTML形式がない場合はテキスト形式を表示 -->
       <div v-else-if="decryptedBody?.bodyText" class="mail-body-content">
         <pre class="text-body-2">{{ decryptedBody.bodyText }}</pre>

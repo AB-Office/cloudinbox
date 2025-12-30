@@ -1,6 +1,9 @@
 <template>
   <v-card class="mail-header" variant="outlined">
-    <v-card-title class="text-h6 pb-2">{{ message.subject }}</v-card-title>
+    <v-card-title class="text-h6 pb-2 d-flex align-center">
+      <span class="flex-grow-1 text-truncate">{{ message.subject }}</span>
+      <slot name="title-append"></slot>
+    </v-card-title>
 
     <v-card-text>
       <div class="mb-3">
@@ -40,6 +43,10 @@
             size="small"
             variant="outlined"
             prepend-icon="mdi-paperclip"
+            :disabled="isDownloading"
+            :loading="downloadingFiles.includes(attachment.filename)"
+            style="cursor: pointer"
+            @click="handleAttachmentClick(attachment)"
           >
             {{ attachment.filename }}
             <span class="ml-1 text-caption">({{ formatFileSize(attachment.size, t) }})</span>
@@ -54,11 +61,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { Timestamp } from 'firebase/firestore';
 import type { MailMessage, AttachmentListItem } from '@/types/mail';
 import { formatFileSize } from '@/plugins/i18n';
+import { useMailStore } from '@/stores/mail';
 
 interface Props {
   message: MailMessage;
@@ -68,6 +76,10 @@ interface Props {
 const props = defineProps<Props>();
 
 const { t, d } = useI18n();
+const mailStore = useMailStore();
+
+const downloadingFiles = ref<string[]>([]);
+const isDownloading = computed(() => downloadingFiles.value.length > 0);
 
 /**
  * 日付をフォーマットする
@@ -84,6 +96,26 @@ const formattedDate = computed(() => {
   // ロケールに応じた日時フォーマット
   return d(date, 'long');
 });
+
+/**
+ * 添付ファイルをクリックした時の処理
+ */
+async function handleAttachmentClick(attachment: AttachmentListItem) {
+  if (downloadingFiles.value.includes(attachment.filename)) return;
+
+  downloadingFiles.value.push(attachment.filename);
+  try {
+    await mailStore.downloadAttachment(props.message.messageId, attachment.filename);
+  } catch (e) {
+    console.error('Failed to download attachment:', e);
+    // エラーはmailStoreで管理されているため、ここではログ出力のみ
+  } finally {
+    const index = downloadingFiles.value.indexOf(attachment.filename);
+    if (index > -1) {
+      downloadingFiles.value.splice(index, 1);
+    }
+  }
+}
 </script>
 
 <style scoped>

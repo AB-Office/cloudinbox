@@ -41,8 +41,8 @@
                       icon
                       variant="text"
                       size="small"
-                      @click="handleEdit(account.id!)"
                       class="mr-2"
+                      @click="handleEdit(account.id!)"
                     >
                       <v-icon>mdi-pencil</v-icon>
                     </v-btn>
@@ -85,8 +85,8 @@
                       variant="text"
                       size="small"
                       color="success"
-                      @click="handleRestore(account.id!)"
                       class="mr-2"
+                      @click="handleRestore(account.id!)"
                     >
                       <v-icon>mdi-restore</v-icon>
                     </v-btn>

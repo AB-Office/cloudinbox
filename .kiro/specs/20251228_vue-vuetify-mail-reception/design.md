@@ -309,6 +309,10 @@ authStoreから認証状態を確認
                                     ▼
                                 デスクトップの場合:
                                 メール一覧で選択中のスレッドをハイライト表示
+                                    │
+                                    ▼
+                                メール詳細画面にアクションボタンを表示
+                                （返信、転送、ゴミ箱に移動、アーカイブ等）
 ```
 
 ### Flow 4: ページネーション（無限スクロール）フロー
@@ -697,6 +701,8 @@ export const useMailStore = defineStore('mail', () => {
     selectThread,
     fetchMessage,
     decryptMailBody,
+    getAttachmentsList,
+    downloadAttachment,
     markAsRead,
     reset,
   };
@@ -883,6 +889,24 @@ export const mailService = {
     const decryptMail = httpsCallable(functions, 'decryptMail');
     const result = await decryptMail({ messageId });
     return result.data as { bodyText?: string; bodyHtml?: string };
+  },
+
+  async downloadAttachment(
+    messageId: string,
+    filename: string
+  ): Promise<{ content: string; filename: string; contentType: string; size: number }> {
+    const downloadAttachment = httpsCallable(functions, 'downloadAttachment');
+    const result = await downloadAttachment({ messageId, filename });
+    return result.data as { content: string; filename: string; contentType: string; size: number };
+  },
+
+  async downloadAttachment(
+    messageId: string,
+    filename: string
+  ): Promise<{ content: string; filename: string; contentType: string; size: number }> {
+    const downloadAttachment = httpsCallable(functions, 'downloadAttachment');
+    const result = await downloadAttachment({ messageId, filename });
+    return result.data as { content: string; filename: string; contentType: string; size: number };
   },
 
   async markAsRead(messageId: string, threadId: string): Promise<void> {
@@ -1418,6 +1442,35 @@ export default defineConfig({
 
 - **Playwright**または**Cypress**を使用してE2Eテストを実装（将来実装）
 
+## Mail Detail Actions
+
+### Action Buttons
+
+メール詳細画面には以下のアクションボタンが実装されています：
+
+**AppBar（ヘッダー）:**
+- ケバブメニュー（`v-menu`）: 返信、全員に返信、転送
+
+**Bottom Navigation Bar（画面下部）:**
+- ゴミ箱に移動（`mdi-delete`）- 常に表示
+- アーカイブ（`mdi-archive`）- ゴミ箱でない場合のみ表示
+- 受信箱に戻す（`mdi-inbox`）- すべてのメール一覧を表示中の場合のみ表示（ゴミ箱でない場合）
+- ゴミ箱から復元（`mdi-restore`）- ゴミ箱の場合のみ表示
+
+**注:** 返信・転送関連のボタンはAppBarのケバブメニューからのみアクセス可能です。画面下部のボトムナビゲーションバーにはゴミ箱・アーカイブ関連のボタンのみを表示します。
+
+**実装状況:**
+- UIコンポーネント: 実装済み（`MailDetailView.vue`、`MailDetailPanel.vue`）
+- ゴミ箱に移動・復元: 実装済み（`mailService.moveToTrash()`、`mailService.restoreFromTrash()`）
+- アーカイブ・受信箱に戻す: 実装済み（`mailService.archive()`、`mailService.restoreToInbox()`）
+- その他のアクションハンドラー: プレースホルダー実装（後続フェーズで実装予定）
+
+**アクション実装詳細:**
+- **ゴミ箱に移動**: メールメッセージの`labels`フィールドに`trash`を追加（`arrayUnion`を使用）。`deletedAt`フィールドにサーバータイムスタンプを設定
+- **ゴミ箱から復元**: メールメッセージとメールスレッドの`labels`フィールドから`trash`を削除（`arrayRemove`を使用）。`deletedAt`フィールドを`null`に設定
+- **アーカイブ**: メールメッセージとメールスレッドの`labels`フィールドから`inbox`を削除（`arrayRemove`を使用）
+- **受信箱に戻す**: メールメッセージとメールスレッドの`labels`フィールドに`inbox`を追加（`arrayUnion`を使用）
+
 ## Internationalization (i18n)
 
 ### vue-i18n Configuration
@@ -1455,7 +1508,14 @@ const i18n = createI18n({
     "trash": "ゴミ箱",
     "subject": "件名",
     "from": "送信者",
-    "date": "日時"
+    "date": "日時",
+    "reply": "返信",
+    "replyAll": "全員に返信",
+    "forward": "転送",
+    "moveToTrash": "ゴミ箱に移動",
+    "archive": "アーカイブ",
+    "unarchive": "アーカイブ解除",
+    "restoreFromTrash": "ゴミ箱から復元"
   }
 }
 ```
@@ -1539,6 +1599,51 @@ function handleSelectThread(threadId: string) {
   - メールスレッドクリック → 同一画面内で右側にメール詳細を表示
   - URLは変更せず、状態管理で選択中のスレッドを管理
   - メール一覧で選択中のスレッドをハイライト表示
+
+## Mail Detail Actions
+
+### Action Buttons
+
+メール詳細画面には以下のアクションボタンが実装されています：
+
+**AppBar（ヘッダー）:**
+- ケバブメニュー（`v-menu`）: 返信、全員に返信、転送
+
+**Bottom Navigation Bar（画面下部）:**
+- ゴミ箱に移動（`mdi-delete`）- 常に表示
+- アーカイブ（`mdi-archive`）- ゴミ箱でない場合のみ表示
+- 受信箱に戻す（`mdi-inbox`）- すべてのメール一覧を表示中の場合のみ表示（ゴミ箱でない場合）
+- ゴミ箱から復元（`mdi-restore`）- ゴミ箱の場合のみ表示
+
+**注:** 返信・転送関連のボタンはAppBarのケバブメニューからのみアクセス可能です。画面下部のボトムナビゲーションバーにはゴミ箱・アーカイブ関連のボタンのみを表示します。
+
+**実装状況:**
+- UIコンポーネント: 実装済み（`MailDetailView.vue`、`MailDetailPanel.vue`）
+- ゴミ箱に移動・復元: 実装済み（`mailService.moveToTrash()`、`mailService.restoreFromTrash()`）
+- アーカイブ・受信箱に戻す: 実装済み（`mailService.archive()`、`mailService.restoreToInbox()`）
+- 添付ファイルダウンロード: 実装済み（`mailService.downloadAttachment()`）
+- その他のアクションハンドラー: プレースホルダー実装（後続フェーズで実装予定）
+
+**アクション実装詳細:**
+- **ゴミ箱に移動**: メールメッセージの`labels`フィールドに`trash`を追加（`arrayUnion`を使用）。`deletedAt`フィールドにサーバータイムスタンプを設定
+- **ゴミ箱から復元**: メールメッセージとメールスレッドの`labels`フィールドから`trash`を削除（`arrayRemove`を使用）。`deletedAt`フィールドを`null`に設定
+- **アーカイブ**: メールメッセージとメールスレッドの`labels`フィールドから`inbox`を削除（`arrayRemove`を使用）
+- **受信箱に戻す**: メールメッセージとメールスレッドの`labels`フィールドに`inbox`を追加（`arrayUnion`を使用）
+
+## Attachment Download
+
+### Download Functionality
+
+メール詳細画面で添付ファイルをクリックすると、ブラウザのダウンロードが実行されます。
+
+**実装詳細:**
+- `MailHeader.vue`で添付ファイルをクリック可能な`v-chip`として表示
+- クリック時に`mailStore.downloadAttachment()`を呼び出す
+- `mailService.downloadAttachment()`が既存のCloud Functions（`downloadAttachment`）を呼び出す
+- Cloud Functionsから返されたBase64エンコードされた復号化済みコンテンツをBlobに変換
+- 一時的なダウンロードリンクを作成し、プログラム的にクリックしてダウンロードを実行
+- ダウンロード中はローディングインジケーターを表示（`v-chip`の`:loading`プロパティを使用）
+- エラー発生時は`mailStore`のエラー状態を更新し、エラーメッセージを表示
 
 ## Performance Considerations
 

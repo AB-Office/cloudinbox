@@ -89,12 +89,25 @@ CloudInboxサービスは現在Flutterモバイルアプリとして実装され
 8. When メール本文を表示する, CloudInbox shall HTMLコンテンツを安全にレンダリングする（XSS対策）
 9. When メール詳細を表示する, CloudInbox shall Storageパス情報（`storage.attachmentsBasePath`）から添付ファイル一覧を取得・表示する
 10. When 添付ファイル一覧を取得する, CloudInbox shall 既存のCloud Functions（`getAttachmentsList`）を呼び出す
-11. When ユーザーがメールを開く, CloudInbox shall Firestoreを直接更新して、メールの未読状態を`isRead: true`に更新し、スレッド内のすべてのメッセージを確認して`hasUnread`を再計算する（スレッド内に未読メッセージが1つでもあれば`hasUnread: true`、すべて既読なら`hasUnread: false`）
-12. The CloudInbox shall 復号済みのメール本文をクライアント側でキャッシュしない（セキュリティ要件）
-13. When メール詳細を表示する, CloudInbox shall ローディング状態を表示する（データ取得中、復号処理中）
-14. If メール詳細の取得に失敗する, CloudInbox shall エラーメッセージを表示する
-15. If メール本文の復号に失敗する, CloudInbox shall エラーメッセージを表示する
-16. The CloudInbox shall メール詳細のUIをVuetifyのコンポーネント（`v-card`、`v-container`等）を使用して実装する
+11. When ユーザーが添付ファイルをクリックする, CloudInbox shall 既存のCloud Functions（`downloadAttachment`）を呼び出して添付ファイルをダウンロードする
+12. When 添付ファイルをダウンロードする, CloudInbox shall Cloud Functionsから返されたBase64エンコードされた復号化済みコンテンツをBlobに変換し、ブラウザのダウンロード機能を実行する
+13. When 添付ファイルのダウンロード中である場合, CloudInbox shall ローディングインジケーターを表示する
+14. If 添付ファイルのダウンロードに失敗する, CloudInbox shall エラーメッセージを表示する
+15. When ユーザーがメールを開く, CloudInbox shall Firestoreを直接更新して、メールの未読状態を`isRead: true`に更新し、スレッド内のすべてのメッセージを確認して`hasUnread`を再計算する（スレッド内に未読メッセージが1つでもあれば`hasUnread: true`、すべて既読なら`hasUnread: false`）
+16. The CloudInbox shall 復号済みのメール本文をクライアント側でキャッシュしない（セキュリティ要件）
+17. When メール詳細を表示する, CloudInbox shall ローディング状態を表示する（データ取得中、復号処理中）
+18. If メール詳細の取得に失敗する, CloudInbox shall エラーメッセージを表示する
+19. If メール本文の復号に失敗する, CloudInbox shall エラーメッセージを表示する
+20. The CloudInbox shall メール詳細のUIをVuetifyのコンポーネント（`v-card`、`v-container`等）を使用して実装する
+21. When メール詳細画面を表示する, CloudInbox shall AppBarにケバブメニューを表示し、返信、全員に返信、転送のアクションを提供する
+18. When メール詳細画面を表示する, CloudInbox shall 画面下部にボトムナビゲーションバーを表示し、ゴミ箱に移動、アーカイブ、受信箱に戻す、ゴミ箱から復元のアイコンボタンを表示する
+18.1. When ユーザーが「ゴミ箱に移動」ボタンをクリックする, CloudInbox shall メールメッセージの`labels`フィールドに`trash`ラベルを追加し、`deletedAt`フィールドに日付を設定する
+18.2. When ユーザーが「ゴミ箱から復元」ボタンをクリックする, CloudInbox shall メールメッセージとメールスレッドの`labels`フィールドから`trash`ラベルを削除し、`deletedAt`フィールドを`null`に設定する
+18.3. When ユーザーが「アーカイブ」ボタンをクリックする, CloudInbox shall メールメッセージとメールスレッドの`labels`フィールドから`inbox`ラベルを削除する
+18.4. When ユーザーが「受信箱に戻す」ボタンをクリックする, CloudInbox shall メールメッセージとメールスレッドの`labels`フィールドに`inbox`ラベルを追加する
+19. When メールがゴミ箱に移動済みの場合, CloudInbox shall 「ゴミ箱から復元」ボタンを表示し、「アーカイブ」「受信箱に戻す」ボタンは非表示にする
+20. When 「すべてのメール」一覧を表示中の場合, CloudInbox shall 「受信箱に戻す」ボタンを表示する（ゴミ箱でない場合のみ）
+21. When メールがゴミ箱にもアーカイブにも含まれていない場合, CloudInbox shall 「アーカイブ」ボタンを表示し、「ゴミ箱から復元」「受信箱に戻す」ボタンは非表示にする
 
 ### Requirement 5: ナビゲーションとルーティング
 

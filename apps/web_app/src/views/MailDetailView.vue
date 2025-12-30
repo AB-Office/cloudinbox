@@ -5,7 +5,7 @@
       <v-btn icon variant="text" @click="handleBack">
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
-      <v-toolbar-title>{{ t('mail.detail') }}</v-toolbar-title>
+      <v-toolbar-title>{{ message?.subject || t('mail.detail') }}</v-toolbar-title>
     </v-app-bar>
 
     <!-- メール詳細コンテンツ -->
@@ -26,8 +26,39 @@
 
       <!-- メール詳細: メールが取得できた場合 -->
       <div v-else-if="message" class="pa-4">
-        <!-- メールヘッダー -->
-        <mail-header :message="message" :attachments="attachments" />
+        <!-- メールヘッダー（タイトルとケバブメニュー付き） -->
+        <mail-header :message="message" :attachments="attachments">
+          <template #title-append>
+            <!-- ケバブメニュー（返信・転送） -->
+            <v-menu location="bottom end">
+              <template #activator="{ props: menuProps }">
+                <v-btn icon variant="text" v-bind="menuProps" size="small" class="ml-2">
+                  <v-icon>mdi-dots-vertical</v-icon>
+                </v-btn>
+              </template>
+              <v-list>
+                <v-list-item @click="handleReply">
+                  <template #prepend>
+                    <v-icon>mdi-reply</v-icon>
+                  </template>
+                  <v-list-item-title>{{ t('mail.reply') }}</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="handleReplyAll">
+                  <template #prepend>
+                    <v-icon>mdi-reply-all</v-icon>
+                  </template>
+                  <v-list-item-title>{{ t('mail.replyAll') }}</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="handleForward">
+                  <template #prepend>
+                    <v-icon>mdi-forward</v-icon>
+                  </template>
+                  <v-list-item-title>{{ t('mail.forward') }}</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </template>
+        </mail-header>
 
         <!-- メール本文 -->
         <mail-body :decrypted-body="decryptedBody" />
@@ -42,11 +73,32 @@
         </div>
       </div>
     </div>
+
+    <!-- ボトムナビゲーションバー（アイコンボタン） -->
+    <v-bottom-navigation v-if="message" color="primary" height="64">
+      <!-- ゴミ箱・アーカイブボタン -->
+      <v-btn @click="handleMoveToTrash">
+        <v-icon>mdi-delete</v-icon>
+        <span class="text-caption">{{ t('mail.moveToTrash') }}</span>
+      </v-btn>
+      <v-btn v-if="!isTrash" @click="handleArchive">
+        <v-icon>mdi-archive</v-icon>
+        <span class="text-caption">{{ t('mail.archive') }}</span>
+      </v-btn>
+      <v-btn v-if="isAllMail && !isTrash" @click="handleUnarchive">
+        <v-icon>mdi-inbox</v-icon>
+        <span class="text-caption">{{ t('mail.restoreToInbox') }}</span>
+      </v-btn>
+      <v-btn v-if="isTrash" @click="handleRestoreFromTrash">
+        <v-icon>mdi-restore</v-icon>
+        <span class="text-caption">{{ t('mail.restoreFromTrash') }}</span>
+      </v-btn>
+    </v-bottom-navigation>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import type { MailMessage, DecryptedMailBody, AttachmentListItem } from '@/types/mail';
@@ -141,6 +193,108 @@ async function decryptBody(messageId: string) {
 function handleBack() {
   router.push('/');
 }
+
+/**
+ * 返信ボタンのハンドラ
+ */
+function handleReply() {
+  // TODO: 返信機能を実装
+  console.log('Reply:', message.value?.messageId);
+}
+
+/**
+ * 全員に返信ボタンのハンドラ
+ */
+function handleReplyAll() {
+  // TODO: 全員に返信機能を実装
+  console.log('Reply All:', message.value?.messageId);
+}
+
+/**
+ * 転送ボタンのハンドラ
+ */
+function handleForward() {
+  // TODO: 転送機能を実装
+  console.log('Forward:', message.value?.messageId);
+}
+
+/**
+ * ゴミ箱に移動ボタンのハンドラ
+ */
+async function handleMoveToTrash() {
+  if (!message.value) return;
+
+  try {
+    await mailStore.moveToTrash(message.value.messageId);
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+    console.error('Failed to move message to trash:', errorMessage);
+    // TODO: エラーメッセージをユーザーに表示
+  }
+}
+
+/**
+ * アーカイブボタンのハンドラ
+ */
+async function handleArchive() {
+  if (!message.value) return;
+
+  try {
+    await mailStore.archive(message.value.messageId);
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+    console.error('Failed to archive message:', errorMessage);
+    // TODO: エラーメッセージをユーザーに表示
+  }
+}
+
+/**
+ * 受信箱に戻すボタンのハンドラ
+ */
+async function handleUnarchive() {
+  if (!message.value) return;
+
+  try {
+    await mailStore.restoreToInbox(message.value.messageId);
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+    console.error('Failed to restore message to inbox:', errorMessage);
+    // TODO: エラーメッセージをユーザーに表示
+  }
+}
+
+/**
+ * ゴミ箱から復元ボタンのハンドラ
+ */
+async function handleRestoreFromTrash() {
+  if (!message.value) return;
+
+  try {
+    await mailStore.restoreFromTrash(message.value.messageId);
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+    console.error('Failed to restore message from trash:', errorMessage);
+    // TODO: エラーメッセージをユーザーに表示
+  }
+}
+
+/**
+ * ゴミ箱かどうかを判定
+ */
+const isTrash = computed(() => {
+  return message.value?.labels?.includes('trash') ?? false;
+});
+
+// ルートのクエリパラメータからラベルを取得（デフォルトは'inbox'）
+const currentLabel = computed(() => {
+  const label = route.query.label as string;
+  if (label === 'trash' || label === 'all') {
+    return label;
+  }
+  return 'inbox';
+});
+
+const isAllMail = computed(() => currentLabel.value === 'all');
 
 /**
  * ルートパラメータのthreadIdを監視してメッセージを読み込む

@@ -95,6 +95,39 @@ export const useMailStore = defineStore('mail', () => {
   }
 
   /**
+   * 添付ファイルをダウンロードする
+   * @param messageId メッセージID
+   * @param filename ファイル名
+   */
+  async function downloadAttachment(messageId: string, filename: string) {
+    try {
+      const result = await mailService.downloadAttachment(messageId, filename);
+
+      // Base64をBlobに変換
+      const binaryString = atob(result.content);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: result.contentType });
+
+      // ダウンロードリンクを作成してクリック
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = result.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (e: unknown) {
+      const { message } = parseError(e);
+      error.value = message;
+      throw e;
+    }
+  }
+
+  /**
    * メールを既読にする
    * @param messageId メッセージID
    * @param threadId スレッドID
@@ -137,6 +170,70 @@ export const useMailStore = defineStore('mail', () => {
   }
 
   /**
+   * メールをゴミ箱に移動する
+   * @param messageId メッセージID
+   */
+  async function moveToTrash(messageId: string) {
+    try {
+      await mailService.moveToTrash(messageId);
+      // 成功時はメッセージを更新（ラベルが変更されたため）
+      await fetchMessage(messageId);
+    } catch (e: unknown) {
+      const { message } = parseError(e);
+      error.value = message;
+      throw e;
+    }
+  }
+
+  /**
+   * メールをゴミ箱から復元する
+   * @param messageId メッセージID
+   */
+  async function restoreFromTrash(messageId: string) {
+    try {
+      await mailService.restoreFromTrash(messageId);
+      // 成功時はメッセージを更新（ラベルが変更されたため）
+      await fetchMessage(messageId);
+    } catch (e: unknown) {
+      const { message } = parseError(e);
+      error.value = message;
+      throw e;
+    }
+  }
+
+  /**
+   * メールをアーカイブする
+   * @param messageId メッセージID
+   */
+  async function archive(messageId: string) {
+    try {
+      await mailService.archive(messageId);
+      // 成功時はメッセージを更新（ラベルが変更されたため）
+      await fetchMessage(messageId);
+    } catch (e: unknown) {
+      const { message } = parseError(e);
+      error.value = message;
+      throw e;
+    }
+  }
+
+  /**
+   * メールを受信箱に戻す
+   * @param messageId メッセージID
+   */
+  async function restoreToInbox(messageId: string) {
+    try {
+      await mailService.restoreToInbox(messageId);
+      // 成功時はメッセージを更新（ラベルが変更されたため）
+      await fetchMessage(messageId);
+    } catch (e: unknown) {
+      const { message } = parseError(e);
+      error.value = message;
+      throw e;
+    }
+  }
+
+  /**
    * ストアの状態をリセットする
    */
   function reset() {
@@ -155,6 +252,7 @@ export const useMailStore = defineStore('mail', () => {
     selectedThreadId,
     isLoading,
     error,
+    lastDocument,
     hasMore,
     // actions
     fetchThreads,
@@ -162,8 +260,13 @@ export const useMailStore = defineStore('mail', () => {
     fetchMessage,
     decryptMailBody,
     getAttachmentsList,
+    downloadAttachment,
     markAsRead,
     selectThread,
+    moveToTrash,
+    restoreFromTrash,
+    archive,
+    restoreToInbox,
     reset,
   };
 });

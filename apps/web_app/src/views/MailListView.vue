@@ -12,6 +12,7 @@
           :message="currentMessage"
           :is-loading="mailStore.isLoading"
           :error="mailStore.error"
+          :label="currentLabel"
         />
       </v-col>
     </v-row>

@@ -11,6 +11,10 @@ import {
   type QueryDocumentSnapshot,
   doc,
   getDoc,
+  writeBatch,
+  serverTimestamp,
+  arrayUnion,
+  arrayRemove,
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -217,6 +221,21 @@ export const mailService = {
   },
 
   /**
+   * 添付ファイルをダウンロードする
+   * @param messageId メッセージID
+   * @param filename ファイル名
+   * @returns ダウンロードされたファイル情報（Base64エンコードされたコンテンツ、ファイル名、Content-Type、サイズ）
+   */
+  async downloadAttachment(
+    messageId: string,
+    filename: string
+  ): Promise<{ content: string; filename: string; contentType: string; size: number }> {
+    const downloadAttachment = httpsCallable(functions, 'downloadAttachment');
+    const result = await downloadAttachment({ messageId, filename });
+    return result.data as { content: string; filename: string; contentType: string; size: number };
+  },
+
+  /**
    * メールを既読にする
    * @param messageId メッセージID
    * @param threadId スレッドID
@@ -231,5 +250,175 @@ export const mailService = {
       console.warn('Failed to mark message as read:', e);
       // エラーを再スローしない（UIの動作を妨げないため）
     }
+  },
+
+  /**
+   * メールをゴミ箱に移動する
+   * @param messageId メッセージID
+   */
+  async moveToTrash(messageId: string): Promise<void> {
+    const auth = getAuth(firebaseApp);
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error('User not authenticated');
+
+    // メールメッセージドキュメントを取得してthreadIdを取得
+    const messageRef = doc(db, 'users', uid, 'mailMessages', messageId);
+    const messageDoc = await getDoc(messageRef);
+    if (!messageDoc.exists()) {
+      throw new Error('Message not found');
+    }
+
+    const data = messageDoc.data();
+    const threadId = data.threadId as string | undefined;
+    if (!threadId) {
+      throw new Error('Thread ID not found');
+    }
+
+    // Firestoreのバッチ更新を作成
+    const batch = writeBatch(db);
+
+    // メールメッセージドキュメントの更新
+    // labelsにtrashを追加（inboxラベルは削除しない）
+    batch.update(messageRef, {
+      labels: arrayUnion('trash'),
+      deletedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    // メールスレッドドキュメントの更新は行わない（スレッド全体の誤ラベリング防止）
+    // 必要であればサーバー側集約ロジックで対応する
+
+    // バッチ更新をコミット
+    await batch.commit();
+  },
+
+  /**
+   * メールをゴミ箱から復元する
+   * @param messageId メッセージID
+   */
+  async restoreFromTrash(messageId: string): Promise<void> {
+    const auth = getAuth(firebaseApp);
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error('User not authenticated');
+
+    // メールメッセージドキュメントを取得してthreadIdを取得
+    const messageRef = doc(db, 'users', uid, 'mailMessages', messageId);
+    const messageDoc = await getDoc(messageRef);
+    if (!messageDoc.exists()) {
+      throw new Error('Message not found');
+    }
+
+    const data = messageDoc.data();
+    const threadId = data.threadId as string | undefined;
+    if (!threadId) {
+      throw new Error('Thread ID not found');
+    }
+
+    // Firestoreのバッチ更新を作成
+    const batch = writeBatch(db);
+
+    // メールメッセージドキュメントの更新
+    // labelsからtrashを削除、deletedAtをnullに設定
+    batch.update(messageRef, {
+      labels: arrayRemove('trash'),
+      deletedAt: null,
+      updatedAt: serverTimestamp(),
+    });
+
+    // メールスレッドドキュメントの更新
+    const threadRef = doc(db, 'users', uid, 'mailThreads', threadId);
+    batch.update(threadRef, {
+      labels: arrayRemove('trash'),
+      updatedAt: serverTimestamp(),
+    });
+
+    // バッチ更新をコミット
+    await batch.commit();
+  },
+
+  /**
+   * メールをアーカイブする
+   * @param messageId メッセージID
+   */
+  async archive(messageId: string): Promise<void> {
+    const auth = getAuth(firebaseApp);
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error('User not authenticated');
+
+    // メールメッセージドキュメントを取得してthreadIdを取得
+    const messageRef = doc(db, 'users', uid, 'mailMessages', messageId);
+    const messageDoc = await getDoc(messageRef);
+    if (!messageDoc.exists()) {
+      throw new Error('Message not found');
+    }
+
+    const data = messageDoc.data();
+    const threadId = data.threadId as string | undefined;
+    if (!threadId) {
+      throw new Error('Thread ID not found');
+    }
+
+    // Firestoreのバッチ更新を作成
+    const batch = writeBatch(db);
+
+    // メールメッセージドキュメントの更新
+    // labelsからinboxを削除
+    batch.update(messageRef, {
+      labels: arrayRemove('inbox'),
+      updatedAt: serverTimestamp(),
+    });
+
+    // メールスレッドドキュメントの更新
+    const threadRef = doc(db, 'users', uid, 'mailThreads', threadId);
+    batch.update(threadRef, {
+      labels: arrayRemove('inbox'),
+      updatedAt: serverTimestamp(),
+    });
+
+    // バッチ更新をコミット
+    await batch.commit();
+  },
+
+  /**
+   * メールを受信箱に戻す
+   * @param messageId メッセージID
+   */
+  async restoreToInbox(messageId: string): Promise<void> {
+    const auth = getAuth(firebaseApp);
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error('User not authenticated');
+
+    // メールメッセージドキュメントを取得してthreadIdを取得
+    const messageRef = doc(db, 'users', uid, 'mailMessages', messageId);
+    const messageDoc = await getDoc(messageRef);
+    if (!messageDoc.exists()) {
+      throw new Error('Message not found');
+    }
+
+    const data = messageDoc.data();
+    const threadId = data.threadId as string | undefined;
+    if (!threadId) {
+      throw new Error('Thread ID not found');
+    }
+
+    // Firestoreのバッチ更新を作成
+    const batch = writeBatch(db);
+
+    // メールメッセージドキュメントの更新
+    // labelsにinboxを追加
+    batch.update(messageRef, {
+      labels: arrayUnion('inbox'),
+      updatedAt: serverTimestamp(),
+    });
+
+    // メールスレッドドキュメントの更新
+    const threadRef = doc(db, 'users', uid, 'mailThreads', threadId);
+    batch.update(threadRef, {
+      labels: arrayUnion('inbox'),
+      updatedAt: serverTimestamp(),
+    });
+
+    // バッチ更新をコミット
+    await batch.commit();
   },
 };

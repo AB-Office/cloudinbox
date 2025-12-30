@@ -36,7 +36,15 @@
     "noBody": "本文がありません",
     "detail": "メール詳細",
     "allMailLoaded": "すべてのメールを読み込みました",
-    "selectMessage": "メールを選択してください"
+    "selectMessage": "メールを選択してください",
+    "reply": "返信",
+    "replyAll": "全員に返信",
+    "forward": "転送",
+    "moveToTrash": "ゴミ箱に移動",
+    "archive": "アーカイブ",
+    "unarchive": "アーカイブ解除",
+    "restoreToInbox": "受信箱に戻す",
+    "restoreFromTrash": "ゴミ箱から復元"
   },
   "navigation": {
     "settings": "設定",
@@ -74,6 +82,7 @@
     "testConnection": "接続テスト",
     "testPop3": "POP3接続テスト",
     "testSmtp": "SMTP接続テスト",
+    "copyFromPop3": "POP3設定からコピー",
     "testSuccess": "接続テストが成功しました",
     "testFailed": "接続テストが失敗しました",
     "sslRequired": "SSL/TLS接続が必須です",
