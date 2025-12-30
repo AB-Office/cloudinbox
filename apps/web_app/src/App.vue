@@ -58,6 +58,12 @@ const navItems = [
     label: 'all',
   },
   {
+    title: t('mail.sent'),
+    icon: 'mdi-send',
+    route: { name: 'mail-list', query: { label: 'sent' } },
+    label: 'sent',
+  },
+  {
     title: t('mail.trash'),
     icon: 'mdi-delete',
     route: { name: 'mail-list', query: { label: 'trash' } },
@@ -86,8 +92,8 @@ function isActiveRoute(item: (typeof navItems)[number]): boolean {
     return currentRoute === 'mail-list' && !route.query.label;
   }
 
-  // すべてのメール、ゴミ箱の場合
-  if (item.label === 'all' || item.label === 'trash') {
+  // すべてのメール、送信済み、ゴミ箱の場合
+  if (item.label === 'all' || item.label === 'sent' || item.label === 'trash') {
     return currentRoute === 'mail-list' && route.query.label === item.label;
   }
 

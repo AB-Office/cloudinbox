@@ -112,14 +112,14 @@
   - 複数のアカウントがある場合、デフォルトで最初のアカウントを選択する
   - _Requirements: 1.6,1.7_
 
-- [ ] 7. 既存コンポーネントの拡張
-- [ ] 7.1 (P) MailListPanelにFABを追加する
+- [x] 7. 既存コンポーネントの拡張
+- [x] 7.1 (P) MailListPanelにFABを追加する
   - `apps/web_app/src/components/MailListPanel.vue`にFAB（Floating Action Button）を追加する
   - 画面右下に配置する（`v-fab`コンポーネントまたは`v-btn` with `fixed` propを使用）
   - FABクリック時に`/compose`ルートに遷移する
   - _Requirements: 1.1_
 
-- [ ] 7.2 (P) MailDetailPanelに返信・転送ハンドラを実装する
+- [x] 7.2 (P) MailDetailPanelに返信・転送ハンドラを実装する
   - `apps/web_app/src/components/MailDetailPanel.vue`の`handleReply`関数を実装する
   - `/compose?reply=${messageId}`ルートに遷移する
   - `apps/web_app/src/components/MailDetailPanel.vue`の`handleReplyAll`関数を実装する
@@ -128,7 +128,7 @@
   - `/compose?forward=${messageId}`ルートに遷移する
   - _Requirements: 1.2,1.3,1.4,4.3,4.4,4.5,4.6_
 
-- [ ] 7.3 (P) App.vueに「送信済み」メニュー項目を追加する
+- [x] 7.3 (P) App.vueに「送信済み」メニュー項目を追加する
   - `apps/web_app/src/App.vue`の`navItems`配列に「送信済み」メニュー項目を追加する
   - 受信トレイ、すべてのメール、送信済み、ゴミ箱、設定の順序とする
   - `route: { name: 'mail-list', query: { label: 'sent' } }`を設定する
