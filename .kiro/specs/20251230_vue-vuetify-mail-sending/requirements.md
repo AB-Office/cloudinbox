@@ -159,3 +159,23 @@ CloudInboxサービスは現在Vue.jsとVuetifyを使用したWebアプリケー
 5. The CloudInbox shall メール作成画面のレイアウトは既存のメール詳細画面と一貫性を保つ
 6. The CloudInbox shall メール作成画面のボタン配置は既存の画面と一貫性を保つ（送信ボタンは右上、キャンセルボタンは左上等）
 7. When メール作成画面でキーボードショートカット（Ctrl+EnterまたはCmd+Enter）を押す, CloudInbox shall メールを送信する（オプション、将来の拡張機能）
+
+### Requirement 9: プラン・容量情報の表示
+
+**Objective:** As a ユーザー, I want プラン情報とストレージ使用量を確認できること, so that 現在のプランと容量の使用状況を把握できる
+
+#### Acceptance Criteria
+
+1. When ナビゲーションドロワーが表示される, CloudInbox shall ドロワー下部にプラン情報を表示する
+2. When ナビゲーションドロワーが表示される, CloudInbox shall ドロワー下部に使用済み容量/最大容量を表示する（パーセンテージ付き）
+3. When ナビゲーションドロワーが表示される, CloudInbox shall ドロワー下部に使用可能容量を表示する
+4. When 設定画面が表示される, CloudInbox shall プラン情報を表示する
+5. When 設定画面が表示される, CloudInbox shall 使用済み容量/最大容量を表示する（パーセンテージ付き）
+6. When 設定画面が表示される, CloudInbox shall 使用可能容量を表示する
+7. When 容量情報を表示する, CloudInbox shall Firestoreの`users/{uid}`ドキュメントから`plan`と`usage`フィールドを取得する
+8. When 容量情報を表示する, CloudInbox shall `onSnapshot`を使用してリアルタイムで更新する
+9. When 容量情報を表示する, CloudInbox shall 容量の値をバイト単位で取得し、適切な単位（KB、MB、GB等）にフォーマットして表示する
+10. The CloudInbox shall 容量情報の表示は既存の`formatFileSize`関数を使用して実装する
+11. The CloudInbox shall 容量情報の文字列を国際化対応する（日本語・英語）
+12. When ユーザーがログインする, CloudInbox shall 容量情報の監視を開始する
+13. When ユーザーがログアウトする, CloudInbox shall 容量情報の監視を停止する

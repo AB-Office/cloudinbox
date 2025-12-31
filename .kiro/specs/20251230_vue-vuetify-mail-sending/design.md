@@ -587,3 +587,117 @@ npm run build
 3. **ファイルサイズ制限**: クライアント側で制限（サーバー側でも制限されている想定）
 4. **XSS対策**: 本文入力はプレーンテキストのみ（HTMLは将来的にサニタイズが必要）
 
+## Storage Usage Display Design
+
+### Component Design
+
+#### App.vue (拡張)
+
+ナビゲーションドロワーの下部に容量情報を表示。
+
+**Changes**:
+- `useSettingsStore`を使用して容量情報を取得
+- `watchSettings`を使用してリアルタイム更新
+- ドロワーの`append`スロットに容量情報を表示
+
+**Display Format**:
+```
+プラン: Free
+使用済み容量: 500 MB / 2 GB (25.0%)
+使用可能容量: 1.5 GB
+```
+
+#### SettingsView.vue (拡張)
+
+設定画面に容量情報をカード形式で表示。
+
+**Changes**:
+- `useSettingsStore`を使用して容量情報を取得
+- `watchSettings`を使用してリアルタイム更新
+- `v-card`を使用して容量情報を表示
+
+### Service Design
+
+#### settingsService
+
+容量情報を取得・監視するサービス。
+
+**Location**: `apps/web_app/src/services/settings.ts`
+
+**Functions**:
+- `loadSettings()`: 設定データを一度取得
+- `watchSettings(callback)`: 設定データをリアルタイムで監視
+
+**Data Source**: Firestore `users/{uid}` ドキュメント
+- `plan.label`: プラン名（例: "Free"）
+- `plan.maxStorageBytes`: 最大容量（バイト）
+- `usage.storageBytes`: 使用済み容量（バイト）
+
+### Store Design
+
+#### useSettingsStore
+
+容量情報を管理するストア。
+
+**Location**: `apps/web_app/src/stores/settings.ts`
+
+**State**:
+```typescript
+const settings = ref<SettingsData | null>(null);
+const isLoading = ref(false);
+const error = ref<string | null>(null);
+const availableStorageBytes = computed(() => {
+  if (!settings.value) return 0;
+  return Math.max(0, settings.value.maxStorageBytes - settings.value.usedStorageBytes);
+});
+```
+
+**Methods**:
+- `loadSettings()`: 設定データを読み込む
+- `startWatching()`: リアルタイム監視を開始
+- `stopWatching()`: リアルタイム監視を停止
+
+### Type Definitions
+
+#### SettingsData
+
+**Location**: `apps/web_app/src/types/settings.ts`
+
+```typescript
+export interface SettingsData {
+  planLabel: string;
+  maxStorageBytes: number;
+  usedStorageBytes: number;
+}
+```
+
+### Internationalization
+
+#### New Translation Keys
+
+**Location**: `apps/web_app/src/locales/ja.json`, `apps/web_app/src/locales/en.json`
+
+**Japanese (ja.json)**:
+```json
+{
+  "settings": {
+    "plan": "プラン",
+    "usedStorage": "使用済み容量",
+    "availableStorage": "使用可能容量",
+    "storageUsage": "容量使用状況"
+  }
+}
+```
+
+**English (en.json)**:
+```json
+{
+  "settings": {
+    "plan": "Plan",
+    "usedStorage": "Used Storage",
+    "availableStorage": "Available Storage",
+    "storageUsage": "Storage Usage"
+  }
+}
+```
+

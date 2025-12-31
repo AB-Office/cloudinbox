@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { accountService } from '../account';
 import { getAuth } from 'firebase/auth';
 import {
-  getFirestore,
   collection,
   doc,
   getDoc,
@@ -13,9 +12,7 @@ import {
   deleteDoc,
   query,
   where,
-  Timestamp,
 } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 
 // Firebase Authをモック
 vi.mock('firebase/auth', () => ({
@@ -276,7 +273,7 @@ describe('accountService', () => {
       };
 
       const mockDocRef = { path: 'users/test-uid' };
-      vi.mocked(doc).mockImplementation((db: any, ...pathSegments: string[]) => {
+      vi.mocked(doc).mockImplementation((_db: any, ...pathSegments: string[]) => {
         const path = pathSegments.join('/');
         if (path === 'users/test-uid') {
           return mockDocRef as any;
@@ -336,7 +333,7 @@ describe('accountService', () => {
       };
 
       const mockDocRef = { path: 'users/test-uid' };
-      vi.mocked(doc).mockImplementation((db: any, ...pathSegments: string[]) => {
+      vi.mocked(doc).mockImplementation((_db: any, ...pathSegments: string[]) => {
         const path = pathSegments.join('/');
         if (path === 'users/test-uid') {
           return mockDocRef as any;
@@ -401,7 +398,7 @@ describe('accountService', () => {
       };
 
       const mockDocRef = { path: 'users/test-uid' };
-      vi.mocked(doc).mockImplementation((db: any, ...pathSegments: string[]) => {
+      vi.mocked(doc).mockImplementation((_db: any, ...pathSegments: string[]) => {
         const path = pathSegments.join('/');
         if (path === 'users/test-uid') {
           return mockDocRef as any;
@@ -535,7 +532,7 @@ describe('accountService', () => {
       };
 
       const mockDocRef = { path: 'users/test-uid' };
-      vi.mocked(doc).mockImplementation((db: any, ...pathSegments: string[]) => {
+      vi.mocked(doc).mockImplementation((_db: any, ...pathSegments: string[]) => {
         const path = pathSegments.join('/');
         if (path === 'users/test-uid') {
           return mockDocRef as any;
@@ -579,7 +576,7 @@ describe('accountService', () => {
       };
 
       const mockDocRef = { path: 'users/test-uid' };
-      vi.mocked(doc).mockImplementation((db: any, ...pathSegments: string[]) => {
+      vi.mocked(doc).mockImplementation((_db: any, ...pathSegments: string[]) => {
         const path = pathSegments.join('/');
         if (path === 'users/test-uid') {
           return mockDocRef as any;

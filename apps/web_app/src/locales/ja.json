@@ -75,7 +75,11 @@
     "menu": "メニュー"
   },
   "settings": {
-    "accountDescription": "メールアカウントの追加、編集、削除を行います"
+    "accountDescription": "メールアカウントの追加、編集、削除を行います",
+    "plan": "プラン",
+    "usedStorage": "使用済み容量",
+    "availableStorage": "使用可能容量",
+    "storageUsage": "容量使用状況"
   },
   "account": {
     "title": "アカウント設定",

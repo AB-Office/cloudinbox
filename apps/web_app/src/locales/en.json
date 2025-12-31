@@ -75,7 +75,11 @@
     "menu": "Menu"
   },
   "settings": {
-    "accountDescription": "Add, edit, or delete mail accounts"
+    "accountDescription": "Add, edit, or delete mail accounts",
+    "plan": "Plan",
+    "usedStorage": "Used Storage",
+    "availableStorage": "Available Storage",
+    "storageUsage": "Storage Usage"
   },
   "account": {
     "title": "Account Settings",
