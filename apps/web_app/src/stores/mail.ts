@@ -1,10 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
-import type { MailThread, MailMessage, AttachmentListItem } from '@/types/mail';
+import type { MailThread, MailMessage, AttachmentListItem, SendMailRequest } from '@/types/mail';
 import { mailService, calculateItemsPerPage } from '@/services/mail';
 import { parseError } from '@/utils/errorHandler';
-import { fi } from 'vuetify/locale';
 
 export const useMailStore = defineStore('mail', () => {
   const threads = ref<MailThread[]>([]);

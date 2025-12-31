@@ -136,15 +136,15 @@
   - 国際化リソース（`mail.sent`）を使用する
   - _Requirements: 3.1,3.2,7.2_
 
-- [ ] 8. 送信済みフォルダのサポート（既存機能の活用）
-- [ ] 8.1 (I) 送信済みフォルダの表示を確認する
+- [x] 8. 送信済みフォルダのサポート（既存機能の活用）
+- [x] 8.1 (I) 送信済みフォルダの表示を確認する
   - 既存の`mailService.fetchThreads`関数が`label='sent'`をサポートしていることを確認する
   - 既存の`MailListView`コンポーネントが`label=sent`クエリパラメータをサポートしていることを確認する
   - 必要に応じて修正する
   - _Requirements: 3.3,3.4,3.5,3.6,3.7,3.8,3.9,3.10,3.11_
 
 - [ ] 9. テストの実装
-- [ ] 9.1 (P) mailService.sendMail()のユニットテストを実装する
+- [x] 9.1 (P) mailService.sendMail()のユニットテストを実装する
   - `apps/web_app/src/services/__tests__/mail.test.ts`に`sendMail`関数のテストを追加する
   - Firebase Cloud Functions SDK（`httpsCallable`）をモックする
   - 正常系：メール送信が成功する場合のテスト
@@ -154,7 +154,7 @@
   - Vitestとモックを使用する
   - _Requirements: 2.9,2.10,2.11,2.12,2.13,2.14,2.15,2.16_
 
-- [ ] 9.2 (P) useMailStore.sendMail()のユニットテストを実装する
+- [x] 9.2 (P) useMailStore.sendMail()のユニットテストを実装する
   - `apps/web_app/src/stores/__tests__/mail.test.ts`に`sendMail`関数のテストを追加する
   - `mailService.sendMail`をモックする
   - 正常系：メール送信が成功する場合のテスト（`isSending`、`sendError`の状態変化を確認）
@@ -164,7 +164,7 @@
   - Vitestとモックを使用する
   - _Requirements: 5.1,5.2,5.3,5.4,5.5,5.6,5.7,5.8,5.9,5.10_
 
-- [ ] 9.3 (P) ComposeViewコンポーネントのユニットテストを実装する
+- [x] 9.3 (P) ComposeViewコンポーネントのユニットテストを実装する
   - `apps/web_app/src/views/__tests__/ComposeView.test.ts`を作成する
   - `@vue/test-utils`を使用してコンポーネントをマウントする
   - フォームバリデーションのテスト（宛先の必須チェック、メールアドレス形式の検証、件名の必須チェック、本文の必須チェック）
@@ -178,7 +178,7 @@
   - Vitestと`@vue/test-utils`を使用する
   - _Requirements: 1.17,1.18,1.20,1.21,1.22,1.23,1.2,1.3,1.4,1.5,1.6,1.7,6.4,6.5,6.6,6.7,6.8_
 
-- [ ] 9.4 (I) メール送信フローの統合テストを実装する
+- [x] 9.4 (I) メール送信フローの統合テストを実装する
   - `apps/web_app/src/__tests__/integration/sendMail.test.ts`を作成する
   - エンドツーエンドのメール送信フローをテストする（モックCloud Functions使用）
   - ComposeViewからmailStore、mailServiceを経由してCloud Functionsを呼び出すまでのフローをテストする
@@ -187,7 +187,7 @@
   - Vitestとモックを使用する
   - _Requirements: 1.19,2.9,2.10,2.11,2.12,4.9_
 
-- [ ] 9.5 (I) 返信・転送フローの統合テストを実装する
+- [x] 9.5 (I) 返信・転送フローの統合テストを実装する
   - `apps/web_app/src/__tests__/integration/replyForward.test.ts`を作成する
   - 返信フロー：元のメール取得からメール送信までをテストする
   - 全員に返信フロー：元のメール取得からメール送信までをテストする
@@ -196,7 +196,7 @@
   - Vitestとモックを使用する
   - _Requirements: 1.2,1.3,1.4,1.5,1.27,2.8,2.9,6.7_
 
-- [ ] 9.6 (I) 型定義のテストを実装する
+- [x] 9.6 (I) 型定義のテストを実装する
   - TypeScriptの型チェックを実行する（`npm run build`で確認）
   - `SendMailRequest`、`SendMailResponse`、`ComposeAttachment`の型定義が正しいことを確認する
   - 既存のバックエンドAPI（`sendMail`関数）のインターフェースと整合性を保つことを確認する

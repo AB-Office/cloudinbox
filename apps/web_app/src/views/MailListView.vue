@@ -38,7 +38,7 @@ const currentMessage = computed(() => mailStore.currentMessage);
 // ルートのクエリパラメータからラベルを取得（デフォルトは'inbox'）
 const currentLabel = computed(() => {
   const label = route.query.label as string;
-  if (label === 'trash' || label === 'all') {
+  if (label === 'trash' || label === 'all' || label === 'sent') {
     return label;
   }
   return 'inbox';

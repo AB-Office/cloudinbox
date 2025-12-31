@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useMailStore } from '../mail';
 import * as mailService from '@/services/mail';
+import type { SendMailRequest } from '@/types/mail';
 
 // mailServiceをモック
 vi.mock('@/services/mail', () => ({
@@ -436,6 +437,43 @@ describe('mailStore', () => {
       vi.mocked(mailService.mailService.sendMail).mockRejectedValue(error);
 
       await expect(store.sendMail(request)).rejects.toThrow();
+      expect(store.sendError).toBeTruthy();
+      expect(store.sendError).toBe('Failed to send mail');
+      expect(store.isSending).toBe(false);
+    });
+
+    it('should handle different types of errors and set appropriate error messages', async () => {
+      const store = useMailStore();
+      const request: SendMailRequest = {
+        accountId: 'test-account-id',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+
+      // SMTP接続エラー
+      const smtpError = {
+        code: 'unavailable',
+        message: 'SMTP server connection failed',
+      };
+      vi.mocked(mailService.mailService.sendMail).mockRejectedValueOnce(smtpError);
+
+      await expect(store.sendMail(request)).rejects.toEqual(smtpError);
+      expect(store.sendError).toBeTruthy();
+      expect(store.isSending).toBe(false);
+
+      // リセットして次のテスト
+      store.clearSendError();
+      vi.clearAllMocks();
+
+      // 認証エラー
+      const authError = {
+        code: 'unauthenticated',
+        message: 'User not authenticated',
+      };
+      vi.mocked(mailService.mailService.sendMail).mockRejectedValueOnce(authError);
+
+      await expect(store.sendMail(request)).rejects.toEqual(authError);
       expect(store.sendError).toBeTruthy();
       expect(store.isSending).toBe(false);
     });

@@ -49,7 +49,7 @@ export function calculateItemsPerPage(): number {
 export const mailService = {
   /**
    * メールスレッド一覧を取得する（ページネーション対応）
-   * @param label ラベル（'inbox', 'trash', 'all'）
+   * @param label ラベル（'inbox', 'trash', 'sent', 'all'）
    * @param limitCount 取得件数
    * @param lastDoc 前回取得した最後のドキュメント（追加読み込み時）
    * @returns メールスレッド一覧、最後のドキュメント、hasMoreフラグ
@@ -88,6 +88,14 @@ export const mailService = {
       q = query(
         collection(db, 'users', uid, 'mailThreads'),
         where('labels', 'array-contains', 'trash'),
+        orderBy('lastMessageAt', 'desc'),
+        limit(limitCount + 1)
+      );
+    } else if (label === 'sent') {
+      // 送信済み: 'sent'ラベルを含むものを取得
+      q = query(
+        collection(db, 'users', uid, 'mailThreads'),
+        where('labels', 'array-contains', 'sent'),
         orderBy('lastMessageAt', 'desc'),
         limit(limitCount + 1)
       );
@@ -133,7 +141,7 @@ export const mailService = {
 
   /**
    * メールスレッド一覧のリアルタイム更新を監視する
-   * @param label ラベル（'inbox', 'trash', 'all'）
+   * @param label ラベル（'inbox', 'trash', 'sent', 'all'）
    * @param callback 更新時のコールバック関数
    * @returns 監視を停止する関数
    */
@@ -154,6 +162,12 @@ export const mailService = {
       q = query(
         collection(db, 'users', uid, 'mailThreads'),
         where('labels', 'array-contains', 'trash'),
+        orderBy('lastMessageAt', 'desc')
+      );
+    } else if (label === 'sent') {
+      q = query(
+        collection(db, 'users', uid, 'mailThreads'),
+        where('labels', 'array-contains', 'sent'),
         orderBy('lastMessageAt', 'desc')
       );
     }
