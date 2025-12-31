@@ -1,19 +1,15 @@
 /**
  * 型定義のテストファイル
- * 
+ *
  * このファイルは型の整合性を確認するためのテストです。
  * TypeScriptコンパイラが型エラーを検出することで、型定義が正しいことを確認します。
  */
 
-import type {
-  SendMailRequest,
-  SendMailResponse,
-  ComposeAttachment,
-} from '../mail';
+import type { SendMailRequest, SendMailResponse, ComposeAttachment } from '../mail';
 
 /**
  * SendMailRequestの型定義が正しいことを確認するテスト
- * 
+ *
  * 以下のテストケースは、TypeScriptコンパイラが型エラーを検出することを確認するためのものです。
  * これらの変数は実際には使用されませんが、型チェックの実行により型定義の整合性を確認します。
  */
@@ -115,7 +111,7 @@ const validAttachment2: ComposeAttachment = {
 
 /**
  * バックエンドAPIとの整合性を確認するテスト
- * 
+ *
  * フロントエンドのSendMailRequestがバックエンドのSendMailRequestと
  * 互換性があることを確認します。
  */
@@ -178,4 +174,3 @@ export {
   validAttachment2,
   testBackendCompatibility,
 };
-

@@ -42,26 +42,12 @@
         <p>{{ t('mail.inbox') }}</p>
       </div>
     </div>
-
-    <!-- FAB（Floating Action Button） -->
-    <v-btn
-      class="fab-button"
-      color="primary"
-      icon
-      size="large"
-      fixed
-      location="bottom end"
-      @click="handleComposeClick"
-    >
-      <v-icon>mdi-plus</v-icon>
-    </v-btn>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 import { useMailStore } from '@/stores/mail';
 import MailListItem from './MailListItem.vue';
 
@@ -78,7 +64,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const router = useRouter();
 const mailStore = useMailStore();
 
 const scrollTrigger = ref<HTMLElement | null>(null);
@@ -96,13 +81,6 @@ const hasMore = computed(() => mailStore.hasMore);
  */
 function handleThreadClick(threadId: string) {
   emit('select-thread', threadId);
-}
-
-/**
- * FABクリック時の処理
- */
-function handleComposeClick() {
-  router.push('/compose');
 }
 
 /**
@@ -171,10 +149,5 @@ onUnmounted(() => {
 .scroll-trigger {
   height: 1px;
   width: 100%;
-}
-
-.fab-button {
-  margin-bottom: 24px;
-  margin-right: 24px;
 }
 </style>

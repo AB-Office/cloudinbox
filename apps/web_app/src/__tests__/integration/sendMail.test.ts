@@ -273,7 +273,9 @@ describe('メール送信フロー統合テスト', () => {
         await wrapper.vm.$nextTick();
 
         // 成功メッセージが表示されたことを確認
-        expect(mockShowSuccess).toHaveBeenCalledWith(expect.stringContaining('メールを送信しました'));
+        expect(mockShowSuccess).toHaveBeenCalledWith(
+          expect.stringContaining('メールを送信しました')
+        );
 
         // 画面遷移が行われることを確認
         expect(routerPushSpy).toHaveBeenCalledWith('/');
@@ -386,7 +388,7 @@ describe('メール送信フロー統合テスト', () => {
 
       // mailService.sendMailのモックを設定（遅延あり）
       let resolveSendMail: (value: SendMailResponse) => void;
-      const sendMailPromise = new Promise<SendMailResponse>((resolve) => {
+      const sendMailPromise = new Promise<SendMailResponse>(resolve => {
         resolveSendMail = resolve;
       });
       vi.mocked(mailService.sendMail).mockReturnValue(sendMailPromise);
@@ -453,4 +455,3 @@ describe('メール送信フロー統合テスト', () => {
     });
   });
 });
-

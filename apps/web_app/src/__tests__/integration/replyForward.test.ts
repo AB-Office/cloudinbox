@@ -10,7 +10,12 @@ import { createRouter, createWebHistory } from 'vue-router';
 import ComposeView from '@/views/ComposeView.vue';
 import { useAccountStore } from '@/stores/account';
 import { mailService } from '@/services/mail';
-import type { SendMailResponse, MailMessage, DecryptedMailBody, AttachmentListItem } from '@/types/mail';
+import type {
+  SendMailResponse,
+  MailMessage,
+  DecryptedMailBody,
+  AttachmentListItem,
+} from '@/types/mail';
 
 // visualViewportのモック
 beforeAll(() => {
@@ -354,7 +359,11 @@ describe('返信・転送フロー統合テスト', () => {
         expect(mailService.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
             accountId: 'account1',
-            to: expect.arrayContaining(['sender@example.com', 'cc1@example.com', 'cc2@example.com']),
+            to: expect.arrayContaining([
+              'sender@example.com',
+              'cc1@example.com',
+              'cc2@example.com',
+            ]),
             cc: expect.arrayContaining(['cc1@example.com', 'cc2@example.com']),
             subject: expect.stringContaining('Re:'),
             body: 'Reply all body text',
@@ -429,7 +438,9 @@ describe('返信・転送フロー統合テスト', () => {
       expect(vm.subject).toContain('Fw:');
       expect(vm.subject).toContain('Original Subject');
       expect(vm.body).toContain('Original body text');
-      expect(vm.body).toContain('From: sender@example.com');
+      // モバイルアプリ版と同じ引用形式を確認 (YYYY/MM/DD HH:MM <email@example.com>)
+      expect(vm.body).toMatch(/\d{4}\/\d{2}\/\d{2} \d{2}:\d{2} <sender@example\.com>/);
+      expect(vm.body).toContain('> Original body text');
 
       // 添付ファイルが正しく追加されていることを確認
       expect(vm.attachments.length).toBe(2);
@@ -631,4 +642,3 @@ describe('返信・転送フロー統合テスト', () => {
     });
   });
 });
-

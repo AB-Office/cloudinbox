@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { useDisplay } from 'vuetify';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth';
-
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
@@ -148,4 +147,5 @@ async function handleLogout() {
   </v-app>
 </template>
 
-<style scoped></style>
+<style scoped>
+</style>
