@@ -250,8 +250,9 @@ function addSubjectPrefix(subject: string, prefix: string): string {
  * メールアドレスから表示名を除去してアドレスのみを取得
  */
 function extractEmailAddress(from: string): string {
-  const match = from.match(/<(.+)>/);
-  return match ? match[1] : from;
+  const match = from.match(/<([^>]+)>/);
+  const addr = match ? match[1] : from;
+  return addr.trim().replace(/^"(.*)"$/, '$1');
 }
 
 /**
@@ -541,7 +542,7 @@ async function handleSend() {
   // バリデーション（フォームのバリデーションはv-text-fieldの:rulesで自動的に実行される）
   // 送信元アカウントのチェック
   if (!selectedAccountId.value) {
-    showError(new Error(t('mail.compose.validation.toRequired')));
+    showError(new Error(t('mail.compose.validation.accountRequired')));
     return;
   }
 

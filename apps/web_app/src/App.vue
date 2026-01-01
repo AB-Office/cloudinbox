@@ -130,10 +130,10 @@ const formattedStorageInfo = computed(() => {
 watch(
   () => authStore.isAuthenticated,
   isAuthenticated => {
+    settingsStore.stopWatching();
     if (isAuthenticated) {
       settingsStore.startWatching();
     } else {
-      settingsStore.stopWatching();
       settingsStore.settings = null;
     }
   },
@@ -184,7 +184,7 @@ onUnmounted(() => {
           @click="router.push(item.route)"
         ></v-list-item>
       </v-list>
-      
+
       <!-- 容量情報表示（ドロワー下部） -->
       <template v-if="formattedStorageInfo" #append>
         <v-divider />

@@ -80,7 +80,7 @@
 
       <!-- ボトムナビゲーションバー（アイコンボタン） -->
       <v-bottom-navigation v-if="message" color="primary" height="64">
-        <!-- ゴミ箱・アーカイブボタン -->
+        <!-- ゴミ箱・アーカイブボタン （送信済みでは非表示）-->
         <v-btn @click="handleMoveToTrash">
           <v-icon>mdi-delete</v-icon>
           <span class="text-caption">{{ t('mail.moveToTrash') }}</span>
