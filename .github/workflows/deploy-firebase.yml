@@ -68,10 +68,21 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
+      - name: Debug - Check Firebase CLI version and files
+        run: |
+          firebase --version
+          echo "Current directory: $(pwd)"
+          echo "Checking firebase.json:"
+          cat firebase.json
+          echo "Checking storage.rules file:"
+          ls -la infra/firebase/storage.rules || echo "storage.rules not found"
+          echo "Checking .firebaserc:"
+          cat .firebaserc || echo ".firebaserc not found"
+
       - name: Set Firebase project
         run: firebase use cloudinbox --token ${{ secrets.FIREBASE_TOKEN }}
 
       - name: Deploy to Firebase
         run: |
-          firebase deploy --token ${{ secrets.FIREBASE_TOKEN }}
+          firebase deploy --token ${{ secrets.FIREBASE_TOKEN }} --debug
 
