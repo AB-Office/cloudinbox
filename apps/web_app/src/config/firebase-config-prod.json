@@ -1,9 +1,9 @@
 {
-  "apiKey": "",
-  "authDomain": "",
-  "projectId": "",
-  "storageBucket": "",
-  "messagingSenderId": "",
-  "appId": "",
+  "apiKey": "AIzaSyAR24BzKqdTQ1ZrgafcAI5xkj7f68FGams",
+  "authDomain": "cloudinbox.firebaseapp.com",
+  "projectId": "cloudinbox",
+  "storageBucket": "cloudinbox.firebasestorage.app",
+  "messagingSenderId": "141050394902",
+  "appId": "1:141050394902:web:1efcb8d19e80b553c4b837",
   "measurementId": ""
 }

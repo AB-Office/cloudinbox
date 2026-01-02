@@ -12,7 +12,7 @@ Googleの外部メール受信終了後、複数メールアカウントを一�
 - **添付ファイル管理**: メール添付ファイルの表示・ダウンロード機能
 - **容量管理**: プランベースのストレージ制限と使用量追跡
 - **暗号化**: アプリケーションレベル暗号化（AES-256-GCM、KMS + Secret Managerによる鍵管理）
-- **クロスプラットフォーム**: Flutterアプリによるモバイル対応
+- **クロスプラットフォーム**: Flutterアプリによるモバイル対応、Vue.jsによるWebアプリ対応
 - **認証**: Firebase Auth（Google Sign-In）
 
 ## アーキテクチャ概要
@@ -25,10 +25,10 @@ Cloud Functions
    ├ Firestore (メタデータ)
    └ Storage (本文・添付ファイル)
    ↓
-Flutterアプリ (モバイル)
+Flutterアプリ (モバイル) / Vue.js Webアプリ
 ```
 
-サーバーレスアーキテクチャを採用。Firebase Functionsによるバックエンド処理と、Firestore/Storageによるデータ永続化、Flutterによるクロスプラットフォームクライアントで構成されます。
+サーバーレスアーキテクチャを採用。Firebase Functionsによるバックエンド処理と、Firestore/Storageによるデータ永続化、FlutterによるモバイルクライアントおよびVue.jsによるWebクライアントで構成されます。
 
 ## 技術スタック
 
@@ -41,9 +41,21 @@ Flutterアプリ (モバイル)
 - **暗号化**: Google Cloud KMS（KEK管理） + Secret Manager（wrapされたDEKの保存）
 
 ### フロントエンド
+
+#### モバイルアプリ
 - **フレームワーク**: Flutter (Dart)
 - **UI**: Material Design
 - **国際化**: 日本語・英語（デバイス言語設定に基づく自動選択）
+
+#### Webアプリ
+- **フレームワーク**: Vue 3 (Composition API)
+- **言語**: TypeScript
+- **UI**: Vuetify 3
+- **状態管理**: Pinia
+- **ルーティング**: Vue Router
+- **ビルドツール**: Vite
+- **国際化**: vue-i18n（日本語・英語）
+- **テスト**: Vitest
 
 ### インフラ
 - Firebase Functions（Cloud Functions）
@@ -58,7 +70,8 @@ Flutterアプリ (モバイル)
 ```
 cloudinbox/
 ├── apps/
-│   └── mobile_app/          # Flutterモバイルアプリ
+│   ├── mobile_app/          # Flutterモバイルアプリ
+│   └── web_app/             # Vue.js Webアプリ
 ├── functions/
 │   ├── src/
 │   │   ├── mail/            # メール関連機能（受信、送信、添付ファイル）
@@ -105,7 +118,13 @@ cloudinbox/
    flutter pub get
    ```
 
-4. **KMS と Secret Manager のセットアップ**
+4. **Web アプリの依存関係インストール**
+   ```bash
+   cd apps/web_app
+   npm install
+   ```
+
+5. **KMS と Secret Manager のセットアップ**
    
    KMS と Secret Manager の設定は以下のドキュメントを参照してください：
    - `docs/SETUP_SECRET_MANAGER_KMS.md`
@@ -145,6 +164,38 @@ flutter test
 flutter test integration_test/
 ```
 
+### Web アプリの開発
+
+```bash
+# 開発サーバーの起動
+cd apps/web_app
+npm run dev
+
+# ビルド
+npm run build
+
+# ビルド結果のプレビュー
+npm run preview
+
+# テスト実行
+npm test
+
+# テストをウォッチモードで実行
+npm test -- --watch
+
+# テストカバレッジを取得
+npm run test:coverage
+
+# テストUIを起動
+npm run test:ui
+
+# リント実行
+npm run lint
+
+# コードフォーマット
+npm run format
+```
+
 ### デプロイ
 
 ```bash
@@ -172,6 +223,11 @@ firebase deploy
 
 - **Widget テスト**: 各ウィジェットの動作確認
 - **統合テスト**: アプリ全体のエンドツーエンドテスト
+
+### Web アプリのテスト
+
+- **単体テスト**: Vitest を使用した各コンポーネント・サービスの単体テスト
+- **統合テスト**: エンドツーエンドの機能テスト
 
 ## プロジェクト管理
 
