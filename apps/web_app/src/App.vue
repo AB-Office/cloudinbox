@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDisplay } from 'vuetify';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth';
-
+import { useSettingsStore } from '@/stores/settings';
+import { formatFileSize } from '@/plugins/i18n';
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const { mdAndUp } = useDisplay();
 const authStore = useAuthStore();
+const settingsStore = useSettingsStore();
 
 // ログイン画面ではナビゲーションを表示しない
 const showNavigation = computed(() => {
@@ -58,6 +60,12 @@ const navItems = [
     label: 'all',
   },
   {
+    title: t('mail.sent'),
+    icon: 'mdi-send',
+    route: { name: 'mail-list', query: { label: 'sent' } },
+    label: 'sent',
+  },
+  {
     title: t('mail.trash'),
     icon: 'mdi-delete',
     route: { name: 'mail-list', query: { label: 'trash' } },
@@ -86,8 +94,8 @@ function isActiveRoute(item: (typeof navItems)[number]): boolean {
     return currentRoute === 'mail-list' && !route.query.label;
   }
 
-  // すべてのメール、ゴミ箱の場合
-  if (item.label === 'all' || item.label === 'trash') {
+  // すべてのメール、送信済み、ゴミ箱の場合
+  if (item.label === 'all' || item.label === 'sent' || item.label === 'trash') {
     return currentRoute === 'mail-list' && route.query.label === item.label;
   }
 
@@ -99,6 +107,48 @@ async function handleLogout() {
   await authStore.signOut();
   router.push('/login');
 }
+
+// 容量情報のフォーマット済み表示
+const formattedStorageInfo = computed(() => {
+  if (!settingsStore.settings) {
+    return null;
+  }
+  const { planLabel, maxStorageBytes, usedStorageBytes } = settingsStore.settings;
+  const availableBytes = maxStorageBytes - usedStorageBytes;
+  const usagePercent = maxStorageBytes > 0 ? ((usedStorageBytes / maxStorageBytes) * 100).toFixed(1) : '0.0';
+  
+  return {
+    planLabel,
+    usedStorage: formatFileSize(usedStorageBytes, t),
+    maxStorage: formatFileSize(maxStorageBytes, t),
+    availableStorage: formatFileSize(availableBytes, t),
+    usagePercent,
+  };
+});
+
+// 認証状態が変わったときに容量情報の監視を開始/停止
+watch(
+  () => authStore.isAuthenticated,
+  isAuthenticated => {
+    settingsStore.stopWatching();
+    if (isAuthenticated) {
+      settingsStore.startWatching();
+    } else {
+      settingsStore.settings = null;
+    }
+  },
+  { immediate: true }
+);
+
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    settingsStore.startWatching();
+  }
+});
+
+onUnmounted(() => {
+  settingsStore.stopWatching();
+});
 </script>
 
 <template>
@@ -134,6 +184,22 @@ async function handleLogout() {
           @click="router.push(item.route)"
         ></v-list-item>
       </v-list>
+
+      <!-- 容量情報表示（ドロワー下部） -->
+      <template v-if="formattedStorageInfo" #append>
+        <v-divider />
+        <div class="pa-4">
+          <div class="text-caption text-medium-emphasis mb-1">
+            {{ t('settings.plan') }}: {{ formattedStorageInfo.planLabel }}
+          </div>
+          <div class="text-caption text-medium-emphasis mb-1">
+            {{ t('settings.usedStorage') }}: {{ formattedStorageInfo.usedStorage }} / {{ formattedStorageInfo.maxStorage }} ({{ formattedStorageInfo.usagePercent }}%)
+          </div>
+          <div class="text-caption text-medium-emphasis">
+            {{ t('settings.availableStorage') }}: {{ formattedStorageInfo.availableStorage }}
+          </div>
+        </div>
+      </template>
     </v-navigation-drawer>
 
     <v-main>
@@ -142,4 +208,5 @@ async function handleLogout() {
   </v-app>
 </template>
 
-<style scoped></style>
+<style scoped>
+</style>

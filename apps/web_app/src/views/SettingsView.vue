@@ -6,6 +6,29 @@
       </v-col>
     </v-row>
 
+    <!-- 容量情報表示 -->
+    <v-row v-if="formattedStorageInfo">
+      <v-col cols="12" md="6" lg="4">
+        <v-card variant="outlined">
+          <v-card-title class="d-flex align-center">
+            <v-icon start color="primary">mdi-harddisk</v-icon>
+            {{ t('settings.storageUsage') }}
+          </v-card-title>
+          <v-card-text>
+            <div class="text-body-2 mb-2">
+              <strong>{{ t('settings.plan') }}:</strong> {{ formattedStorageInfo.planLabel }}
+            </div>
+            <div class="text-body-2 mb-2">
+              <strong>{{ t('settings.usedStorage') }}:</strong> {{ formattedStorageInfo.usedStorage }} / {{ formattedStorageInfo.maxStorage }} ({{ formattedStorageInfo.usagePercent }}%)
+            </div>
+            <div class="text-body-2">
+              <strong>{{ t('settings.availableStorage') }}:</strong> {{ formattedStorageInfo.availableStorage }}
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <v-row>
       <v-col cols="12" md="6" lg="4">
         <v-card variant="outlined" class="settings-card" @click="navigateToAccounts">
@@ -31,15 +54,45 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { useSettingsStore } from '@/stores/settings';
+import { formatFileSize } from '@/plugins/i18n';
 
 const router = useRouter();
 const { t } = useI18n();
+const settingsStore = useSettingsStore();
+
+// 容量情報のフォーマット済み表示
+const formattedStorageInfo = computed(() => {
+  if (!settingsStore.settings) {
+    return null;
+  }
+  const { planLabel, maxStorageBytes, usedStorageBytes } = settingsStore.settings;
+  const availableBytes = maxStorageBytes - usedStorageBytes;
+  const usagePercent = maxStorageBytes > 0 ? ((usedStorageBytes / maxStorageBytes) * 100).toFixed(1) : '0.0';
+  
+  return {
+    planLabel,
+    usedStorage: formatFileSize(usedStorageBytes, t),
+    maxStorage: formatFileSize(maxStorageBytes, t),
+    availableStorage: formatFileSize(availableBytes, t),
+    usagePercent,
+  };
+});
 
 function navigateToAccounts() {
   router.push({ name: 'account-list' });
 }
+
+onMounted(() => {
+  settingsStore.startWatching();
+});
+
+onUnmounted(() => {
+  settingsStore.stopWatching();
+});
 </script>
 
 <style scoped>

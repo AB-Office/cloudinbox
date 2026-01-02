@@ -16,6 +16,21 @@
         />
       </v-col>
     </v-row>
+
+    <!-- メール作成ボタン（画面右下に固定） -->
+    <div class="compose-button-fixed">
+      <v-btn
+        fixed
+        location="bottom end"
+        color="primary"
+        size="large"
+        icon
+        rounded="circle"
+        to="/compose"
+      >
+        <v-icon>mdi-plus</v-icon>
+      </v-btn>
+    </div>
   </v-container>
 </template>
 
@@ -38,7 +53,7 @@ const currentMessage = computed(() => mailStore.currentMessage);
 // ルートのクエリパラメータからラベルを取得（デフォルトは'inbox'）
 const currentLabel = computed(() => {
   const label = route.query.label as string;
-  if (label === 'trash' || label === 'all') {
+  if (label === 'trash' || label === 'all' || label === 'sent') {
     return label;
   }
   return 'inbox';
@@ -79,5 +94,13 @@ onMounted(() => {
 <style scoped>
 .fill-height {
   height: 100%;
+}
+
+.compose-button-fixed {
+  position: absolute;
+  bottom: 96px;
+  right: 24px;
+  z-index: 1000;
+  transform: none;
 }
 </style>

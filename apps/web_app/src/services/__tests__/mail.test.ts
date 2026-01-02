@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mailService } from '../mail';
 import { getAuth } from 'firebase/auth';
 import { doc, getDoc, writeBatch } from 'firebase/firestore';
+import type { SendMailRequest } from '@/types/mail';
 
 // Firebase Authをモック
 vi.mock('firebase/auth', () => ({
@@ -230,6 +231,257 @@ describe('mailService', () => {
       vi.mocked(httpsCallable).mockReturnValue(mockMarkAsRead);
 
       await expect(mailService.markAsRead(messageId, threadId)).resolves.not.toThrow();
+    });
+  });
+
+  describe('sendMail', () => {
+    it('should call sendMail Cloud Function with correct parameters', async () => {
+      const request = {
+        accountId: 'test-account-id',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+      const mockResponse = {
+        data: {
+          success: true,
+          messageId: 'test-message-id',
+        },
+      };
+      const mockSendMail = vi.fn().mockResolvedValue(mockResponse);
+
+      vi.mocked(httpsCallable).mockReturnValue(mockSendMail);
+
+      const result = await mailService.sendMail(request);
+
+      expect(httpsCallable).toHaveBeenCalledWith(expect.anything(), 'sendMail');
+      expect(mockSendMail).toHaveBeenCalledWith(request);
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should include optional parameters (cc, bcc, attachments, threadId, inReplyToMessageId)', async () => {
+      const request = {
+        accountId: 'test-account-id',
+        to: ['recipient@example.com'],
+        cc: ['cc@example.com'],
+        bcc: ['bcc@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+        attachments: [
+          {
+            filename: 'test.pdf',
+            content: 'base64content',
+            contentType: 'application/pdf',
+          },
+        ],
+        threadId: 'test-thread-id',
+        inReplyToMessageId: 'test-message-id',
+      };
+      const mockResponse = {
+        data: {
+          success: true,
+          messageId: 'test-message-id',
+        },
+      };
+      const mockSendMail = vi.fn().mockResolvedValue(mockResponse);
+
+      vi.mocked(httpsCallable).mockReturnValue(mockSendMail);
+
+      const result = await mailService.sendMail(request);
+
+      expect(mockSendMail).toHaveBeenCalledWith(request);
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should handle errors and throw with error message', async () => {
+      const request = {
+        accountId: 'test-account-id',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+      const error = new Error('Network error');
+      const mockSendMail = vi.fn().mockRejectedValue(error);
+
+      vi.mocked(httpsCallable).mockReturnValue(mockSendMail);
+
+      await expect(mailService.sendMail(request)).rejects.toThrow('Network error');
+    });
+
+    it('should handle authentication errors', async () => {
+      const request = {
+        accountId: 'test-account-id',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+      const authError = {
+        code: 'unauthenticated',
+        message: 'User not authenticated',
+      };
+      const mockSendMail = vi.fn().mockRejectedValue(authError);
+
+      vi.mocked(httpsCallable).mockReturnValue(mockSendMail);
+
+      await expect(mailService.sendMail(request)).rejects.toEqual(authError);
+    });
+
+    it('should handle parameter validation errors', async () => {
+      const request = {
+        accountId: 'test-account-id',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+      const validationError = {
+        code: 'invalid-argument',
+        message: 'Invalid email address',
+      };
+      const mockSendMail = vi.fn().mockRejectedValue(validationError);
+
+      vi.mocked(httpsCallable).mockReturnValue(mockSendMail);
+
+      await expect(mailService.sendMail(request)).rejects.toEqual(validationError);
+    });
+
+    it('should handle SMTP connection errors', async () => {
+      const request = {
+        accountId: 'test-account-id',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+      const smtpError = {
+        code: 'unavailable',
+        message: 'SMTP server connection failed',
+      };
+      const mockSendMail = vi.fn().mockRejectedValue(smtpError);
+
+      vi.mocked(httpsCallable).mockReturnValue(mockSendMail);
+
+      await expect(mailService.sendMail(request)).rejects.toEqual(smtpError);
+    });
+
+    it('should handle mail sending with attachments correctly', async () => {
+      const request: SendMailRequest = {
+        accountId: 'test-account-id',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+        attachments: [
+          {
+            filename: 'document.pdf',
+            content: 'base64encodedcontent',
+            contentType: 'application/pdf',
+          },
+          {
+            filename: 'image.jpg',
+            content: 'base64encodedimage',
+            contentType: 'image/jpeg',
+          },
+        ],
+      };
+      const mockResponse = {
+        data: {
+          success: true,
+          messageId: 'test-message-id',
+        },
+      };
+      const mockSendMail = vi.fn().mockResolvedValue(mockResponse);
+
+      vi.mocked(httpsCallable).mockReturnValue(mockSendMail);
+
+      const result = await mailService.sendMail(request);
+
+      expect(mockSendMail).toHaveBeenCalledWith(request);
+      expect(result.success).toBe(true);
+      expect(result.messageId).toBe('test-message-id');
+      expect(request.attachments).toHaveLength(2);
+      expect(request.attachments?.[0].filename).toBe('document.pdf');
+      expect(request.attachments?.[1].filename).toBe('image.jpg');
+    });
+
+    it('should handle reply with threadId and inReplyToMessageId', async () => {
+      const request: SendMailRequest = {
+        accountId: 'test-account-id',
+        to: ['recipient@example.com'],
+        subject: 'Re: Test Subject',
+        body: 'Reply body',
+        threadId: 'existing-thread-id',
+        inReplyToMessageId: 'original-message-id',
+      };
+      const mockResponse = {
+        data: {
+          success: true,
+          messageId: 'reply-message-id',
+        },
+      };
+      const mockSendMail = vi.fn().mockResolvedValue(mockResponse);
+
+      vi.mocked(httpsCallable).mockReturnValue(mockSendMail);
+
+      const result = await mailService.sendMail(request);
+
+      expect(mockSendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          threadId: 'existing-thread-id',
+          inReplyToMessageId: 'original-message-id',
+        })
+      );
+      expect(result.success).toBe(true);
+    });
+
+    it('should handle forward with threadId and inReplyToMessageId', async () => {
+      const request: SendMailRequest = {
+        accountId: 'test-account-id',
+        to: ['new-recipient@example.com'],
+        subject: 'Fw: Test Subject',
+        body: 'Forward body',
+        threadId: 'original-thread-id',
+        inReplyToMessageId: 'original-message-id',
+      };
+      const mockResponse = {
+        data: {
+          success: true,
+          messageId: 'forward-message-id',
+        },
+      };
+      const mockSendMail = vi.fn().mockResolvedValue(mockResponse);
+
+      vi.mocked(httpsCallable).mockReturnValue(mockSendMail);
+
+      const result = await mailService.sendMail(request);
+
+      expect(mockSendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          threadId: 'original-thread-id',
+          inReplyToMessageId: 'original-message-id',
+        })
+      );
+      expect(result.success).toBe(true);
+    });
+
+    it('should handle response with error message in success=false case', async () => {
+      const request = {
+        accountId: 'test-account-id',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+      const mockResponse = {
+        data: {
+          success: false,
+          errorMessage: 'SMTP authentication failed',
+        },
+      };
+      const mockSendMail = vi.fn().mockResolvedValue(mockResponse);
+
+      vi.mocked(httpsCallable).mockReturnValue(mockSendMail);
+
+      const result = await mailService.sendMail(request);
+
+      expect(result.success).toBe(false);
+      expect(result.errorMessage).toBe('SMTP authentication failed');
     });
   });
 

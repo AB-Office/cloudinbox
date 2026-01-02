@@ -79,3 +79,41 @@ export interface AttachmentListItem {
   size: number; // bytes
   contentType: string;
 }
+
+/**
+ * メール送信リクエスト
+ */
+export interface SendMailRequest {
+  accountId: string;
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
+  subject: string;
+  body: string;
+  attachments?: Array<{
+    filename: string;
+    content: string; // Base64 encoded
+    contentType?: string;
+  }>;
+  threadId?: string; // 返信・転送の場合
+  inReplyToMessageId?: string; // 返信・転送の場合
+}
+
+/**
+ * メール送信レスポンス
+ */
+export interface SendMailResponse {
+  success: boolean;
+  messageId?: string;
+  errorMessage?: string;
+}
+
+/**
+ * メール作成時の添付ファイル
+ */
+export interface ComposeAttachment {
+  file: File; // 元のFileオブジェクト
+  filename: string;
+  contentType: string;
+  content: string; // Base64 encoded (送信時に生成)
+}

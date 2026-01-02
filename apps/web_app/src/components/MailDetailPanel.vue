@@ -108,6 +108,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import type { MailMessage, DecryptedMailBody, AttachmentListItem } from '@/types/mail';
 import { useMailStore } from '@/stores/mail';
 import MailHeader from './MailHeader.vue';
@@ -124,6 +125,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const { t } = useI18n();
+const router = useRouter();
 const mailStore = useMailStore();
 const { snackbar, snackbarText, snackbarColor, showError } = useSnackbar();
 
@@ -187,24 +189,42 @@ watch(
  * 返信ボタンのハンドラ
  */
 function handleReply() {
-  // TODO: 返信機能を実装
-  console.log('Reply:', props.message?.messageId);
+  if (!props.message?.messageId) return;
+  router.push({
+    path: '/compose',
+    query: {
+      mode: 'reply',
+      messageId: props.message.messageId,
+    },
+  });
 }
 
 /**
  * 全員に返信ボタンのハンドラ
  */
 function handleReplyAll() {
-  // TODO: 全員に返信機能を実装
-  console.log('Reply All:', props.message?.messageId);
+  if (!props.message?.messageId) return;
+  router.push({
+    path: '/compose',
+    query: {
+      mode: 'replyAll',
+      messageId: props.message.messageId,
+    },
+  });
 }
 
 /**
  * 転送ボタンのハンドラ
  */
 function handleForward() {
-  // TODO: 転送機能を実装
-  console.log('Forward:', props.message?.messageId);
+  if (!props.message?.messageId) return;
+  router.push({
+    path: '/compose',
+    query: {
+      mode: 'forward',
+      messageId: props.message.messageId,
+    },
+  });
 }
 
 /**

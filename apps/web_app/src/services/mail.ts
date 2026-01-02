@@ -19,7 +19,13 @@ import {
 import { getAuth } from 'firebase/auth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firebaseApp } from './firebase';
-import type { MailThread, MailMessage, AttachmentListItem } from '@/types/mail';
+import type {
+  MailThread,
+  MailMessage,
+  AttachmentListItem,
+  SendMailRequest,
+  SendMailResponse,
+} from '@/types/mail';
 
 const db = getFirestore(firebaseApp);
 const functions = getFunctions(firebaseApp, 'asia-northeast1');
@@ -43,7 +49,7 @@ export function calculateItemsPerPage(): number {
 export const mailService = {
   /**
    * メールスレッド一覧を取得する（ページネーション対応）
-   * @param label ラベル（'inbox', 'trash', 'all'）
+   * @param label ラベル（'inbox', 'trash', 'sent', 'all'）
    * @param limitCount 取得件数
    * @param lastDoc 前回取得した最後のドキュメント（追加読み込み時）
    * @returns メールスレッド一覧、最後のドキュメント、hasMoreフラグ
@@ -82,6 +88,14 @@ export const mailService = {
       q = query(
         collection(db, 'users', uid, 'mailThreads'),
         where('labels', 'array-contains', 'trash'),
+        orderBy('lastMessageAt', 'desc'),
+        limit(limitCount + 1)
+      );
+    } else if (label === 'sent') {
+      // 送信済み: 'sent'ラベルを含むものを取得
+      q = query(
+        collection(db, 'users', uid, 'mailThreads'),
+        where('labels', 'array-contains', 'sent'),
         orderBy('lastMessageAt', 'desc'),
         limit(limitCount + 1)
       );
@@ -127,7 +141,7 @@ export const mailService = {
 
   /**
    * メールスレッド一覧のリアルタイム更新を監視する
-   * @param label ラベル（'inbox', 'trash', 'all'）
+   * @param label ラベル（'inbox', 'trash', 'sent', 'all'）
    * @param callback 更新時のコールバック関数
    * @returns 監視を停止する関数
    */
@@ -148,6 +162,12 @@ export const mailService = {
       q = query(
         collection(db, 'users', uid, 'mailThreads'),
         where('labels', 'array-contains', 'trash'),
+        orderBy('lastMessageAt', 'desc')
+      );
+    } else if (label === 'sent') {
+      q = query(
+        collection(db, 'users', uid, 'mailThreads'),
+        where('labels', 'array-contains', 'sent'),
         orderBy('lastMessageAt', 'desc')
       );
     }
@@ -439,5 +459,16 @@ export const mailService = {
 
     // バッチ更新をコミット
     await batch.commit();
+  },
+
+  /**
+   * メールを送信する
+   * @param request メール送信リクエスト
+   * @returns メール送信レスポンス
+   */
+  async sendMail(request: SendMailRequest): Promise<SendMailResponse> {
+    const sendMailFunction = httpsCallable(functions, 'sendMail');
+    const result = await sendMailFunction(request);
+    return result.data as SendMailResponse;
   },
 };
