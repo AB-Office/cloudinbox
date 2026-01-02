@@ -70,6 +70,8 @@ jobs:
 
       - name: Set Firebase project
         run: firebase use cloudinbox
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
       - name: Deploy to Firebase
         run: firebase deploy --only functions,hosting,firestore:rules,storage:rules --token ${{ secrets.FIREBASE_TOKEN }}
