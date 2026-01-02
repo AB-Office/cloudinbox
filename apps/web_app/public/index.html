@@ -3,16 +3,974 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CloudInbox</title>
-  <meta http-equiv="refresh" content="0; url=/mail/">
-  <script>
-    // 即座にリダイレクト
-    window.location.href = '/mail/';
-  </script>
+  <meta name="description" content="Gmailの外部メール取り込み機能の代替。POP3メールを安全なクラウド受信箱に集約。PCでもスマホでも、どこでも同じメールを読めます。">
+  <title>CloudInbox - Gmailの外部メール取り込みの代替</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-color: #1976d2;
+      --primary-dark: #1565c0;
+      --secondary-color: #424242;
+      --text-color: #212121;
+      --text-light: #757575;
+      --bg-light: #f5f5f5;
+      --bg-white: #ffffff;
+      --border-color: #e0e0e0;
+      --success-color: #4caf50;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: var(--bg-white);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      padding: 1rem 0;
+    }
+
+    nav .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-color);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: var(--primary-color);
+    }
+
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+    }
+
+    /* Hero Section */
+    #hero {
+      padding: 120px 0 80px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .hero-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    @media (max-width: 968px) {
+      .hero-content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      line-height: 1.2;
+    }
+
+    .hero-subtitle {
+      font-size: 1.25rem;
+      margin-bottom: 2rem;
+      opacity: 0.95;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 14px 32px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .btn-primary {
+      background-color: white;
+      color: var(--primary-color);
+    }
+
+    .btn-primary:hover {
+      background-color: #f5f5f5;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: white;
+      border: 2px solid white;
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .hero-note {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+
+    .hero-image {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-image-placeholder {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
+    }
+
+    /* Section Styles */
+    section {
+      padding: 80px 0;
+    }
+
+    section:nth-child(even) {
+      background-color: var(--bg-light);
+    }
+
+    h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    /* Problem Section */
+    #problem {
+      text-align: center;
+    }
+
+    .problem-text {
+      font-size: 1.125rem;
+      margin-bottom: 2rem;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .checklist {
+      list-style: none;
+      max-width: 600px;
+      margin: 2rem auto;
+      text-align: left;
+    }
+
+    .checklist li {
+      padding: 0.75rem 0;
+      font-size: 1.125rem;
+    }
+
+    .checklist li::before {
+      content: "✓ ";
+      color: var(--success-color);
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+
+    /* Solution Section */
+    .solution-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    @media (max-width: 968px) {
+      .solution-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .solution-card {
+      text-align: center;
+      padding: 2rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .solution-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .solution-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    /* How it works */
+    .steps {
+      max-width: 800px;
+      margin: 3rem auto;
+    }
+
+    .step {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      align-items: flex-start;
+    }
+
+    .step-number {
+      background: var(--primary-color);
+      color: white;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-content h4 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Value Sections */
+    .value-content {
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .value-list {
+      list-style: none;
+      margin: 2rem 0;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .value-list li {
+      padding: 0.75rem 0;
+      font-size: 1.125rem;
+    }
+
+    .value-list li::before {
+      content: "・";
+      margin-right: 0.5rem;
+    }
+
+    /* Security Section */
+    .security-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    @media (max-width: 768px) {
+      .security-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .security-card {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .security-card h3 {
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+    }
+
+    .security-card ul {
+      list-style: none;
+      margin-top: 1rem;
+    }
+
+    .security-card ul li {
+      padding: 0.5rem 0;
+    }
+
+    .security-card ul li::before {
+      content: "・";
+      margin-right: 0.5rem;
+    }
+
+    .security-note {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.875rem;
+      color: var(--text-light);
+    }
+
+    /* Use Cases */
+    .use-cases {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* Pricing Plans */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+      margin-top: 3rem;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    @media (max-width: 768px) {
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .pricing-card {
+      background: white;
+      padding: 2.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      position: relative;
+    }
+
+    .pricing-card.featured {
+      border: 2px solid var(--primary-color);
+      transform: scale(1.05);
+    }
+
+    @media (max-width: 768px) {
+      .pricing-card.featured {
+        transform: scale(1);
+      }
+    }
+
+    .pricing-badge {
+      position: absolute;
+      top: -12px;
+      right: 20px;
+      background: var(--primary-color);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .pricing-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--primary-color);
+    }
+
+    .pricing-price {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin: 1rem 0;
+    }
+
+    .pricing-price .currency {
+      font-size: 1.5rem;
+      vertical-align: top;
+    }
+
+    .pricing-price .period {
+      font-size: 1rem;
+      color: var(--text-light);
+      font-weight: 400;
+    }
+
+    .pricing-features {
+      list-style: none;
+      margin: 2rem 0;
+      text-align: left;
+    }
+
+    .pricing-features li {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .pricing-features li:last-child {
+      border-bottom: none;
+    }
+
+    .pricing-features li::before {
+      content: "✓ ";
+      color: var(--success-color);
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+
+    .pricing-note {
+      font-size: 0.875rem;
+      color: var(--text-light);
+      margin-top: 1rem;
+      font-style: italic;
+    }
+
+    .pricing-cta {
+      margin-top: 2rem;
+    }
+
+    /* Comparison Table */
+    .comparison-table {
+      max-width: 900px;
+      margin: 3rem auto;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: var(--bg-light);
+      font-weight: 600;
+    }
+
+    .check-mark {
+      color: var(--success-color);
+      font-weight: bold;
+    }
+
+    .cross-mark {
+      color: #f44336;
+    }
+
+    /* FAQ */
+    .faq-list {
+      max-width: 800px;
+      margin: 3rem auto;
+    }
+
+    .faq-item {
+      background: white;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .faq-question {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--primary-color);
+    }
+
+    .faq-answer {
+      color: var(--text-light);
+    }
+
+    /* CTA Section */
+    #cta {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-align: center;
+    }
+
+    #cta h2 {
+      color: white;
+    }
+
+    #cta .cta-buttons {
+      justify-content: center;
+    }
+
+    /* Footer */
+    footer {
+      background-color: var(--secondary-color);
+      color: white;
+      padding: 3rem 0;
+      text-align: center;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      list-style: none;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: white;
+      text-decoration: none;
+      transition: opacity 0.3s;
+    }
+
+    .footer-links a:hover {
+      opacity: 0.8;
+    }
+
+    .footer-copyright {
+      margin-top: 1rem;
+      opacity: 0.8;
+    }
+
+    /* Smooth Scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* Utility Classes */
+    .text-center {
+      text-align: center;
+    }
+
+    .mb-1 {
+      margin-bottom: 1rem;
+    }
+
+    .mb-2 {
+      margin-bottom: 2rem;
+    }
+  </style>
 </head>
 <body>
-  <p>リダイレクト中...</p>
-  <p><a href="/mail/">こちらをクリック</a></p>
+  <!-- Navigation -->
+  <nav>
+    <div class="container">
+      <a href="#hero" class="logo">CloudInbox</a>
+      <ul class="nav-links">
+        <li><a href="#how">仕組み</a></li>
+        <li><a href="#security">安全性</a></li>
+        <li><a href="#pricing">プラン</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="/mail/" class="btn btn-primary" style="padding: 8px 16px;">ログイン</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section id="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div>
+          <h1>Gmailの「外部メール取り込み」が終わっても、あなたの受信箱は終わらない。</h1>
+          <p class="hero-subtitle">POP3メールを"安全なクラウド受信箱"に集約。PCでもスマホでも、どこでも同じメールを読めます。</p>
+          <div class="cta-buttons">
+            <a href="/mail/" class="btn btn-primary">無料で試す</a>
+            <a href="#how" class="btn btn-secondary">仕組みを見る</a>
+          </div>
+          <p class="hero-note">※ 2026年1月以降、Gmailの外部メール取り込み（POP）は利用できなくなります。<br>※ Android/iOSアプリは2025年3月末提供予定です。現在はWebアプリをご利用いただけます。</p>
+        </div>
+        <div class="hero-image">
+          <img src="/images/overview.png" alt="外部メール → CloudInbox → 端末（PC/スマホ）" style="max-width: 100%; height: auto; border-radius: 8px;">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem Section -->
+  <section id="problem">
+    <div class="container">
+      <h2>Gmailにまとめていた"あの便利さ"が、使えなくなります</h2>
+      <div class="problem-text">
+        <p>これまでGmailでは、他のメールアカウントをPOPで取り込み、1つの受信箱で管理できました。</p>
+        <p>しかし、この機能は廃止されます。</p>
+      </div>
+      <ul class="checklist">
+        <li>独自ドメインのメールをGmailで見ていた</li>
+        <li>複数アカウントを行き来するのが面倒</li>
+        <li>PCブラウザでまとめて管理したい</li>
+      </ul>
+      <p class="text-center" style="font-size: 1.125rem; margin-top: 2rem;">→ これからは、代替手段が必要です。</p>
+    </div>
+  </section>
+
+  <!-- Solution Section -->
+  <section id="solution">
+    <div class="container">
+      <h2>CloudInboxは「外部メール取り込み」の代替です</h2>
+      <p class="text-center" style="font-size: 1.125rem; max-width: 800px; margin: 0 auto 3rem;">
+        CloudInboxは、POP3メールを安全に受信し、クラウド上のメールボックスに集約するサービスです。
+      </p>
+      <div class="solution-grid">
+        <div class="solution-card">
+          <div class="solution-icon">📧</div>
+          <h3>POP3メールを集約</h3>
+          <p>外部メールを1つの受信箱に</p>
+        </div>
+        <div class="solution-card">
+          <div class="solution-icon">🌐</div>
+          <h3>どこでも同じ受信箱</h3>
+          <p>PC・スマホ・タブレット対応</p>
+          <p style="font-size: 0.875rem; color: var(--text-light); margin-top: 0.5rem;">※ Android/iOSアプリは2025年3月末提供予定</p>
+        </div>
+        <div class="solution-card">
+          <div class="solution-icon">🔒</div>
+          <h3>暗号化で安全</h3>
+          <p>クラウド上でも安心</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how">
+    <div class="container">
+      <h2>仕組みはシンプルです</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h4>外部メール（POP3）の接続情報を登録</h4>
+            <p>メールサーバーの情報とパスワードを設定します。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h4>CloudInboxが定期的にメールを受信</h4>
+            <p>自動的にメールを取得し、クラウドに保存します。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h4>暗号化されたクラウド受信箱に保存</h4>
+            <p>メールは暗号化されて安全に保管されます。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h4>ブラウザやスマホから閲覧</h4>
+            <p>いつでも、どこからでも同じ受信箱にアクセスできます。</p>
+          </div>
+        </div>
+      </div>
+      <div class="text-center" style="margin-top: 2rem;">
+        <img src="/images/structure.png" alt="外部メールサーバ →（POP3）→ CloudInbox →（暗号化保管）→ ブラウザ/スマホ" style="max-width: 100%; height: auto; border-radius: 8px;">
+      </div>
+    </div>
+  </section>
+
+  <!-- Value 1 -->
+  <section id="value1">
+    <div class="container">
+      <h2>受信箱は、もう端末に縛られません</h2>
+      <div class="value-content">
+        <p style="font-size: 1.125rem; margin-bottom: 1rem;">
+          CloudInboxでは、メールはクラウド上の受信箱に保存されます。
+        </p>
+        <ul class="value-list">
+          <li>会社PCでも</li>
+          <li>自宅PCでも</li>
+          <li>スマホでも</li>
+        </ul>
+        <p style="margin-top: 2rem;">いつでも同じ受信箱を見ることができます。</p>
+        <p style="font-size: 0.875rem; color: var(--text-light); margin-top: 1rem;">
+          端末に依存しないため、PC買い替え時も設定不要です。<br>
+          ※ Android/iOSアプリは2025年3月末提供予定です。現在はWebアプリをご利用いただけます。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Value 2 -->
+  <section id="value2">
+    <div class="container">
+      <h2>複数のメールを、1つにまとめる</h2>
+      <div class="value-content">
+        <p style="font-size: 1.125rem; margin-bottom: 2rem;">
+          独自ドメイン、プロバイダメール、レンタルサーバーのメールなど、POP3対応メールをCloudInboxに集約できます。
+        </p>
+        <ul class="value-list">
+          <li>アカウントを切り替えない</li>
+          <li>見落としを防ぐ</li>
+          <li>受信管理がシンプルに</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Security -->
+  <section id="security">
+    <div class="container">
+      <h2>メールは「暗号化」されて保存されます</h2>
+      <p class="text-center" style="font-size: 1.125rem; max-width: 800px; margin: 0 auto 3rem;">
+        CloudInboxでは、メール本文を暗号化した状態で保管します。第三者が内容を読むことはできません。
+      </p>
+
+      <h3 class="text-center" style="margin-top: 3rem; margin-bottom: 1rem;">暗号化と「鍵管理」は別物です</h3>
+      <p class="text-center" style="max-width: 800px; margin: 0 auto 3rem;">
+        CloudInboxでは、暗号を解く「鍵」をGoogle Cloudの専用サービスで管理しています。
+      </p>
+
+      <div class="security-cards">
+        <div class="security-card">
+          <h3>Cloud KMS</h3>
+          <p style="margin-bottom: 1rem;">暗号化の鍵を安全に保管・管理</p>
+          <ul>
+            <li>鍵のローテーション</li>
+            <li>アクセス制御</li>
+            <li>監査ログ</li>
+          </ul>
+        </div>
+        <div class="security-card">
+          <h3>Secret Manager</h3>
+          <p style="margin-bottom: 1rem;">パスワードなどの機密情報を安全に保管</p>
+          <ul>
+            <li>コードに直接保存しない</li>
+            <li>必要な処理のみ参照可能</li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="security-note">
+        鍵やパスワードを、アプリやデータベースに直接保存することはありません。
+      </p>
+
+      <div class="text-center" style="margin-top: 3rem; padding: 2rem; background: rgba(0,0,0,0.05); border-radius: 8px;">
+        <p style="font-size: 0.9rem; color: var(--text-light);">
+          [図: メール本文（暗号化） / 鍵（KMS） / 機密情報（Secret Manager）]
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Use Cases -->
+  <section id="who">
+    <div class="container">
+      <h2>こんな方におすすめです</h2>
+      <div class="use-cases">
+        <ul class="checklist">
+          <li>Gmailで外部メールをまとめていた方</li>
+          <li>独自ドメインメールを使っている個人事業主</li>
+          <li>複数の仕事用メールを管理している方</li>
+          <li>セキュリティに不安があるが、利便性も捨てたくない方</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Plans -->
+  <section id="pricing">
+    <div class="container">
+      <h2>プラン</h2>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <div class="pricing-name">Free</div>
+          <div class="pricing-price">
+            <span class="currency">¥</span>0
+            <span class="period">/月</span>
+          </div>
+          <ul class="pricing-features">
+            <li>ストレージ 2GB</li>
+            <li>メールアカウント 1件</li>
+            <li>自動メール受信</li>
+            <li>クラウド受信箱</li>
+            <li>暗号化保存</li>
+            <li>PC・スマホ対応</li>
+          </ul>
+          <div class="pricing-cta">
+            <a href="/mail/" class="btn btn-primary">無料で始める</a>
+          </div>
+        </div>
+        <div class="pricing-card featured">
+          <div class="pricing-badge">2025年2月末提供予定</div>
+          <div class="pricing-name">Standard</div>
+          <div class="pricing-price">
+            <span class="currency">¥</span>500
+            <span class="period">/月</span>
+          </div>
+          <ul class="pricing-features">
+            <li>ストレージ 10GB</li>
+            <li>メールアカウント 複数</li>
+            <li>自動メール受信</li>
+            <li>クラウド受信箱</li>
+            <li>暗号化保存</li>
+            <li>PC・スマホ対応</li>
+            <li>広告なし</li>
+          </ul>
+          <p class="pricing-note">※ 2025年2月末に提供開始予定です</p>
+          <div class="pricing-cta">
+            <a href="/mail/" class="btn btn-primary">今すぐ登録</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison -->
+  <section id="comparison">
+    <div class="container">
+      <h2>Gmailの代替として選ばれる理由</h2>
+      <div class="comparison-table">
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>Gmail</th>
+              <th>CloudInbox</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>外部POP取込</td>
+              <td><span class="cross-mark">✕（廃止）</span></td>
+              <td><span class="check-mark">○</span></td>
+            </tr>
+            <tr>
+              <td>PCブラウザ</td>
+              <td><span class="check-mark">○</span></td>
+              <td><span class="check-mark">○</span></td>
+            </tr>
+            <tr>
+              <td>受信箱集約</td>
+              <td><span style="color: #ff9800;">△</span></td>
+              <td><span class="check-mark">○</span></td>
+            </tr>
+            <tr>
+              <td>暗号化の説明</td>
+              <td>不明瞭</td>
+              <td>明確</td>
+            </tr>
+            <tr>
+              <td>鍵管理</td>
+              <td>非公開</td>
+              <td>KMS管理</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="container">
+      <h2>よくある質問</h2>
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-question">Q. Gmailの完全な代替ですか？</div>
+          <div class="faq-answer">A. CloudInboxは「外部メール取り込み（POP3集約）」の代替です。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">Q. POP3は安全ですか？</div>
+          <div class="faq-answer">A. 受信後は暗号化され、安全に保管されます。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">Q. パスワードはどこに保存されますか？</div>
+          <div class="faq-answer">A. Secret Managerで安全に管理されます。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">Q. スマートフォンアプリはありますか？</div>
+          <div class="faq-answer">A. Android/iOSアプリは2025年3月末に提供予定です。現在はWebアプリ（PC・スマホブラウザ対応）をご利用いただけます。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="cta">
+    <div class="container">
+      <h2>Gmailの変更後も、受信箱は1つに</h2>
+      <p style="font-size: 1.25rem; margin-bottom: 2rem; max-width: 800px; margin-left: auto; margin-right: auto;">
+        外部メールの管理を、もう諦める必要はありません。CloudInboxで、安全に、シンプルに。
+      </p>
+      <div class="cta-buttons">
+        <a href="/mail/" class="btn btn-primary">無料で試す</a>
+        <a href="#faq" class="btn btn-secondary">お問い合わせ</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="#">プライバシーポリシー</a></li>
+        <li><a href="#">利用規約</a></li>
+        <li><a href="#">お問い合わせ</a></li>
+      </ul>
+      <div class="footer-copyright">© CloudInbox</div>
+    </div>
+  </footer>
 </body>
 </html>
 

@@ -23,15 +23,16 @@
     ],
     "rewrites": [
       {
+        "source": "/mail",
+        "destination": "/mail/index.html"
+      },
+      {
         "source": "/mail/**",
         "destination": "/mail/index.html"
-      }
-    ],
-    "redirects": [
+      },
       {
         "source": "/",
-        "destination": "/mail/",
-        "type": 302
+        "destination": "/index.html"
       }
     ],
     "headers": [
