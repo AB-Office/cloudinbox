@@ -80,9 +80,12 @@ jobs:
           cat .firebaserc || echo ".firebaserc not found"
 
       - name: Set Firebase project
-        run: firebase use cloudinbox --token ${{ secrets.FIREBASE_TOKEN }}
+        run: firebase use cloudinbox
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
       - name: Deploy to Firebase
-        run: |
-          firebase deploy --token ${{ secrets.FIREBASE_TOKEN }} --debug
+        run: firebase deploy --only functions,hosting,firestore:rules,storage:rules
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
