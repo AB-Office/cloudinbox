@@ -11,8 +11,9 @@ export default defineConfig({
     },
   },
   base: '/mail/',
+  publicDir: false, // publicディレクトリの自動コピーを無効化
   build: {
-    outDir: 'dist',
+    outDir: 'dist/mail',
     assetsDir: 'assets',
   },
 });
