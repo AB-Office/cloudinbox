@@ -79,7 +79,11 @@
     "plan": "Plan",
     "usedStorage": "Used Storage",
     "availableStorage": "Available Storage",
-    "storageUsage": "Storage Usage"
+    "storageUsage": "Storage Usage",
+    "legal": "Legal Information",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "pricingBilling": "Pricing / Billing"
   },
   "account": {
     "title": "Account Settings",

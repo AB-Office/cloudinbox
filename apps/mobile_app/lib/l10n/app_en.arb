@@ -465,6 +465,22 @@
   "errorOperationFailed": "Operation failed. Please try again.",
   "@errorOperationFailed": {
     "description": "Operation failed error message"
+  },
+  "legal": "Legal Information",
+  "@legal": {
+    "description": "Legal information section title"
+  },
+  "privacyPolicy": "Privacy Policy",
+  "@privacyPolicy": {
+    "description": "Privacy policy link label"
+  },
+  "termsOfService": "Terms of Service",
+  "@termsOfService": {
+    "description": "Terms of service link label"
+  },
+  "pricingBilling": "Pricing / Billing",
+  "@pricingBilling": {
+    "description": "Pricing / Billing link label"
   }
 }
 

@@ -706,6 +706,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Operation failed. Please try again.'**
   String get errorOperationFailed;
+
+  /// Legal information section title
+  ///
+  /// In en, this message translates to:
+  /// **'Legal Information'**
+  String get legal;
+
+  /// Privacy policy link label
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// Terms of service link label
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get termsOfService;
+
+  /// Pricing / Billing link label
+  ///
+  /// In en, this message translates to:
+  /// **'Pricing / Billing'**
+  String get pricingBilling;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

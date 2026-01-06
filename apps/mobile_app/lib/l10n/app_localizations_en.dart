@@ -335,4 +335,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorOperationFailed => 'Operation failed. Please try again.';
+
+  @override
+  String get legal => 'Legal Information';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get termsOfService => 'Terms of Service';
+
+  @override
+  String get pricingBilling => 'Pricing / Billing';
 }

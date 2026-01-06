@@ -335,4 +335,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get errorOperationFailed => '操作に失敗しました。もう一度お試しください。';
+
+  @override
+  String get legal => '法的情報';
+
+  @override
+  String get privacyPolicy => 'プライバシーポリシー';
+
+  @override
+  String get termsOfService => '利用規約';
+
+  @override
+  String get pricingBilling => '特定商取引法に基づく表記';
 }

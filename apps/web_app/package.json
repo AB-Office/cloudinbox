@@ -1,6 +1,6 @@
 {
   "name": "cloudinbox-web-app",
-  "version": "0.1.0",
+  "version": "1.8.1",
   "description": "CloudInbox Web Application - Vue.js + Vuetify",
   "type": "module",
   "scripts": {
