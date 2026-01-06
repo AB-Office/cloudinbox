@@ -658,6 +658,31 @@ class I18nService {
     return localizations.errorOperationFailed;
   }
 
+  /// ロケールから法的情報ラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateLegal(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.legal;
+  }
+
+  /// ロケールからプライバシーポリシーラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translatePrivacyPolicy(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.privacyPolicy;
+  }
+
+  /// ロケールから利用規約ラベルを取得するユーティリティ（ARBファイルから取得）
+  static String translateTermsOfService(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.termsOfService;
+  }
+
+  /// ロケールからPricing / Billingラベルを取得するユーティリティ（ARBファイルから取得）
+  /// 日本語では「特定商取引法に基づく表記」、英語では「Pricing / Billing」を返す
+  static String translatePricingBilling(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.pricingBilling;
+  }
+
   /// ロケールからAppLocalizationsインスタンスを取得するヘルパーメソッド
   static AppLocalizations _getLocalizations(Locale locale) {
     // AppLocalizationsのサブクラスを直接インスタンス化

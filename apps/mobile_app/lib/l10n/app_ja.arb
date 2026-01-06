@@ -465,6 +465,22 @@
   "errorOperationFailed": "操作に失敗しました。もう一度お試しください。",
   "@errorOperationFailed": {
     "description": "操作失敗エラーメッセージ"
+  },
+  "legal": "法的情報",
+  "@legal": {
+    "description": "法的情報セクションのタイトル"
+  },
+  "privacyPolicy": "プライバシーポリシー",
+  "@privacyPolicy": {
+    "description": "プライバシーポリシーリンクのラベル"
+  },
+  "termsOfService": "利用規約",
+  "@termsOfService": {
+    "description": "利用規約リンクのラベル"
+  },
+  "pricingBilling": "特定商取引法に基づく表記",
+  "@pricingBilling": {
+    "description": "特定商取引法に基づく表記リンクのラベル"
   }
 }
 

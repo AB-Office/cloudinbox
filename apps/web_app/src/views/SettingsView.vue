@@ -50,6 +50,40 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- 法的情報リンク -->
+    <v-row>
+      <v-col cols="12" md="6" lg="4">
+        <v-card variant="outlined">
+          <v-card-title class="d-flex align-center">
+            <v-icon start color="primary">mdi-file-document-outline</v-icon>
+            {{ t('settings.legal') }}
+          </v-card-title>
+          <v-card-text>
+            <v-list density="compact">
+              <v-list-item
+                :title="t('settings.privacyPolicy')"
+                prepend-icon="mdi-shield-lock-outline"
+                @click="openLink(getPrivacyPolicyUrl())"
+                class="cursor-pointer"
+              />
+              <v-list-item
+                :title="t('settings.termsOfService')"
+                prepend-icon="mdi-file-document-outline"
+                @click="openLink(getTermsOfServiceUrl())"
+                class="cursor-pointer"
+              />
+              <v-list-item
+                :title="locale === 'ja' ? t('settings.commercialTransaction') : t('settings.pricingBilling')"
+                prepend-icon="mdi-currency-usd"
+                @click="openLink(getCommercialTransactionUrl())"
+                class="cursor-pointer"
+              />
+            </v-list>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
@@ -61,7 +95,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { formatFileSize } from '@/plugins/i18n';
 
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const settingsStore = useSettingsStore();
 
 // 容量情報のフォーマット済み表示
@@ -86,6 +120,28 @@ function navigateToAccounts() {
   router.push({ name: 'account-list' });
 }
 
+function getPrivacyPolicyUrl(): string {
+  return locale.value === 'ja' 
+    ? 'https://cloudinbox.cloud/privacy.html'
+    : 'https://cloudinbox.cloud/privacy_en.html';
+}
+
+function getTermsOfServiceUrl(): string {
+  return locale.value === 'ja'
+    ? 'https://cloudinbox.cloud/terms.html'
+    : 'https://cloudinbox.cloud/terms_en.html';
+}
+
+function getCommercialTransactionUrl(): string {
+  return locale.value === 'ja'
+    ? 'https://cloudinbox.cloud/commercial.html'
+    : 'https://cloudinbox.cloud/pricing_en.html';
+}
+
+function openLink(url: string) {
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 onMounted(() => {
   settingsStore.startWatching();
 });
@@ -103,5 +159,9 @@ onUnmounted(() => {
 
 .settings-card:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 </style>

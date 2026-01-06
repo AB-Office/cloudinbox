@@ -3,6 +3,7 @@ import 'package:cloudinbox_mobile_app/services/ad_service.dart';
 import 'package:cloudinbox_mobile_app/services/i18n_service.dart';
 import 'package:cloudinbox_mobile_app/widgets/navigation_drawer.dart' as app_drawer;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// 設定画面で表示するプラン・使用量情報
 class SettingsData {
@@ -186,6 +187,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  String _getPrivacyPolicyUrl(Locale locale) {
+    return locale.languageCode == 'ja'
+        ? 'https://cloudinbox.cloud/privacy.html'
+        : 'https://cloudinbox.cloud/privacy_en.html';
+  }
+
+  String _getTermsOfServiceUrl(Locale locale) {
+    return locale.languageCode == 'ja'
+        ? 'https://cloudinbox.cloud/terms.html'
+        : 'https://cloudinbox.cloud/terms_en.html';
+  }
+
+  String _getCommercialTransactionUrl(Locale locale) {
+    return locale.languageCode == 'ja'
+        ? 'https://cloudinbox.cloud/commercial.html'
+        : 'https://cloudinbox.cloud/pricing_en.html';
+  }
+
+  Future<void> _openLink(Locale locale, String url) async {
+    try {
+      final uri = Uri.parse(url);
+      // Android 11以降ではcanLaunchUrlがfalseを返す場合があるため、
+      // 直接launchUrlを試みる
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        // canLaunchUrlがfalseでも、直接launchUrlを試みる
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint('Failed to launch URL: $url, error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(I18nService.translateErrorOperationFailed(locale)),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final adBanner = widget.adService.buildBanner(widget.planId);
@@ -299,6 +341,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       leading: const Icon(Icons.add),
                       onTap: _onAccountSettingsPressed,
                     ),
+                    const Divider(),
+                    // 法的情報リンク
+                    Text(
+                      I18nService.translateLegal(locale),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    ListTile(
+                      title: Text(I18nService.translatePrivacyPolicy(locale)),
+                      leading: const Icon(Icons.privacy_tip),
+                      trailing: const Icon(Icons.open_in_new),
+                      onTap: () => _openLink(locale, _getPrivacyPolicyUrl(locale)),
+                    ),
+                    ListTile(
+                      title: Text(I18nService.translateTermsOfService(locale)),
+                      leading: const Icon(Icons.description),
+                      trailing: const Icon(Icons.open_in_new),
+                      onTap: () => _openLink(locale, _getTermsOfServiceUrl(locale)),
+                    ),
+                    ListTile(
+                      title: Text(I18nService.translatePricingBilling(locale)),
+                      leading: const Icon(Icons.attach_money),
+                      trailing: const Icon(Icons.open_in_new),
+                      onTap: () => _openLink(locale, _getCommercialTransactionUrl(locale)),
+                    ),
+                    const Divider(),
                     ListTile(
                       title: Text(logoutLabel),
                       leading: const Icon(Icons.logout),

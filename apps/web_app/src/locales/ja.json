@@ -79,7 +79,11 @@
     "plan": "プラン",
     "usedStorage": "使用済み容量",
     "availableStorage": "使用可能容量",
-    "storageUsage": "容量使用状況"
+    "storageUsage": "容量使用状況",
+    "legal": "法的情報",
+    "privacyPolicy": "プライバシーポリシー",
+    "termsOfService": "利用規約",
+    "commercialTransaction": "特定商取引法に基づく表記"
   },
   "account": {
     "title": "アカウント設定",
