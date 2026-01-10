@@ -4,7 +4,7 @@
  * メールアカウント設定時のPOP3S/SMTP接続テスト機能（SSL/TLS必須）
  */
 
-import * as functions from 'firebase-functions';
+import { onCall, CallableRequest, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { decryptPassword } from '../encryption';
 import { testPop3Connection } from './pop3Client';
@@ -40,21 +40,23 @@ interface AccountTestResponse {
 }
 
 /**
- * POP3S/SMTP接続テストを実行するHTTP Callable Function
+ * POP3S/SMTP接続テストを実行するHTTP Callable Function (Gen2)
  *
  * テストコードから直接呼び出しやすくするため、型はanyとしてエクスポートする
  */
-export const accountTest: any = functions.region('asia-northeast1').https.onCall(
-  async (data: AccountTestRequest, context: functions.https.CallableContext): Promise<AccountTestResponse> => {
+export const accountTest: any = onCall(
+  { region: 'asia-northeast1' },
+  async (request: CallableRequest<AccountTestRequest>): Promise<AccountTestResponse> => {
     // 認証チェック
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
+    if (!request.auth) {
+      throw new HttpsError(
         'unauthenticated',
         'User must be authenticated'
       );
     }
 
-    const uid = context.auth.uid;
+    const uid = request.auth.uid;
+    const data = request.data;
 
     // パラメータ検証
     const isValidProtocol = data.protocol === 'pop3' || data.protocol === 'smtp';
