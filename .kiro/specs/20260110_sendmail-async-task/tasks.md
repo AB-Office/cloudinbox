@@ -59,7 +59,7 @@
 
 ### 2. バックエンド実装（タスク投入機能）
 
-#### - [ ] 2.1 (P) CloudTasksClientWrapperの拡張（メール送信タスク投入）
+#### - [x] 2.1 (P) CloudTasksClientWrapperの拡張（メール送信タスク投入）
 - **目的**: メール送信タスクをCloud Tasksに投入するためのメソッドを追加
 - **作業内容**:
   - `functions/src/mail/cloudTasksClient.ts`に`enqueueSendMailTask`メソッドを追加
@@ -75,7 +75,7 @@
 - **依存関係**: なし
 - **要件カバー**: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6
 
-#### - [ ] 2.2 sendMail関数のリファクタリング（タスク投入のみ）
+#### - [x] 2.2 sendMail関数のリファクタリング（タスク投入のみ）
 - **目的**: sendMail関数をタスク投入のみを行うようにリファクタリング
 - **作業内容**:
   - `functions/src/mail/sendMail.ts`をリファクタリング
@@ -91,7 +91,7 @@
 - **依存関係**: 2.1
 - **要件カバー**: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6
 
-#### - [ ] 2.3 sendMailTaskHandlerのエクスポート追加
+#### - [x] 2.3 sendMailTaskHandlerのエクスポート追加
 - **目的**: sendMailTaskHandlerをindex.tsにエクスポートしてデプロイ可能にする
 - **作業内容**:
   - `functions/src/index.ts`に`sendMailTaskHandler`のエクスポートを追加

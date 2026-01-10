@@ -26,6 +26,9 @@ export { fetchMails } from './mail/fetchMails';
 // Cloud Tasksハンドラ（processAccount用）
 export { processAccountTaskHandler } from './mail/processAccountTaskHandler';
 
+// Cloud Tasksハンドラ（sendMail用）
+export { sendMailTaskHandler } from './mail/sendMailTaskHandler';
+
 // メール本文復号
 export { decryptMail } from './mail/decryptMail';
 

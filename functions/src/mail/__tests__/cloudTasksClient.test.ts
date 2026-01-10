@@ -78,6 +78,168 @@ describe('CloudTasksClientWrapper', () => {
     
     expect(taskName).toBe('tasks/123');
   });
+
+  describe('enqueueSendMailTask', () => {
+    beforeEach(() => {
+      process.env.SEND_MAIL_TASK_HANDLER_NAME = 'sendMailTaskHandler';
+      process.env.CLOUD_TASKS_QUEUE_NAME = 'sendMailTaskHandler';
+    });
+
+    it('uidが空の場合はエラーを投げる', async () => {
+      const client = new CloudTasksClientWrapper();
+
+      await expect(
+        client.enqueueSendMailTask('', {
+          accountId: 'account-1',
+          to: ['recipient@example.com'],
+          subject: 'Test Subject',
+          body: 'Test Body',
+        })
+      ).rejects.toThrow('uid must be a non-empty string');
+    });
+
+    it('accountIdが空の場合はエラーを投げる', async () => {
+      const client = new CloudTasksClientWrapper();
+
+      await expect(
+        client.enqueueSendMailTask('user-1', {
+          accountId: '',
+          to: ['recipient@example.com'],
+          subject: 'Test Subject',
+          body: 'Test Body',
+        })
+      ).rejects.toThrow('accountId is required');
+    });
+
+    it('toが空配列の場合はエラーを投げる', async () => {
+      const client = new CloudTasksClientWrapper();
+
+      await expect(
+        client.enqueueSendMailTask('user-1', {
+          accountId: 'account-1',
+          to: [],
+          subject: 'Test Subject',
+          body: 'Test Body',
+        })
+      ).rejects.toThrow('to is required and must be a non-empty array');
+    });
+
+    it('subjectが空の場合はエラーを投げる', async () => {
+      const client = new CloudTasksClientWrapper();
+
+      await expect(
+        client.enqueueSendMailTask('user-1', {
+          accountId: 'account-1',
+          to: ['recipient@example.com'],
+          subject: '',
+          body: 'Test Body',
+        })
+      ).rejects.toThrow('subject is required');
+    });
+
+    it('bodyが空の場合はエラーを投げる', async () => {
+      const client = new CloudTasksClientWrapper();
+
+      await expect(
+        client.enqueueSendMailTask('user-1', {
+          accountId: 'account-1',
+          to: ['recipient@example.com'],
+          subject: 'Test Subject',
+          body: '',
+        })
+      ).rejects.toThrow('body is required');
+    });
+
+    it('有効なペイロードでcreateTaskを呼び出す', async () => {
+      mockCreateTask.mockResolvedValue([{ name: 'tasks/sendmail-123' }]);
+      mockQueuePath.mockReturnValue('projects/test-project/locations/asia-northeast1/queues/sendMailTaskHandler');
+
+      const client = new CloudTasksClientWrapper();
+
+      const result = await client.enqueueSendMailTask('user-1', {
+        accountId: 'account-1',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      });
+
+      expect(mockQueuePath).toHaveBeenCalledWith(
+        'test-project',
+        'asia-northeast1',
+        'sendMailTaskHandler'
+      );
+      expect(mockCreateTask).toHaveBeenCalledTimes(1);
+
+      const request = mockCreateTask.mock.calls[0][0];
+      expect(request.parent).toBe('projects/test-project/locations/asia-northeast1/queues/sendMailTaskHandler');
+      expect(request.task.httpRequest.url).toBe('https://asia-northeast1-test-project.cloudfunctions.net/sendMailTaskHandler');
+      expect(request.task.retryConfig).toBeDefined();
+      expect(request.task.retryConfig.maxAttempts).toBe(3);
+      expect(request.task.retryConfig.maxRetryDuration.seconds).toBe(3600);
+      expect(request.task.retryConfig.maxBackoff.seconds).toBe(300);
+
+      // リクエストボディが { data: { uid, accountId, to, subject, body, taskId } } 形式であることを確認
+      const bodyBuffer = Buffer.from(request.task.httpRequest.body, 'base64');
+      const bodyJson = JSON.parse(bodyBuffer.toString());
+      expect(bodyJson.data.uid).toBe('user-1');
+      expect(bodyJson.data.accountId).toBe('account-1');
+      expect(bodyJson.data.to).toEqual(['recipient@example.com']);
+      expect(bodyJson.data.subject).toBe('Test Subject');
+      expect(bodyJson.data.body).toBe('Test Body');
+      expect(bodyJson.data.taskId).toBeDefined();
+      expect(bodyJson.data.taskId).toMatch(/^sendmail-\d+-[a-z0-9]+$/);
+
+      // OIDCトークンが設定されていることを確認
+      expect(request.task.httpRequest.oidcToken).toBeDefined();
+      expect(request.task.httpRequest.oidcToken.serviceAccountEmail).toBe('test-project@appspot.gserviceaccount.com');
+
+      expect(result.taskName).toBe('tasks/sendmail-123');
+      expect(result.taskId).toBeDefined();
+      expect(result.taskId).toMatch(/^sendmail-\d+-[a-z0-9]+$/);
+    });
+
+    it('cc、bcc、attachments、threadId、inReplyToMessageIdが含まれる場合も処理できる', async () => {
+      mockCreateTask.mockResolvedValue([{ name: 'tasks/sendmail-123' }]);
+      mockQueuePath.mockReturnValue('projects/test-project/locations/asia-northeast1/queues/sendMailTaskHandler');
+
+      const client = new CloudTasksClientWrapper();
+
+      const result = await client.enqueueSendMailTask('user-1', {
+        accountId: 'account-1',
+        to: ['recipient@example.com'],
+        cc: ['cc@example.com'],
+        bcc: ['bcc@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+        attachments: [
+          {
+            filename: 'test.pdf',
+            content: Buffer.from('test content').toString('base64'),
+            contentType: 'application/pdf',
+          },
+        ],
+        threadId: 'thread-id-123',
+        inReplyToMessageId: 'message-id-456',
+      });
+
+      const request = mockCreateTask.mock.calls[0][0];
+      const bodyBuffer = Buffer.from(request.task.httpRequest.body, 'base64');
+      const bodyJson = JSON.parse(bodyBuffer.toString());
+
+      expect(bodyJson.data.cc).toEqual(['cc@example.com']);
+      expect(bodyJson.data.bcc).toEqual(['bcc@example.com']);
+      expect(bodyJson.data.attachments).toEqual([
+        {
+          filename: 'test.pdf',
+          content: Buffer.from('test content').toString('base64'),
+          contentType: 'application/pdf',
+        },
+      ]);
+      expect(bodyJson.data.threadId).toBe('thread-id-123');
+      expect(bodyJson.data.inReplyToMessageId).toBe('message-id-456');
+      expect(result.taskId).toBeDefined();
+    });
+  });
 });
 
 
