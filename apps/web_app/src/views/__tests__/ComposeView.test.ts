@@ -65,13 +65,21 @@ vi.mock('firebase/functions', () => ({
   httpsCallable: vi.fn(() => vi.fn()),
 }));
 
+vi.mock('@/services/firebase', () => ({
+  firebaseApp: {},
+}));
+
 // mailServiceをモック
+const mockWatchTaskResult = vi.fn();
 vi.mock('@/services/mail', () => ({
   mailService: {
     fetchMessage: vi.fn(),
     decryptMailBody: vi.fn(),
     getAttachmentsList: vi.fn(),
     downloadAttachment: vi.fn(),
+    watchTaskResult: vi.fn((uid, taskId, onResult, onTimeout) => {
+      return mockWatchTaskResult(uid, taskId, onResult, onTimeout);
+    }),
   },
 }));
 
@@ -151,6 +159,7 @@ describe('ComposeView', () => {
     pinia = createPinia();
     setActivePinia(pinia);
     vi.clearAllMocks();
+    mockWatchTaskResult.mockClear();
 
     router = createRouter({
       history: createWebHistory(),
@@ -319,6 +328,216 @@ describe('ComposeView', () => {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         expect(mockSendMail).toHaveBeenCalled();
+      }
+    });
+
+    it('should watch task result and show success snackbar when task succeeds', async () => {
+      const { useMailStore } = await import('@/stores/mail');
+      const mailStore = useMailStore();
+      let onResultCallback: ((result: any) => void) | null = null;
+
+      const mockSendMail = vi.fn().mockResolvedValue({
+        success: true,
+        taskId: 'test-task-id',
+      });
+
+      mockWatchTaskResult.mockImplementation((uid, taskId, onResult, onTimeout) => {
+        onResultCallback = onResult;
+        return vi.fn(); // cleanup function
+      });
+
+      mailStore.sendMail = mockSendMail;
+
+      const wrapper = await createWrapper();
+      const vm = wrapper.vm as any;
+
+      vm.selectedAccountId = 'account1';
+      vm.to = 'recipient@example.com';
+      vm.subject = 'Test Subject';
+      vm.body = 'Test Body';
+
+      await wrapper.vm.$nextTick();
+
+      const sendButton = wrapper.find('button[color="primary"]');
+      if (sendButton.exists()) {
+        await sendButton.trigger('click');
+        await wrapper.vm.$nextTick();
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // watchTaskResultが呼び出されたことを確認
+        expect(mockWatchTaskResult).toHaveBeenCalledWith(
+          'test-uid',
+          'test-task-id',
+          expect.any(Function),
+          expect.any(Function)
+        );
+
+        // タスク結果が成功した場合
+        if (onResultCallback) {
+          onResultCallback({
+            success: true,
+            messageId: 'test-message-id',
+            taskId: 'test-task-id',
+            accountId: 'account1',
+            subject: 'Test Subject',
+          });
+
+          await wrapper.vm.$nextTick();
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // 成功スナックバーが表示されることを確認
+          expect(mockShowSuccess).toHaveBeenCalled();
+
+          // メール一覧画面に遷移することを確認
+          expect(router.push).toHaveBeenCalledWith('/');
+        }
+      }
+    });
+
+    it('should show error snackbar when task result fails', async () => {
+      const { useMailStore } = await import('@/stores/mail');
+      const mailStore = useMailStore();
+      let onResultCallback: ((result: any) => void) | null = null;
+
+      const mockSendMail = vi.fn().mockResolvedValue({
+        success: true,
+        taskId: 'test-task-id',
+      });
+
+      mockWatchTaskResult.mockImplementation((uid, taskId, onResult, onTimeout) => {
+        onResultCallback = onResult;
+        return vi.fn(); // cleanup function
+      });
+
+      mailStore.sendMail = mockSendMail;
+
+      const wrapper = await createWrapper();
+      const vm = wrapper.vm as any;
+
+      vm.selectedAccountId = 'account1';
+      vm.to = 'recipient@example.com';
+      vm.subject = 'Test Subject';
+      vm.body = 'Test Body';
+
+      await wrapper.vm.$nextTick();
+
+      const sendButton = wrapper.find('button[color="primary"]');
+      if (sendButton.exists()) {
+        await sendButton.trigger('click');
+        await wrapper.vm.$nextTick();
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // タスク結果が失敗した場合
+        if (onResultCallback) {
+          onResultCallback({
+            success: false,
+            errorMessage: 'SMTP connection failed',
+            taskId: 'test-task-id',
+            accountId: 'account1',
+            subject: 'Test Subject',
+          });
+
+          await wrapper.vm.$nextTick();
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // エラースナックバーが表示されることを確認
+          expect(mockShowError).toHaveBeenCalledWith(
+            expect.objectContaining({
+              message: expect.stringContaining('SMTP connection failed'),
+            })
+          );
+
+          // 画面遷移は行われない
+          expect(router.push).not.toHaveBeenCalledWith('/');
+        }
+      }
+    });
+
+    it('should show timeout snackbar when task result times out', async () => {
+      const { useMailStore } = await import('@/stores/mail');
+      const mailStore = useMailStore();
+      let onTimeoutCallback: (() => void) | null = null;
+
+      const mockSendMail = vi.fn().mockResolvedValue({
+        success: true,
+        taskId: 'test-task-id',
+      });
+
+      mockWatchTaskResult.mockImplementation((uid, taskId, onResult, onTimeout) => {
+        onTimeoutCallback = onTimeout;
+        return vi.fn(); // cleanup function
+      });
+
+      mailStore.sendMail = mockSendMail;
+
+      const wrapper = await createWrapper();
+      const vm = wrapper.vm as any;
+
+      vm.selectedAccountId = 'account1';
+      vm.to = 'recipient@example.com';
+      vm.subject = 'Test Subject';
+      vm.body = 'Test Body';
+
+      await wrapper.vm.$nextTick();
+
+      const sendButton = wrapper.find('button[color="primary"]');
+      if (sendButton.exists()) {
+        await sendButton.trigger('click');
+        await wrapper.vm.$nextTick();
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // タイムアウトが発生した場合
+        if (onTimeoutCallback) {
+          onTimeoutCallback();
+
+          await wrapper.vm.$nextTick();
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // タイムアウトスナックバーが表示されることを確認
+          expect(mockShowError).toHaveBeenCalledWith(
+            expect.objectContaining({
+              message: expect.stringContaining('timeout') || expect.stringContaining('タイムアウト'),
+            })
+          );
+
+          // 画面遷移は行われない
+          expect(router.push).not.toHaveBeenCalledWith('/');
+        }
+      }
+    });
+
+    it('should not watch task result if taskId is not returned', async () => {
+      const { useMailStore } = await import('@/stores/mail');
+      const mailStore = useMailStore();
+
+      const mockSendMail = vi.fn().mockResolvedValue({
+        success: true,
+        // taskId is missing
+      });
+
+      mailStore.sendMail = mockSendMail;
+
+      const wrapper = await createWrapper();
+      const vm = wrapper.vm as any;
+
+      vm.selectedAccountId = 'account1';
+      vm.to = 'recipient@example.com';
+      vm.subject = 'Test Subject';
+      vm.body = 'Test Body';
+
+      await wrapper.vm.$nextTick();
+
+      const sendButton = wrapper.find('button[color="primary"]');
+      if (sendButton.exists()) {
+        await sendButton.trigger('click');
+        await wrapper.vm.$nextTick();
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // watchTaskResultが呼び出されないことを確認
+        expect(mockWatchTaskResult).not.toHaveBeenCalled();
+
+        // エラースナックバーが表示されることを確認
+        expect(mockShowError).toHaveBeenCalled();
       }
     });
   });

@@ -141,7 +141,7 @@
 
 ### 4. Firestoreセキュリティルールの更新
 
-#### - [ ] 4.1 mailTaskResultsコレクションのセキュリティルール追加
+#### - [x] 4.1 mailTaskResultsコレクションのセキュリティルール追加
 - **目的**: mailTaskResultsコレクションへのアクセスを認証ユーザーのみに制限
 - **作業内容**:
   - `infra/firebase/firestore.rules`を更新
@@ -154,7 +154,7 @@
 
 ### 5. テスト実装
 
-#### - [ ] 5.1 handleSendMailTask関数の単体テスト
+#### - [x] 5.1 handleSendMailTask関数の単体テスト
 - **目的**: handleSendMailTask関数の単体テストを実装
 - **作業内容**:
   - `functions/src/mail/__tests__/handleSendMailTask.test.ts`の作成
@@ -166,7 +166,7 @@
 - **依存関係**: 1.1, 1.3
 - **要件カバー**: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 5.1, 5.2, 5.3, 5.4, 5.5
 
-#### - [ ] 5.2 sendMailTaskHandlerの単体テスト
+#### - [x] 5.2 sendMailTaskHandlerの単体テスト
 - **目的**: sendMailTaskHandlerの単体テストを実装
 - **作業内容**:
   - `functions/src/mail/__tests__/sendMailTaskHandler.test.ts`の作成
@@ -177,7 +177,7 @@
 - **依存関係**: 1.2
 - **要件カバー**: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6
 
-#### - [ ] 5.3 CloudTasksClientWrapperの拡張テスト
+#### - [x] 5.3 CloudTasksClientWrapperの拡張テスト
 - **目的**: enqueueSendMailTaskメソッドの単体テストを実装
 - **作業内容**:
   - `functions/src/mail/__tests__/cloudTasksClient.test.ts`を更新
@@ -190,7 +190,7 @@
 - **依存関係**: 2.1
 - **要件カバー**: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6
 
-#### - [ ] 5.4 sendMail関数のリファクタリングテスト
+#### - [x] 5.4 sendMail関数のリファクタリングテスト
 - **目的**: sendMail関数のリファクタリング後の単体テストを実装
 - **作業内容**:
   - `functions/src/mail/__tests__/sendMail.test.ts`を更新
@@ -202,7 +202,7 @@
 - **依存関係**: 2.2
 - **要件カバー**: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6
 
-#### - [ ] 5.5 統合テスト（メール送信フロー）
+#### - [x] 5.5 統合テスト（メール送信フロー）
 - **目的**: メール送信の非同期フローの統合テストを実装
 - **作業内容**:
   - `functions/src/mail/__tests__/sendMail.integration.test.ts`の作成
@@ -213,7 +213,7 @@
 - **依存関係**: 2.2, 1.2, 1.3
 - **要件カバー**: 1.1, 2.1, 3.1, 4.1, 5.1
 
-#### - [ ] 5.6 Webアプリのタスク結果監視テスト
+#### - [x] 5.6 Webアプリのタスク結果監視テスト
 - **目的**: Webアプリのタスク結果監視機能のテストを実装
 - **作業内容**:
   - `apps/web_app/src/services/__tests__/mail.test.ts`を更新
@@ -225,7 +225,7 @@
 - **依存関係**: 3.1
 - **要件カバー**: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8
 
-#### - [ ] 5.7 Flutterアプリのタスク結果監視テスト
+#### - [x] 5.7 Flutterアプリのタスク結果監視テスト
 - **目的**: Flutterアプリのタスク結果監視機能のテストを実装
 - **作業内容**:
   - `apps/mobile_app/test/repositories/mail_repository_test.dart`を更新

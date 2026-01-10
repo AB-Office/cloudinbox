@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mailService } from '../mail';
 import { getAuth } from 'firebase/auth';
-import { doc, getDoc, writeBatch } from 'firebase/firestore';
-import type { SendMailRequest } from '@/types/mail';
+import { doc, getDoc, writeBatch, onSnapshot } from 'firebase/firestore';
+import type { SendMailRequest, SendMailTaskResult } from '@/types/mail';
 
 // Firebase Authをモック
 vi.mock('firebase/auth', () => ({
@@ -32,7 +32,10 @@ vi.mock('firebase/firestore', async () => {
     limit: vi.fn(q => q),
     startAfter: vi.fn(q => q),
     getDocs: vi.fn(),
-    onSnapshot: vi.fn(),
+    onSnapshot: vi.fn((ref, onNext, onError) => {
+      // モックのunsubscribe関数を返す
+      return vi.fn();
+    }),
   };
 });
 
@@ -674,6 +677,273 @@ describe('mailService', () => {
         })
       );
       expect(mockBatch.commit).toHaveBeenCalled();
+    });
+  });
+
+  describe('watchTaskResult', () => {
+    let mockUnsubscribe: ReturnType<typeof vi.fn>;
+    let mockOnNext: (snapshot: any) => void;
+    let mockOnError: (error: Error) => void;
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      mockUnsubscribe = vi.fn();
+      mockOnNext = vi.fn();
+      mockOnError = vi.fn();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.clearAllTimers();
+    });
+
+    it('should set up Firestore snapshot listener and timeout', () => {
+      const uid = 'test-uid';
+      const taskId = 'test-task-id';
+      const onResult = vi.fn();
+      const onTimeout = vi.fn();
+      const mockTaskResultRef = {};
+
+      vi.mocked(doc).mockReturnValue(mockTaskResultRef as any);
+      vi.mocked(onSnapshot).mockImplementation((ref, onNext, onError) => {
+        mockOnNext = onNext;
+        mockOnError = onError as (error: Error) => void;
+        return mockUnsubscribe;
+      });
+
+      const cleanup = mailService.watchTaskResult(uid, taskId, onResult, onTimeout);
+
+      // docは(getFirestore()の結果, 'users', uid, 'mailTaskResults', taskId)で呼び出される
+      // getFirestore()がモックされているため、最初の引数はundefinedになる可能性がある
+      expect(doc).toHaveBeenCalled();
+      const docCalls = vi.mocked(doc).mock.calls;
+      expect(docCalls[docCalls.length - 1]).toEqual(
+        expect.arrayContaining(['users', uid, 'mailTaskResults', taskId])
+      );
+      expect(onSnapshot).toHaveBeenCalledWith(
+        mockTaskResultRef,
+        expect.any(Function),
+        expect.any(Function)
+      );
+
+      // タイムアウトが設定されていることを確認
+      expect(vi.getTimerCount()).toBe(1);
+
+      // クリーンアップ関数を呼び出し
+      cleanup();
+      expect(mockUnsubscribe).toHaveBeenCalled();
+    });
+
+    it('should call onResult callback when task result is available', () => {
+      const uid = 'test-uid';
+      const taskId = 'test-task-id';
+      const onResult = vi.fn();
+      const onTimeout = vi.fn();
+      const mockTaskResultRef = {};
+
+      const mockTaskResultData = {
+        success: true,
+        messageId: 'test-message-id',
+        errorMessage: undefined,
+        taskId: 'test-task-id',
+        accountId: 'test-account-id',
+        subject: 'Test Subject',
+        createdAt: { toDate: () => new Date('2024-01-01T00:00:00Z') },
+        completedAt: { toDate: () => new Date('2024-01-01T00:00:01Z') },
+      };
+
+      const mockSnapshot = {
+        exists: () => true,
+        data: () => mockTaskResultData,
+      };
+
+      vi.mocked(doc).mockReturnValue(mockTaskResultRef as any);
+      vi.mocked(onSnapshot).mockImplementation((ref, onNext, onError) => {
+        mockOnNext = onNext;
+        mockOnError = onError as (error: Error) => void;
+        return mockUnsubscribe;
+      });
+
+      mailService.watchTaskResult(uid, taskId, onResult, onTimeout);
+
+      // スナップショットが存在する場合、onResultが呼び出される
+      mockOnNext(mockSnapshot);
+
+      expect(onResult).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          messageId: 'test-message-id',
+          taskId: 'test-task-id',
+          accountId: 'test-account-id',
+          subject: 'Test Subject',
+          createdAt: mockTaskResultData.createdAt,
+          completedAt: mockTaskResultData.completedAt,
+        })
+      );
+
+      // クリーンアップが呼び出され、タイムアウトがクリアされる
+      expect(vi.getTimerCount()).toBe(0);
+      expect(mockUnsubscribe).toHaveBeenCalled();
+    });
+
+    it('should call onTimeout callback after 30 seconds', () => {
+      const uid = 'test-uid';
+      const taskId = 'test-task-id';
+      const onResult = vi.fn();
+      const onTimeout = vi.fn();
+      const mockTaskResultRef = {};
+
+      vi.mocked(doc).mockReturnValue(mockTaskResultRef as any);
+      vi.mocked(onSnapshot).mockImplementation((ref, onNext, onError) => {
+        mockOnNext = onNext;
+        mockOnError = onError as (error: Error) => void;
+        return mockUnsubscribe;
+      });
+
+      mailService.watchTaskResult(uid, taskId, onResult, onTimeout);
+
+      // 30秒経過
+      vi.advanceTimersByTime(30000);
+
+      expect(onTimeout).toHaveBeenCalled();
+      expect(mockUnsubscribe).toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('should handle task result with error message', () => {
+      const uid = 'test-uid';
+      const taskId = 'test-task-id';
+      const onResult = vi.fn();
+      const onTimeout = vi.fn();
+      const mockTaskResultRef = {};
+
+      const mockTaskResultData = {
+        success: false,
+        messageId: undefined,
+        errorMessage: 'SMTP connection failed',
+        taskId: 'test-task-id',
+        accountId: 'test-account-id',
+        subject: 'Test Subject',
+        createdAt: { toDate: () => new Date('2024-01-01T00:00:00Z') },
+        completedAt: { toDate: () => new Date('2024-01-01T00:00:01Z') },
+      };
+
+      const mockSnapshot = {
+        exists: () => true,
+        data: () => mockTaskResultData,
+      };
+
+      vi.mocked(doc).mockReturnValue(mockTaskResultRef as any);
+      vi.mocked(onSnapshot).mockImplementation((ref, onNext, onError) => {
+        mockOnNext = onNext;
+        mockOnError = onError as (error: Error) => void;
+        return mockUnsubscribe;
+      });
+
+      mailService.watchTaskResult(uid, taskId, onResult, onTimeout);
+
+      // スナップショットが存在する場合、onResultが呼び出される
+      mockOnNext(mockSnapshot);
+
+      expect(onResult).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          errorMessage: 'SMTP connection failed',
+          taskId: 'test-task-id',
+          accountId: 'test-account-id',
+          subject: 'Test Subject',
+        })
+      );
+
+      // クリーンアップが呼び出される
+      expect(vi.getTimerCount()).toBe(0);
+      expect(mockUnsubscribe).toHaveBeenCalled();
+    });
+
+    it('should not call onResult if snapshot does not exist', () => {
+      const uid = 'test-uid';
+      const taskId = 'test-task-id';
+      const onResult = vi.fn();
+      const onTimeout = vi.fn();
+      const mockTaskResultRef = {};
+
+      const mockSnapshot = {
+        exists: () => false,
+        data: () => null,
+      };
+
+      vi.mocked(doc).mockReturnValue(mockTaskResultRef as any);
+      vi.mocked(onSnapshot).mockImplementation((ref, onNext, onError) => {
+        mockOnNext = onNext;
+        mockOnError = onError as (error: Error) => void;
+        return mockUnsubscribe;
+      });
+
+      mailService.watchTaskResult(uid, taskId, onResult, onTimeout);
+
+      // スナップショットが存在しない場合、onResultは呼び出されない
+      mockOnNext(mockSnapshot);
+
+      expect(onResult).not.toHaveBeenCalled();
+      // タイムアウトは設定されている
+      expect(vi.getTimerCount()).toBe(1);
+    });
+
+    it('should handle Firestore error and cleanup', () => {
+      const uid = 'test-uid';
+      const taskId = 'test-task-id';
+      const onResult = vi.fn();
+      const onTimeout = vi.fn();
+      const mockTaskResultRef = {};
+      const mockError = new Error('Firestore error');
+
+      vi.mocked(doc).mockReturnValue(mockTaskResultRef as any);
+      vi.mocked(onSnapshot).mockImplementation((ref, onNext, onError) => {
+        mockOnNext = onNext;
+        mockOnError = onError as (error: Error) => void;
+        return mockUnsubscribe;
+      });
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      mailService.watchTaskResult(uid, taskId, onResult, onTimeout);
+
+      // エラーが発生した場合
+      mockOnError(mockError);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error watching task result:', mockError);
+      expect(mockUnsubscribe).toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should return cleanup function that stops watching and clears timeout', () => {
+      const uid = 'test-uid';
+      const taskId = 'test-task-id';
+      const onResult = vi.fn();
+      const onTimeout = vi.fn();
+      const mockTaskResultRef = {};
+
+      vi.mocked(doc).mockReturnValue(mockTaskResultRef as any);
+      vi.mocked(onSnapshot).mockImplementation((ref, onNext, onError) => {
+        mockOnNext = onNext;
+        mockOnError = onError as (error: Error) => void;
+        return mockUnsubscribe;
+      });
+
+      const cleanup = mailService.watchTaskResult(uid, taskId, onResult, onTimeout);
+
+      expect(vi.getTimerCount()).toBe(1);
+
+      // クリーンアップ関数を呼び出し
+      cleanup();
+
+      expect(mockUnsubscribe).toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+
+      // 再度クリーンアップを呼び出してもエラーが発生しない
+      expect(() => cleanup()).not.toThrow();
     });
   });
 });

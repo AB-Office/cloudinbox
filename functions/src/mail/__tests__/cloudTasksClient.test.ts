@@ -239,6 +239,80 @@ describe('CloudTasksClientWrapper', () => {
       expect(bodyJson.data.inReplyToMessageId).toBe('message-id-456');
       expect(result.taskId).toBeDefined();
     });
+
+    it('タスクIDが一意に生成される', async () => {
+      mockCreateTask.mockResolvedValue([{ name: 'tasks/sendmail-123' }]);
+      mockQueuePath.mockReturnValue('projects/test-project/locations/asia-northeast1/queues/sendMailTaskHandler');
+
+      const client = new CloudTasksClientWrapper();
+
+      const result1 = await client.enqueueSendMailTask('user-1', {
+        accountId: 'account-1',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject 1',
+        body: 'Test Body 1',
+      });
+
+      const result2 = await client.enqueueSendMailTask('user-1', {
+        accountId: 'account-1',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject 2',
+        body: 'Test Body 2',
+      });
+
+      expect(result1.taskId).not.toBe(result2.taskId);
+      expect(result1.taskId).toMatch(/^sendmail-\d+-[a-z0-9]+$/);
+      expect(result2.taskId).toMatch(/^sendmail-\d+-[a-z0-9]+$/);
+    });
+
+    it('createTaskが失敗した場合はエラーをスローする', async () => {
+      const mockError = new Error('Failed to create task');
+      mockCreateTask.mockRejectedValue(mockError);
+      mockQueuePath.mockReturnValue('projects/test-project/locations/asia-northeast1/queues/sendMailTaskHandler');
+
+      const client = new CloudTasksClientWrapper();
+
+      await expect(
+        client.enqueueSendMailTask('user-1', {
+          accountId: 'account-1',
+          to: ['recipient@example.com'],
+          subject: 'Test Subject',
+          body: 'Test Body',
+        })
+      ).rejects.toThrow('Failed to create task');
+
+      expect(mockCreateTask).toHaveBeenCalledTimes(1);
+    });
+
+    it('環境変数でキューネームと関数名をカスタマイズできる', async () => {
+      process.env.SEND_MAIL_TASK_QUEUE_NAME = 'custom-send-mail-queue';
+      process.env.SEND_MAIL_TASK_HANDLER_NAME = 'customSendMailTaskHandler';
+      
+      mockCreateTask.mockResolvedValue([{ name: 'tasks/sendmail-123' }]);
+      mockQueuePath.mockReturnValue('projects/test-project/locations/asia-northeast1/queues/custom-send-mail-queue');
+
+      const client = new CloudTasksClientWrapper();
+
+      await client.enqueueSendMailTask('user-1', {
+        accountId: 'account-1',
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      });
+
+      expect(mockQueuePath).toHaveBeenCalledWith(
+        'test-project',
+        'asia-northeast1',
+        'custom-send-mail-queue'
+      );
+
+      const request = mockCreateTask.mock.calls[0][0];
+      expect(request.task.httpRequest.url).toBe('https://asia-northeast1-test-project.cloudfunctions.net/customSendMailTaskHandler');
+
+      // 環境変数をリセット
+      delete process.env.SEND_MAIL_TASK_QUEUE_NAME;
+      delete process.env.SEND_MAIL_TASK_HANDLER_NAME;
+    });
   });
 });
 

@@ -701,6 +701,66 @@ describe('handleSendMailTask', () => {
       await expect(handleSendMailTask(payload)).rejects.toThrow('SMTP connection failed');
     });
 
+    it('SMTP接続タイムアウトエラー時にエラーをスローし、タスク結果を保存する', async () => {
+      // sendSmtpMail関数はエラーメッセージをフォーマットしてからスローする
+      const formattedError = new Error('Cannot connect to SMTP server: Connection timeout');
+      (formattedError as any).code = 'ETIMEDOUT';
+      (sendSmtpMail as jest.Mock).mockRejectedValue(formattedError);
+
+      const payload: SendMailTaskPayload = {
+        uid: mockUid,
+        taskId: mockTaskId,
+        accountId: mockAccountId,
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+
+      await expect(handleSendMailTask(payload)).rejects.toThrow('Failed to send mail');
+
+      // タスク結果がFirestoreに保存されたか確認
+      expect(mockTaskResultRef.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          errorMessage: expect.stringContaining('Failed to send mail'),
+          taskId: mockTaskId,
+          accountId: mockAccountId,
+          subject: 'Test Subject',
+        }),
+        { merge: false }
+      );
+    });
+
+    it('SMTP認証エラー時にエラーをスローし、タスク結果を保存する', async () => {
+      // sendSmtpMail関数はエラーメッセージをフォーマットしてからスローする
+      const formattedError = new Error('Authentication failed: Invalid username or password');
+      (formattedError as any).code = 'EAUTH';
+      (sendSmtpMail as jest.Mock).mockRejectedValue(formattedError);
+
+      const payload: SendMailTaskPayload = {
+        uid: mockUid,
+        taskId: mockTaskId,
+        accountId: mockAccountId,
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+
+      await expect(handleSendMailTask(payload)).rejects.toThrow('Failed to send mail');
+
+      // タスク結果がFirestoreに保存されたか確認
+      expect(mockTaskResultRef.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          errorMessage: expect.stringContaining('Failed to send mail'),
+          taskId: mockTaskId,
+          accountId: mockAccountId,
+          subject: 'Test Subject',
+        }),
+        { merge: false }
+      );
+    });
+
     it('パスワード復号化が失敗した場合はエラーをスローする', async () => {
       const decryptError = new Error('Decryption failed');
       (encryption.decryptPassword as jest.Mock).mockRejectedValue(decryptError);
@@ -714,7 +774,7 @@ describe('handleSendMailTask', () => {
         body: 'Test Body',
       };
 
-      await expect(handleSendMailTask(payload)).rejects.toThrow('Decryption failed');
+      await expect(handleSendMailTask(payload)).rejects.toThrow('Failed to decrypt SMTP password');
     });
 
     it('送信済みメールの保存が失敗した場合はエラーをスローする', async () => {

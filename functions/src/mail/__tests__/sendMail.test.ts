@@ -405,5 +405,108 @@ describe('sendMail', () => {
 
       await expect(sendMail(data, mockContext)).rejects.toThrow('Failed to enqueue send mail task');
     });
+
+    it('アカウントデータが空の場合、エラーを投げる', async () => {
+      const mockAccountRefEmpty = {
+        get: jest.fn().mockResolvedValue({
+          exists: true,
+          data: () => null, // アカウントデータがnull
+        }),
+      };
+
+      const mockFirestoreEmpty = {
+        collection: jest.fn(() => ({
+          doc: jest.fn(() => ({
+            collection: jest.fn(() => ({
+              doc: jest.fn(() => mockAccountRefEmpty),
+            })),
+          })),
+        })),
+      };
+
+      (admin.firestore as any) = jest.fn().mockReturnValue(mockFirestoreEmpty);
+
+      const data = {
+        accountId: mockAccountId,
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+
+      await expect(sendMail(data, mockContext)).rejects.toThrow('Account data is empty');
+    });
+
+    it('HttpsErrorはそのままスローされる（アカウントが存在しない場合）', async () => {
+      const mockAccountRefNotExist = {
+        get: jest.fn().mockResolvedValue({
+          exists: false,
+        }),
+      };
+
+      const mockFirestoreNotExist = {
+        collection: jest.fn(() => ({
+          doc: jest.fn(() => ({
+            collection: jest.fn(() => ({
+              doc: jest.fn(() => mockAccountRefNotExist),
+            })),
+          })),
+        })),
+      };
+
+      (admin.firestore as any) = jest.fn().mockReturnValue(mockFirestoreNotExist);
+
+      const data = {
+        accountId: mockAccountId,
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+
+      try {
+        await sendMail(data, mockContext);
+        fail('Expected HttpsError to be thrown');
+      } catch (error: any) {
+        expect(error).toBeInstanceOf(functions.https.HttpsError);
+        expect(error.code).toBe('not-found');
+        expect(error.message).toBe('Account not found');
+      }
+    });
+
+    it('レスポンスにtaskIdが含まれる', async () => {
+      const mockTaskId = 'sendmail-custom-task-id';
+      mockCloudTasksClient.enqueueSendMailTask.mockResolvedValue({
+        taskName: 'tasks/sendmail-123',
+        taskId: mockTaskId,
+      });
+
+      const data = {
+        accountId: mockAccountId,
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+
+      const result = await sendMail(data, mockContext);
+
+      expect(result.success).toBe(true);
+      expect(result.taskId).toBe(mockTaskId);
+      expect(result.taskId).toBeDefined();
+      expect(typeof result.taskId).toBe('string');
+    });
+
+    it('タスク投入成功時、レスポンスにerrorMessageが含まれない', async () => {
+      const data = {
+        accountId: mockAccountId,
+        to: ['recipient@example.com'],
+        subject: 'Test Subject',
+        body: 'Test Body',
+      };
+
+      const result = await sendMail(data, mockContext);
+
+      expect(result.success).toBe(true);
+      expect(result.taskId).toBeDefined();
+      expect(result.errorMessage).toBeUndefined();
+    });
   });
 });
