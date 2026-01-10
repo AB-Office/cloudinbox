@@ -136,16 +136,39 @@ gcloud compute routers nats describe nat-cloud-run \
 
 #### 方法1: Firebase CLIでデプロイ後、gcloud runでDirect VPC Egressを設定（推奨）
 
-Gen2関数はCloud Runとして実行されるため、Firebase CLIでデプロイ後、`gcloud run services update`コマンドでDirect VPC Egressを設定します：
+Gen2関数はCloud Runとして実行されるため、Firebase CLIでデプロイ後、`gcloud run services update`コマンドでDirect VPC Egressを設定します。
+
+**既存のVPC connector設定がない場合（新規デプロイ）:**
 
 ```bash
 cd /home/abtc/Projects/cloudinbox
 
 # まず通常通りデプロイ（コードではVPC設定を指定しない）
-firebase deploy --only functions:sendMail
+firebase deploy --only functions:accountTest
 
 # デプロイ後、Cloud RunサービスとしてDirect VPC Egressを設定
-gcloud run services update sendMail \
+gcloud run services update accounttest \
+    --region=asia-northeast1 \
+    --vpc-egress=all-traffic \
+    --network=vpc-cloud-run \
+    --subnet=subnet-cloud-run \
+    --project=cloudinbox-dev
+```
+
+**既存のVPC connector設定がある場合（既存関数の移行）:**
+
+既存の関数にServerless VPC Access Connectorが設定されている場合、まずVPC connectorをクリアしてから、Direct VPC Egressを設定する必要があります。
+
+```bash
+# ステップ1: VPC connectorをクリア（vpc-egress=private-ranges-onlyが必要）
+gcloud run services update accounttest \
+    --region=asia-northeast1 \
+    --clear-vpc-connector \
+    --vpc-egress=private-ranges-only \
+    --project=cloudinbox-dev
+
+# ステップ2: Direct VPC Egressを設定
+gcloud run services update accounttest \
     --region=asia-northeast1 \
     --vpc-egress=all-traffic \
     --network=vpc-cloud-run \
@@ -159,25 +182,21 @@ gcloud run services update sendMail \
 - `--subnet`でサブネットを指定（リージョンと同じリージョンである必要があります）
 - Serverless VPC Access Connectorは不要です
 - Gen2関数はCloud Runサービスとして管理されるため、`gcloud run services update`を使用します
+- **VPC connectorとDirect VPC Egressは同時に使用できません**。既存のVPC connectorがある場合は、必ず先にクリアしてください
+- VPC connectorをクリアする際は、`--vpc-egress=private-ranges-only`を同時に指定する必要があります
 
-#### 方法2: accountTest関数にも同様の設定を適用
+**Cloud Runサービス名の確認方法:**
 
-`accountTest`関数にもDirect VPC Egressを設定する場合：
+関数名がCloud Runサービス名にどのように変換されるかを確認：
 
 ```bash
-# accountTest関数をデプロイ
-firebase deploy --only functions:accountTest
+# デプロイ済みのCloud Runサービス一覧を確認
+gcloud run services list --region=asia-northeast1 --project=cloudinbox-dev
 
-# その後、Direct VPC Egressを設定
-gcloud run services update accounttest \
-    --region=asia-northeast1 \
-    --vpc-egress=all-traffic \
-    --network=vpc-cloud-run \
-    --subnet=subnet-cloud-run \
-    --project=cloudinbox-dev
+# または、関数名から推測（通常は小文字に変換される）
+# sendMail → sendmail
+# accountTest → accounttest
 ```
-
-**注意**: Cloud Runサービス名は、関数名を小文字にしたものになります（例: `sendMail` → `sendmail`、`accountTest` → `accounttest`）。
 
 #### 方法3: Firebase Console / Google Cloud Consoleを使用する場合（補足）
 
@@ -193,21 +212,15 @@ GUIでの設定は、UIが変更される可能性があるため、gcloudコマ
 
 Direct VPC Egress設定を反映する手順：
 
+#### 8-1. 新規デプロイの場合（VPC connector設定がない場合）
+
 ```bash
 cd /home/abtc/Projects/cloudinbox
 
 # 1. Firebase CLIで関数をデプロイ（コードではVPC設定を指定しない）
-firebase deploy --only functions:sendMail,functions:accountTest
+firebase deploy --only functions:accountTest
 
-# 2. sendMail関数にDirect VPC Egressを設定
-gcloud run services update sendmail \
-    --region=asia-northeast1 \
-    --vpc-egress=all-traffic \
-    --network=vpc-cloud-run \
-    --subnet=subnet-cloud-run \
-    --project=cloudinbox-dev
-
-# 3. accountTest関数にDirect VPC Egressを設定
+# 2. accountTest関数にDirect VPC Egressを設定
 gcloud run services update accounttest \
     --region=asia-northeast1 \
     --vpc-egress=all-traffic \
@@ -216,10 +229,70 @@ gcloud run services update accounttest \
     --project=cloudinbox-dev
 ```
 
-**注意**: 
+#### 8-2. 既存のVPC connector設定がある場合（移行手順）
+
+**重要**: 既存の関数にServerless VPC Access Connectorが設定されている場合、VPC connectorをクリアしてからDirect VPC Egressを設定する必要があります。**VPC connectorとDirect VPC Egressは同時に使用できません。**
+
+```bash
+# ステップ1: 既存のVPC connector設定を確認
+gcloud run services describe accounttest \
+    --region=asia-northeast1 \
+    --project=cloudinbox-dev \
+    --format="get(spec.template.metadata.annotations)" | grep -i vpc
+
+# ステップ2: VPC connectorをクリア（vpc-egress=private-ranges-onlyを同時に指定する必要がある）
+gcloud run services update accounttest \
+    --region=asia-northeast1 \
+    --clear-vpc-connector \
+    --vpc-egress=private-ranges-only \
+    --project=cloudinbox-dev
+
+# ステップ3: Direct VPC Egressを設定
+gcloud run services update accounttest \
+    --region=asia-northeast1 \
+    --vpc-egress=all-traffic \
+    --network=vpc-cloud-run \
+    --subnet=subnet-cloud-run \
+    --project=cloudinbox-dev
+```
+
+**エラーが発生した場合:**
+
+エラーメッセージ `VPC connector and direct VPC can not be used together` が表示される場合：
+
+1. **既存のVPC connector設定を確認:**
+   ```bash
+   gcloud run services describe <サービス名> \
+       --region=asia-northeast1 \
+       --project=cloudinbox-dev \
+       --format="get(spec.template.metadata.annotations)" | grep -i vpc
+   ```
+
+2. **VPC connectorをクリア:**
+   ```bash
+   gcloud run services update <サービス名> \
+       --region=asia-northeast1 \
+       --clear-vpc-connector \
+       --vpc-egress=private-ranges-only \
+       --project=cloudinbox-dev
+   ```
+
+3. **その後、Direct VPC Egressを設定:**
+   ```bash
+   gcloud run services update <サービス名> \
+       --region=asia-northeast1 \
+       --vpc-egress=all-traffic \
+       --network=vpc-cloud-run \
+       --subnet=subnet-cloud-run \
+       --project=cloudinbox-dev
+   ```
+
+**注意事項**: 
+- **VPC connectorとDirect VPC Egressは同時に使用できません**
+- VPC connectorをクリアする際は、`--vpc-egress=private-ranges-only`を同時に指定する必要があります（`--vpc-egress=all-traffic`は指定できません）
 - Gen2関数はCloud Runサービスとして実行されるため、`gcloud run services update`を使用します
-- Cloud Runサービス名は関数名を小文字にしたものになります
-- `--vpc-egress=all-traffic`でDirect VPC Egressを有効化します
+- Cloud Runサービス名は関数名を小文字にしたものになります（例: `sendMail` → `sendmail`、`accountTest` → `accounttest`）
+- `--vpc-egress=all-traffic`でDirect VPC Egressを有効化します（すべてのトラフィックをVPC経由で送信）
 - `--network`と`--subnet`でVPCネットワークとサブネットを指定します
 
 ### 9. 動作確認（Direct VPC Egress設定の反映確認）
