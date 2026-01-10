@@ -126,40 +126,7 @@ gcloud compute routers nats describe nat-cloud-run \
     --region=asia-northeast1
 ```
 
-### 7. Cloud Functions Gen2のVPC接続設定（GUI）
-
-Firebase ConsoleまたはGoogle Cloud Consoleで、`sendMail`関数にVPC接続を設定します。
-
-#### 方法1: Firebase Consoleを使用する場合
-
-1. [Firebase Console](https://console.firebase.google.com/)にアクセス
-2. プロジェクト（`cloudinbox-dev`）を選択
-3. 左メニューから「Functions」を選択
-4. `sendMail`関数をクリック
-5. 「設定」タブを選択
-6. 「VPC接続」セクションを展開
-7. 「VPC接続を設定」をクリック
-8. 以下の設定を入力:
-   - **VPC接続器**: `vpc-cloud-run-connector`（まだ存在しない場合は作成が必要）
-   - **Egress設定**: 「プライベートIPのみ」を選択
-   - **VPC**: `vpc-cloud-run`を選択
-   - **サブネット**: `subnet-cloud-run`を選択
-9. 「保存」をクリック
-
-#### 方法2: Google Cloud Consoleを使用する場合
-
-1. [Google Cloud Console](https://console.cloud.google.com/)にアクセス
-2. プロジェクト（`cloudinbox-dev`）を選択
-3. 左メニューから「Cloud Functions」を選択
-4. `sendMail`関数をクリック
-5. 「編集」タブをクリック
-6. 「接続設定」セクションを展開
-7. 「VPC接続器」ドロップダウンから「既存の接続器を使用」を選択
-   - または「新しい接続器を作成」を選択して接続器を作成
-8. 「Egress設定」で「プライベートIPのみ」を選択
-9. 「デプロイ」をクリック
-
-#### 方法3: Serverless VPC Access Connectorの作成（必要な場合）
+### 7. Serverless VPC Access Connectorの作成
 
 VPC接続器が存在しない場合は、先に作成する必要があります。
 
@@ -179,24 +146,19 @@ gcloud compute networks vpc-access connectors describe vpc-cloud-run-connector \
     --region=asia-northeast1
 ```
 
-### 8. Cloud Functions Gen2のコード設定
+### 8. Cloud Functions Gen2のVPC接続設定（gcloudコマンド推奨）
 
-`sendMail`関数のコードで、Direct VPC Egressを使用するように設定します。
+**推奨方法**: gcloudコマンドを使用して設定します（GUIでの設定はUIが変更される可能性があるため）。
 
-関数定義の例（`functions/src/mail/sendMail.ts`）:
+#### 方法1: コードで設定してFirebase CLIでデプロイ（推奨）
+
+Gen2関数のVPC接続を設定する最も確実な方法は、コードでVPC設定を指定し、Firebase CLIでデプロイすることです。
+
+関数のコードでVPC設定を指定（`functions/src/mail/sendMail.ts`）:
 
 ```typescript
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { setGlobalOptions } from 'firebase-functions/v2';
+import { onCall } from 'firebase-functions/v2/https';
 
-// VPC接続設定をグローバルに設定（必要に応じて）
-setGlobalOptions({
-  vpcConnector: 'vpc-cloud-run-connector',
-  vpcConnectorEgressSettings: 'PRIVATE_RANGES_ONLY',
-  region: 'asia-northeast1',
-});
-
-// または、関数レベルで設定
 export const sendMail = onCall(
   {
     region: 'asia-northeast1',
@@ -212,18 +174,68 @@ export const sendMail = onCall(
 );
 ```
 
-**注意**: コードレベルでの設定は、GUIでの設定と競合する可能性があるため、GUIでの設定を推奨します。
-
-### 9. 関数の再デプロイ
-
-VPC接続設定を反映するため、関数を再デプロイします。
+Firebase CLIでデプロイ:
 
 ```bash
 cd /home/abtc/Projects/cloudinbox
 firebase deploy --only functions:sendMail
 ```
 
-### 10. 動作確認
+**注意**: 
+- コードでVPC設定を指定することで、設定が確実に適用されます
+- Callable Function（`onCall`）は認証が必要な関数なので、`--allow-unauthenticated`フラグは不要です
+- Firebase CLIを使用することで、Gen2関数の設定が適切に処理されます
+
+#### 方法2: gcloudコマンドで設定（補足）
+
+gcloudコマンドで既存のGen2関数のVPC設定を更新する場合:
+
+```bash
+# 既存の関数にVPC接続を追加
+gcloud functions deploy sendMail \
+    --gen2 \
+    --region=asia-northeast1 \
+    --vpc-connector=vpc-cloud-run-connector \
+    --egress-settings=private-ranges-only \
+    --update-env-vars="" \
+    --source=functions/lib
+```
+
+**注意**: 
+- `--source`はビルド後の`lib`ディレクトリを指定する必要があります
+- Callable Function（`onCall`）の場合、`--trigger-http`や`--allow-unauthenticated`フラグは使用しないでください
+- gcloudコマンドでの設定は複雑なため、コードで設定してFirebase CLIでデプロイする方法を推奨します
+
+#### 方法3: Firebase Console / Google Cloud Consoleを使用する場合（補足）
+
+GUIでの設定は、UIが変更される可能性があるため、gcloudコマンドを推奨します。
+
+- **Firebase Console**: Functionsの詳細ページから「設定」タブまたは「VPC接続」セクションを確認
+- **Google Cloud Console**: 「Cloud Run」セクションから関数を選択し、設定画面でVPC接続を確認
+- **Cloud Runとして管理**: Gen2関数は「Cloud Run」として表示される場合があります
+
+**注意**: GUIでの設定場所は、Cloud Functionsのバージョンやリージョンによって異なる場合があります。設定が見つからない場合は、gcloudコマンドを使用してください。
+
+### 9. 関数の再デプロイ
+
+VPC接続設定を反映するため、関数を再デプロイします。
+
+#### Firebase CLIを使用する場合
+
+関数のコードでVPC設定を指定している場合は、Firebase CLIでデプロイします：
+
+```bash
+cd /home/abtc/Projects/cloudinbox
+firebase deploy --only functions:sendMail
+```
+
+**注意**: コードでVPC設定を指定していない場合は、gcloudコマンドで設定するか、Firebase CLIデプロイ後にgcloudコマンドで更新する必要があります。
+
+#### gcloudコマンドを使用する場合
+
+gcloudコマンドでVPC設定を指定してデプロイする場合は、上記の「方法1: gcloudコマンドで設定（推奨）」を参照してください。
+
+### 10. 動作確認（VPC設定の反映確認）
 
 #### 固定IPアドレスの確認
 

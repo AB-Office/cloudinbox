@@ -43,9 +43,14 @@ interface AccountTestResponse {
  * POP3S/SMTP接続テストを実行するHTTP Callable Function (Gen2)
  *
  * テストコードから直接呼び出しやすくするため、型はanyとしてエクスポートする
+ * SMTP接続テストで固定IPアドレスが必要な場合に備えて、VPC接続を設定
  */
 export const accountTest: any = onCall(
-  { region: 'asia-northeast1' },
+  {
+    region: 'asia-northeast1',
+    vpcConnector: 'vpc-cloud-run-connector',
+    vpcConnectorEgressSettings: 'PRIVATE_RANGES_ONLY',
+  },
   async (request: CallableRequest<AccountTestRequest>): Promise<AccountTestResponse> => {
     // 認証チェック
     if (!request.auth) {
