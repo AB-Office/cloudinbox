@@ -285,6 +285,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get errorFailedToSendMail => 'メール送信に失敗しました';
 
   @override
+  String get mailSent => 'メールを送信しました';
+
+  @override
+  String get mailSendTimeout => 'メール送信結果の確認に失敗しました。しばらくしてから送信済みフォルダをご確認ください。';
+
+  @override
   String errorGeneric(String error) {
     return 'エラー: $error';
   }

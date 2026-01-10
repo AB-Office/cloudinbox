@@ -380,6 +380,14 @@
   },
   "errorFailedToSendMail": "メール送信に失敗しました",
   "@errorFailedToSendMail": {
+    "description": "メール送信失敗時のエラーメッセージ"
+  },
+  "mailSent": "メールを送信しました",
+  "@mailSent": {
+    "description": "メール送信成功時のメッセージ"
+  },
+  "mailSendTimeout": "メール送信結果の確認に失敗しました。しばらくしてから送信済みフォルダをご確認ください。",
+  "@mailSendTimeout": {
     "description": "メール送信失敗エラーメッセージ"
   },
   "errorGeneric": "エラー: {error}",

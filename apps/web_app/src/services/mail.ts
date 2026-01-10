@@ -25,6 +25,7 @@ import type {
   AttachmentListItem,
   SendMailRequest,
   SendMailResponse,
+  SendMailTaskResult,
 } from '@/types/mail';
 
 const db = getFirestore(firebaseApp);
@@ -464,11 +465,83 @@ export const mailService = {
   /**
    * メールを送信する
    * @param request メール送信リクエスト
-   * @returns メール送信レスポンス
+   * @returns メール送信レスポンス（taskIdを含む）
    */
   async sendMail(request: SendMailRequest): Promise<SendMailResponse> {
     const sendMailFunction = httpsCallable(functions, 'sendMail');
     const result = await sendMailFunction(request);
     return result.data as SendMailResponse;
+  },
+
+  /**
+   * メール送信タスクの結果を監視する
+   * @param uid ユーザーID
+   * @param taskId タスクID
+   * @param onResult タスク結果が保存されたときに呼び出されるコールバック関数
+   * @param onTimeout タイムアウト時に呼び出されるコールバック関数
+   * @returns 監視を停止する関数
+   */
+  watchTaskResult(
+    uid: string,
+    taskId: string,
+    onResult: (result: SendMailTaskResult) => void,
+    onTimeout: () => void
+  ): () => void {
+    const taskResultRef = doc(db, 'users', uid, 'mailTaskResults', taskId);
+    
+    let timeoutId: NodeJS.Timeout | null = null;
+    let unsubscribe: (() => void) | null = null;
+
+    // クリーンアップ関数
+    const cleanup = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+      }
+    };
+
+    // タイムアウトタイマーを設定（30秒）
+    timeoutId = setTimeout(() => {
+      cleanup();
+      onTimeout();
+    }, 30000);
+
+    // Firestoreのドキュメントを監視
+    unsubscribe = onSnapshot(
+      taskResultRef,
+      snapshot => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          const result: SendMailTaskResult = {
+            success: data.success ?? false,
+            messageId: data.messageId,
+            errorMessage: data.errorMessage,
+            taskId: data.taskId ?? taskId,
+            accountId: data.accountId ?? '',
+            subject: data.subject ?? '',
+            createdAt: data.createdAt,
+            completedAt: data.completedAt,
+          };
+
+          // クリーンアップ
+          cleanup();
+
+          // コールバック関数を呼び出す
+          onResult(result);
+        }
+      },
+      error => {
+        // エラーが発生した場合、クリーンアップ
+        cleanup();
+        console.error('Error watching task result:', error);
+      }
+    );
+
+    // 監視を停止する関数を返す
+    return cleanup;
   },
 };

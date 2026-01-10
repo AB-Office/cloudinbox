@@ -59,6 +59,7 @@
       "sending": "Sending...",
       "sendSuccess": "Mail sent successfully",
       "sendError": "Failed to send mail",
+      "sendTimeout": "Failed to confirm mail send result. Please check the sent folder later.",
       "cancel": "Cancel",
       "cancelConfirm": "Discard changes?",
       "discard": "Discard",

@@ -285,6 +285,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorFailedToSendMail => 'Failed to send mail';
 
   @override
+  String get mailSent => 'Mail sent successfully';
+
+  @override
+  String get mailSendTimeout => 'Failed to confirm mail send result. Please check the sent folder later.';
+
+  @override
   String errorGeneric(String error) {
     return 'Error: $error';
   }

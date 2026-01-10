@@ -382,6 +382,14 @@
   "@errorFailedToSendMail": {
     "description": "Failed to send mail error message"
   },
+  "mailSent": "Mail sent successfully",
+  "@mailSent": {
+    "description": "Mail sent successfully message"
+  },
+  "mailSendTimeout": "Failed to confirm mail send result. Please check the sent folder later.",
+  "@mailSendTimeout": {
+    "description": "Mail send timeout message"
+  },
   "errorGeneric": "Error: {error}",
   "@errorGeneric": {
     "description": "Generic error message",

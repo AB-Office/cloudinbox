@@ -1568,6 +1568,7 @@ class FirebaseMailComposeRepository implements MailComposeRepository {
       final dataResult = Map<String, dynamic>.from(result.data as Map);
       return SendMailResponse(
         success: dataResult['success'] as bool? ?? false,
+        taskId: dataResult['taskId'] as String?,
         messageId: dataResult['messageId'] as String?,
         errorMessage: dataResult['errorMessage'] as String?,
       );
@@ -1584,6 +1585,55 @@ class FirebaseMailComposeRepository implements MailComposeRepository {
         errorMessage: 'Error: $e',
       );
     }
+  }
+
+  @override
+  Stream<SendMailTaskResult?> watchTaskResult(String uid, String taskId) {
+    final taskResultRef = _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('mailTaskResults')
+        .doc(taskId);
+
+    // タイムアウト処理（30秒）
+    // タイムアウト時はnullをemitするために、StreamControllerを使用
+    final controller = StreamController<SendMailTaskResult?>.broadcast();
+    StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? subscription;
+    Timer? timeoutTimer;
+
+    subscription = taskResultRef.snapshots().listen(
+      (snapshot) {
+        if (snapshot.exists && snapshot.data() != null) {
+          final data = snapshot.data()!;
+          final result = SendMailTaskResult.fromFirestore(data, taskId);
+          timeoutTimer?.cancel();
+          subscription?.cancel();
+          if (!controller.isClosed) {
+            controller.add(result);
+            controller.close();
+          }
+        }
+      },
+      onError: (error) {
+        timeoutTimer?.cancel();
+        subscription?.cancel();
+        if (!controller.isClosed) {
+          controller.addError(error);
+          controller.close();
+        }
+      },
+    );
+
+    // タイムアウトタイマーを設定（30秒）
+    timeoutTimer = Timer(const Duration(seconds: 30), () {
+      subscription?.cancel();
+      if (!controller.isClosed) {
+        controller.add(null); // タイムアウト時はnullを返す
+        controller.close();
+      }
+    });
+
+    return controller.stream;
   }
 }
 

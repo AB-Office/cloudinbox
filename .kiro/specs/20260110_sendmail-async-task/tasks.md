@@ -102,7 +102,7 @@
 
 ### 3. フロントエンド実装（タスク結果監視）
 
-#### - [ ] 3.1 Webアプリでのタスク結果監視機能の実装
+#### - [x] 3.1 Webアプリでのタスク結果監視機能の実装
 - **目的**: Webアプリでメール送信タスクの結果をFirestoreで監視し、スナックバーで表示
 - **作業内容**:
   - `apps/web_app/src/services/mail.ts`に`watchTaskResult`関数を追加
@@ -121,7 +121,7 @@
 - **依存関係**: 1.3
 - **要件カバー**: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8
 
-#### - [ ] 3.2 Flutterアプリでのタスク結果監視機能の実装
+#### - [x] 3.2 Flutterアプリでのタスク結果監視機能の実装
 - **目的**: Flutterアプリでメール送信タスクの結果をFirestoreで監視し、スナックバーで表示
 - **作業内容**:
   - `apps/mobile_app/lib/repositories/mail_repository.dart`に`watchTaskResult`メソッドを追加

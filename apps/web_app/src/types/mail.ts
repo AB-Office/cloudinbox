@@ -104,8 +104,23 @@ export interface SendMailRequest {
  */
 export interface SendMailResponse {
   success: boolean;
-  messageId?: string;
+  taskId?: string; // タスクID（非同期処理用）
+  messageId?: string; // 後方互換性のため保持（非同期処理では使用されない）
   errorMessage?: string;
+}
+
+/**
+ * メール送信タスク結果
+ */
+export interface SendMailTaskResult {
+  success: boolean;
+  messageId?: string; // 成功時のメッセージID
+  errorMessage?: string; // 失敗時のエラーメッセージ
+  taskId: string;
+  accountId: string;
+  subject: string;
+  createdAt?: any; // Firestore Timestamp
+  completedAt?: any; // Firestore Timestamp
 }
 
 /**
