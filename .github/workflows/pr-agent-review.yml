@@ -26,7 +26,6 @@ jobs:
       - name: PR-Agent Review
         uses: qodo-ai/pr-agent@main
         env:
-          OPENAI_KEY: ${{ secrets.OPENAI_API_KEY }}   # ← secret名はそのままでOK（環境変数名はOPENAI_KEY推奨）
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           github_action_config.auto_review: "true"
           github_action_config.auto_describe: "true"
