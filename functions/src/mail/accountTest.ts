@@ -43,14 +43,12 @@ interface AccountTestResponse {
  * POP3S/SMTP接続テストを実行するHTTP Callable Function (Gen2)
  *
  * テストコードから直接呼び出しやすくするため、型はanyとしてエクスポートする
- * SMTP接続テストで固定IPアドレスが必要な場合に備えて、VPC接続を設定
+ * 
+ * 注意: Direct VPC Egressの設定はコードではなく、デプロイ時にgcloudコマンドで行います
+ * 例: --vpc-egress=all-traffic --vpc-network=vpc-cloud-run --vpc-subnet=subnet-cloud-run
  */
 export const accountTest: any = onCall(
-  {
-    region: 'asia-northeast1',
-    vpcConnector: 'vpc-cloud-run-connector',
-    vpcConnectorEgressSettings: 'PRIVATE_RANGES_ONLY',
-  },
+  { region: 'asia-northeast1' },
   async (request: CallableRequest<AccountTestRequest>): Promise<AccountTestResponse> => {
     // 認証チェック
     if (!request.auth) {

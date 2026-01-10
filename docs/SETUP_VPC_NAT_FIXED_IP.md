@@ -53,7 +53,7 @@ gcloud compute networks describe vpc-cloud-run
 
 ### 3. サブネットの構築
 
-VPC内にサブネットを作成します。IPレンジは`10.10.0.0/16`を使用します。
+Direct VPC Egressを使用するため、VPC内にサブネットを作成します。
 
 ```bash
 gcloud compute networks subnets create subnet-cloud-run \
@@ -66,6 +66,8 @@ gcloud compute networks subnets create subnet-cloud-run \
 ```bash
 gcloud compute networks subnets describe subnet-cloud-run --region=asia-northeast1
 ```
+
+**注意**: Direct VPC Egressを使用する場合、Serverless VPC Access Connectorは不要です。Cloud Functions Gen2が直接VPCに接続します。
 
 ### 4. ルーターの構築
 
@@ -126,85 +128,56 @@ gcloud compute routers nats describe nat-cloud-run \
     --region=asia-northeast1
 ```
 
-### 7. Serverless VPC Access Connectorの作成
+### 7. Cloud Functions Gen2のDirect VPC Egress設定
 
-VPC接続器が存在しない場合は、先に作成する必要があります。
-
-```bash
-gcloud compute networks vpc-access connectors create vpc-cloud-run-connector \
-    --region=asia-northeast1 \
-    --subnet=subnet-cloud-run \
-    --subnet-project=cloudinbox-dev \
-    --min-instances=2 \
-    --max-instances=3 \
-    --machine-type=e2-micro
-```
-
-**確認方法:**
-```bash
-gcloud compute networks vpc-access connectors describe vpc-cloud-run-connector \
-    --region=asia-northeast1
-```
-
-### 8. Cloud Functions Gen2のVPC接続設定（gcloudコマンド推奨）
+**重要**: Direct VPC Egressを使用する場合、Serverless VPC Access Connectorは**不要**です。Cloud Functions Gen2が直接VPCに接続します。
 
 **推奨方法**: gcloudコマンドを使用して設定します（GUIでの設定はUIが変更される可能性があるため）。
 
-#### 方法1: コードで設定してFirebase CLIでデプロイ（推奨）
+#### 方法1: Firebase CLIでデプロイ後、gcloud runでDirect VPC Egressを設定（推奨）
 
-Gen2関数のVPC接続を設定する最も確実な方法は、コードでVPC設定を指定し、Firebase CLIでデプロイすることです。
-
-関数のコードでVPC設定を指定（`functions/src/mail/sendMail.ts`）:
-
-```typescript
-import { onCall } from 'firebase-functions/v2/https';
-
-export const sendMail = onCall(
-  {
-    region: 'asia-northeast1',
-    vpcConnector: 'vpc-cloud-run-connector',
-    vpcConnectorEgressSettings: 'PRIVATE_RANGES_ONLY',
-    timeoutSeconds: 540,
-    memory: '512MB',
-  },
-  async (request) => {
-    // SMTP送信処理
-    // ...
-  }
-);
-```
-
-Firebase CLIでデプロイ:
+Gen2関数はCloud Runとして実行されるため、Firebase CLIでデプロイ後、`gcloud run services update`コマンドでDirect VPC Egressを設定します：
 
 ```bash
 cd /home/abtc/Projects/cloudinbox
+
+# まず通常通りデプロイ（コードではVPC設定を指定しない）
 firebase deploy --only functions:sendMail
+
+# デプロイ後、Cloud RunサービスとしてDirect VPC Egressを設定
+gcloud run services update sendMail \
+    --region=asia-northeast1 \
+    --vpc-egress=all-traffic \
+    --network=vpc-cloud-run \
+    --subnet=subnet-cloud-run \
+    --project=cloudinbox-dev
 ```
 
-**注意**: 
-- コードでVPC設定を指定することで、設定が確実に適用されます
-- Callable Function（`onCall`）は認証が必要な関数なので、`--allow-unauthenticated`フラグは不要です
-- Firebase CLIを使用することで、Gen2関数の設定が適切に処理されます
+**重要**: 
+- `--vpc-egress=all-traffic`でDirect VPC Egressを有効化（すべてのトラフィックをVPC経由で送信）
+- `--network`でVPCネットワークを指定
+- `--subnet`でサブネットを指定（リージョンと同じリージョンである必要があります）
+- Serverless VPC Access Connectorは不要です
+- Gen2関数はCloud Runサービスとして管理されるため、`gcloud run services update`を使用します
 
-#### 方法2: gcloudコマンドで設定（補足）
+#### 方法2: accountTest関数にも同様の設定を適用
 
-gcloudコマンドで既存のGen2関数のVPC設定を更新する場合:
+`accountTest`関数にもDirect VPC Egressを設定する場合：
 
 ```bash
-# 既存の関数にVPC接続を追加
-gcloud functions deploy sendMail \
-    --gen2 \
+# accountTest関数をデプロイ
+firebase deploy --only functions:accountTest
+
+# その後、Direct VPC Egressを設定
+gcloud run services update accounttest \
     --region=asia-northeast1 \
-    --vpc-connector=vpc-cloud-run-connector \
-    --egress-settings=private-ranges-only \
-    --update-env-vars="" \
-    --source=functions/lib
+    --vpc-egress=all-traffic \
+    --network=vpc-cloud-run \
+    --subnet=subnet-cloud-run \
+    --project=cloudinbox-dev
 ```
 
-**注意**: 
-- `--source`はビルド後の`lib`ディレクトリを指定する必要があります
-- Callable Function（`onCall`）の場合、`--trigger-http`や`--allow-unauthenticated`フラグは使用しないでください
-- gcloudコマンドでの設定は複雑なため、コードで設定してFirebase CLIでデプロイする方法を推奨します
+**注意**: Cloud Runサービス名は、関数名を小文字にしたものになります（例: `sendMail` → `sendmail`、`accountTest` → `accounttest`）。
 
 #### 方法3: Firebase Console / Google Cloud Consoleを使用する場合（補足）
 
@@ -216,26 +189,40 @@ GUIでの設定は、UIが変更される可能性があるため、gcloudコマ
 
 **注意**: GUIでの設定場所は、Cloud Functionsのバージョンやリージョンによって異なる場合があります。設定が見つからない場合は、gcloudコマンドを使用してください。
 
-### 9. 関数の再デプロイ
+### 8. 関数のデプロイとDirect VPC Egress設定
 
-VPC接続設定を反映するため、関数を再デプロイします。
-
-#### Firebase CLIを使用する場合
-
-関数のコードでVPC設定を指定している場合は、Firebase CLIでデプロイします：
+Direct VPC Egress設定を反映する手順：
 
 ```bash
 cd /home/abtc/Projects/cloudinbox
-firebase deploy --only functions:sendMail
+
+# 1. Firebase CLIで関数をデプロイ（コードではVPC設定を指定しない）
+firebase deploy --only functions:sendMail,functions:accountTest
+
+# 2. sendMail関数にDirect VPC Egressを設定
+gcloud run services update sendmail \
+    --region=asia-northeast1 \
+    --vpc-egress=all-traffic \
+    --network=vpc-cloud-run \
+    --subnet=subnet-cloud-run \
+    --project=cloudinbox-dev
+
+# 3. accountTest関数にDirect VPC Egressを設定
+gcloud run services update accounttest \
+    --region=asia-northeast1 \
+    --vpc-egress=all-traffic \
+    --network=vpc-cloud-run \
+    --subnet=subnet-cloud-run \
+    --project=cloudinbox-dev
 ```
 
-**注意**: コードでVPC設定を指定していない場合は、gcloudコマンドで設定するか、Firebase CLIデプロイ後にgcloudコマンドで更新する必要があります。
+**注意**: 
+- Gen2関数はCloud Runサービスとして実行されるため、`gcloud run services update`を使用します
+- Cloud Runサービス名は関数名を小文字にしたものになります
+- `--vpc-egress=all-traffic`でDirect VPC Egressを有効化します
+- `--network`と`--subnet`でVPCネットワークとサブネットを指定します
 
-#### gcloudコマンドを使用する場合
-
-gcloudコマンドでVPC設定を指定してデプロイする場合は、上記の「方法1: gcloudコマンドで設定（推奨）」を参照してください。
-
-### 10. 動作確認（VPC設定の反映確認）
+### 9. 動作確認（Direct VPC Egress設定の反映確認）
 
 #### 固定IPアドレスの確認
 
@@ -258,12 +245,15 @@ gcloud functions logs read sendMail --limit 50
 
 ## トラブルシューティング
 
-### VPC接続エラーが発生する場合
+### Direct VPC Egress設定エラーが発生する場合
 
-1. **VPC接続器の状態を確認**
+1. **VPCネットワークとサブネットの確認**
    ```bash
-   gcloud compute networks vpc-access connectors describe vpc-cloud-run-connector \
-       --region=asia-northeast1
+   # VPCネットワークの確認
+   gcloud compute networks describe vpc-cloud-run
+   
+   # サブネットの確認
+   gcloud compute networks subnets describe subnet-cloud-run --region=asia-northeast1
    ```
 
 2. **Cloud Functionsのログを確認**
@@ -276,6 +266,17 @@ gcloud functions logs read sendMail --limit 50
    ```bash
    gcloud compute firewall-rules list --filter="network:vpc-cloud-run"
    ```
+
+4. **Direct VPC Egressの設定を確認**
+   ```bash
+   gcloud functions describe sendMail --gen2 --region=asia-northeast1 \
+       --format="value(serviceConfig.vpcAccess)"
+   ```
+
+5. **エラーメッセージ `VPC connector ... does not exist` が表示される場合**
+   - Direct VPC Egressを使用する場合、VPC接続器（Serverless VPC Access Connector）は不要です
+   - コードから`vpcConnector`の設定を削除してください
+   - デプロイ時に`--vpc-egress=all-traffic`、`--vpc-network`、`--vpc-subnet`オプションを指定してください
 
 ### NATが動作していない場合
 
@@ -303,16 +304,34 @@ gcloud functions logs read sendMail --limit 50
 
 ## 参考情報
 
-- [Serverless VPC Access の概要](https://cloud.google.com/vpc/docs/configure-serverless-vpc-access)
 - [Cloud NAT のドキュメント](https://cloud.google.com/nat/docs/overview)
 - [Cloud Functions Gen2 の VPC 接続](https://cloud.google.com/functions/docs/networking/connecting-vpc)
 - [Direct VPC Egress の設定](https://cloud.google.com/functions/docs/networking/direct-vpc-egress)
+- [Direct VPC Egress と Serverless VPC Access Connector の比較](https://cloud.google.com/functions/docs/networking/vpc-direct-egress)
+
+## Direct VPC Egress と Serverless VPC Access Connector の違い
+
+| 項目 | Direct VPC Egress | Serverless VPC Access Connector |
+|------|------------------|--------------------------------|
+| **接続方法** | Cloud Functions Gen2が直接VPCに接続 | 中間のコネクタ経由で接続 |
+| **コスト** | コネクタのコストなし | コネクタのインスタンスコストが発生 |
+| **レイテンシ** | 低い（直接接続） | やや高い（コネクタ経由） |
+| **設定** | デプロイ時に`--vpc-egress`で設定 | `vpcConnector`オプションで設定 |
+| **サブネット要件** | 任意のサイズ（推奨: /24以上） | /28（16個のIPアドレス）必須 |
+
+**CloudInbox MVPでは、Direct VPC Egressを使用するため、Serverless VPC Access Connectorは不要です。**
 
 ## コスト考慮事項
 
-- **VPC接続器**: 常時実行されるインスタンスのコストが発生します（最小インスタンス数 × インスタンスタイプのコスト）
+Direct VPC Egressを使用する場合のコスト：
+
+- **VPCネットワーク**: 基本料金はありません
+- **サブネット**: 基本料金はありません
+- **Cloud Router**: 基本料金はありません（転送トラフィックに対してのみ課金）
 - **Cloud NAT**: NATゲートウェイ経由のトラフィックに対して課金されます
+  - NAT IPアドレス: 1時間あたりの料金
+  - 処理されたGB: データ処理量に応じた料金
 - **固定IPアドレス**: 未使用でもIPアドレスの予約費用が発生します
 
-コストを最小化するには、最小インスタンス数を調整し、必要に応じてVPC接続器のインスタンスタイプを小さく設定します。
+**注意**: Direct VPC Egressを使用する場合、Serverless VPC Access Connectorは不要なため、コネクタのコストは発生しません。これはServerless VPC Access Connectorを使用する場合と比較してコストが削減されます。
 
