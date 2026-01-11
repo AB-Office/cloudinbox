@@ -827,6 +827,7 @@ class FirebaseAccountRepository implements AccountRepository {
       return accountsSnapshot.docs.map((doc) {
         final data = doc.data();
         final pop3 = data['pop3'] as Map<String, dynamic>?;
+        final smtp = data['smtp'] as Map<String, dynamic>?;
         final status = data['status'] as String? ?? 'active';
         final deletedAtTimestamp = data['deletedAt'] as Timestamp?;
         final deletedAt = deletedAtTimestamp?.toDate();
@@ -840,6 +841,9 @@ class FirebaseAccountRepository implements AccountRepository {
           pop3Username: pop3?['userName'] as String? ?? '',
           status: status,
           deletedAt: deletedAt,
+          smtpHost: smtp?['host'] as String?,
+          smtpPort: smtp?['port'] as int?,
+          smtpUsername: smtp?['userName'] as String?,
         );
       }).toList();
     } catch (e) {
@@ -869,6 +873,7 @@ class FirebaseAccountRepository implements AccountRepository {
 
       final data = accountDoc.data()!;
       final pop3 = data['pop3'] as Map<String, dynamic>?;
+      final smtp = data['smtp'] as Map<String, dynamic>?;
       final status = data['status'] as String? ?? 'active';
       final deletedAtTimestamp = data['deletedAt'] as Timestamp?;
       final deletedAt = deletedAtTimestamp?.toDate();
@@ -882,6 +887,9 @@ class FirebaseAccountRepository implements AccountRepository {
         pop3Username: pop3?['userName'] as String? ?? '',
         status: status,
         deletedAt: deletedAt,
+        smtpHost: smtp?['host'] as String?,
+        smtpPort: smtp?['port'] as int?,
+        smtpUsername: smtp?['userName'] as String?,
       );
     } catch (e) {
       debugPrint('Error getting account: $e');
@@ -1520,6 +1528,7 @@ class FirebaseMailComposeRepository implements MailComposeRepository {
       return accountsSnapshot.docs.map((doc) {
         final data = doc.data();
         final pop3 = data['pop3'] as Map<String, dynamic>?;
+        final smtp = data['smtp'] as Map<String, dynamic>?;
         final status = data['status'] as String? ?? 'active';
         final deletedAtTimestamp = data['deletedAt'] as Timestamp?;
         final deletedAt = deletedAtTimestamp?.toDate();
@@ -1533,6 +1542,9 @@ class FirebaseMailComposeRepository implements MailComposeRepository {
           pop3Username: pop3?['userName'] as String? ?? '',
           status: status,
           deletedAt: deletedAt,
+          smtpHost: smtp?['host'] as String?,
+          smtpPort: smtp?['port'] as int?,
+          smtpUsername: smtp?['userName'] as String?,
         );
       }).toList();
     } catch (e) {

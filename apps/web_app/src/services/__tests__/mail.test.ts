@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mailService } from '../mail';
 import { getAuth } from 'firebase/auth';
 import { doc, getDoc, writeBatch, onSnapshot } from 'firebase/firestore';
-import type { SendMailRequest, SendMailTaskResult } from '@/types/mail';
+import type { SendMailRequest } from '@/types/mail';
 
 // Firebase Authをモック
 vi.mock('firebase/auth', () => ({
@@ -32,7 +32,7 @@ vi.mock('firebase/firestore', async () => {
     limit: vi.fn(q => q),
     startAfter: vi.fn(q => q),
     getDocs: vi.fn(),
-    onSnapshot: vi.fn((ref, onNext, onError) => {
+    onSnapshot: vi.fn((_ref, _onNext, _onError) => {
       // モックのunsubscribe関数を返す
       return vi.fn();
     }),
@@ -705,9 +705,9 @@ describe('mailService', () => {
       const mockTaskResultRef = {};
 
       vi.mocked(doc).mockReturnValue(mockTaskResultRef as any);
-      vi.mocked(onSnapshot).mockImplementation((ref, onNext, onError) => {
-        mockOnNext = onNext;
-        mockOnError = onError as (error: Error) => void;
+      vi.mocked(onSnapshot).mockImplementation((_ref: any, onNext: any, onError?: any) => {
+        mockOnNext = onNext as (snapshot: any) => void;
+        mockOnError = (onError as (error: Error) => void) || vi.fn();
         return mockUnsubscribe;
       });
 
@@ -758,9 +758,9 @@ describe('mailService', () => {
       };
 
       vi.mocked(doc).mockReturnValue(mockTaskResultRef as any);
-      vi.mocked(onSnapshot).mockImplementation((ref, onNext, onError) => {
-        mockOnNext = onNext;
-        mockOnError = onError as (error: Error) => void;
+      vi.mocked(onSnapshot).mockImplementation((_ref: any, onNext: any, onError?: any) => {
+        mockOnNext = onNext as (snapshot: any) => void;
+        mockOnError = (onError as (error: Error) => void) || vi.fn();
         return mockUnsubscribe;
       });
 
@@ -794,9 +794,9 @@ describe('mailService', () => {
       const mockTaskResultRef = {};
 
       vi.mocked(doc).mockReturnValue(mockTaskResultRef as any);
-      vi.mocked(onSnapshot).mockImplementation((ref, onNext, onError) => {
-        mockOnNext = onNext;
-        mockOnError = onError as (error: Error) => void;
+      vi.mocked(onSnapshot).mockImplementation((_ref: any, onNext: any, onError?: any) => {
+        mockOnNext = onNext as (snapshot: any) => void;
+        mockOnError = (onError as (error: Error) => void) || vi.fn();
         return mockUnsubscribe;
       });
 
@@ -834,9 +834,9 @@ describe('mailService', () => {
       };
 
       vi.mocked(doc).mockReturnValue(mockTaskResultRef as any);
-      vi.mocked(onSnapshot).mockImplementation((ref, onNext, onError) => {
-        mockOnNext = onNext;
-        mockOnError = onError as (error: Error) => void;
+      vi.mocked(onSnapshot).mockImplementation((_ref: any, onNext: any, onError?: any) => {
+        mockOnNext = onNext as (snapshot: any) => void;
+        mockOnError = (onError as (error: Error) => void) || vi.fn();
         return mockUnsubscribe;
       });
 
@@ -873,9 +873,9 @@ describe('mailService', () => {
       };
 
       vi.mocked(doc).mockReturnValue(mockTaskResultRef as any);
-      vi.mocked(onSnapshot).mockImplementation((ref, onNext, onError) => {
-        mockOnNext = onNext;
-        mockOnError = onError as (error: Error) => void;
+      vi.mocked(onSnapshot).mockImplementation((_ref: any, onNext: any, onError?: any) => {
+        mockOnNext = onNext as (snapshot: any) => void;
+        mockOnError = (onError as (error: Error) => void) || vi.fn();
         return mockUnsubscribe;
       });
 
@@ -898,9 +898,9 @@ describe('mailService', () => {
       const mockError = new Error('Firestore error');
 
       vi.mocked(doc).mockReturnValue(mockTaskResultRef as any);
-      vi.mocked(onSnapshot).mockImplementation((ref, onNext, onError) => {
-        mockOnNext = onNext;
-        mockOnError = onError as (error: Error) => void;
+      vi.mocked(onSnapshot).mockImplementation((_ref: any, onNext: any, onError?: any) => {
+        mockOnNext = onNext as (snapshot: any) => void;
+        mockOnError = (onError as (error: Error) => void) || vi.fn();
         return mockUnsubscribe;
       });
 
@@ -926,9 +926,9 @@ describe('mailService', () => {
       const mockTaskResultRef = {};
 
       vi.mocked(doc).mockReturnValue(mockTaskResultRef as any);
-      vi.mocked(onSnapshot).mockImplementation((ref, onNext, onError) => {
-        mockOnNext = onNext;
-        mockOnError = onError as (error: Error) => void;
+      vi.mocked(onSnapshot).mockImplementation((_ref: any, onNext: any, onError?: any) => {
+        mockOnNext = onNext as (snapshot: any) => void;
+        mockOnError = (onError as (error: Error) => void) || vi.fn();
         return mockUnsubscribe;
       });
 

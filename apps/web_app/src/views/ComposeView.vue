@@ -12,7 +12,7 @@
               <v-btn
                 color="primary"
                 :loading="mailStore.isSending"
-                :disabled="mailStore.isSending"
+                :disabled="mailStore.isSending || !selectedAccountHasSmtp"
                 @click="handleSend"
               >
                 {{ t('mail.compose.send') }}
@@ -231,15 +231,22 @@ const rules = {
   },
 };
 
-// SMTP設定があるアクティブなアカウントのみをフィルタリング
+// アクティブなアカウントのみをフィルタリング（SMTP設定の有無に関係なく）
 const accountItems = computed(() => {
   return accountStore.accounts
-    .filter(account => account.status === 'active' && account.smtp)
+    .filter(account => account.status === 'active')
     .map(account => ({
       id: account.id || '',
       label: account.label || account.email,
       email: account.email,
     }));
+});
+
+// 選択されたアカウントがSMTP設定を持っているかどうか
+const selectedAccountHasSmtp = computed(() => {
+  if (!selectedAccountId.value) return false;
+  const account = accountStore.accounts.find(acc => acc.id === selectedAccountId.value);
+  return account?.smtp != null;
 });
 
 /**
@@ -597,9 +604,11 @@ async function handleSend() {
 
     // メール送信（タスク投入）
     const response = await mailStore.sendMail(request);
+    console.log('ComposeView: sendMail response', response);
 
     // タスクIDが返却された場合、タスク結果を監視
     if (response.success && response.taskId) {
+      console.log('ComposeView: starting task result watch', response.taskId);
       const auth = getAuth(firebaseApp);
       const uid = auth.currentUser?.uid;
       
@@ -612,28 +621,34 @@ async function handleSend() {
           uid,
           response.taskId,
           result => {
+            console.log('ComposeView: task result received', result);
             // タスク結果が保存された
             cleanupTaskResultWatch();
             
             if (result.success) {
+              console.log('ComposeView: task succeeded, showing success snackbar');
               showSuccess(t('mail.compose.sendSuccess'));
               // メール一覧画面に戻る
               router.push('/');
             } else {
+              console.log('ComposeView: task failed, showing error snackbar', result.errorMessage);
               showError(new Error(result.errorMessage || t('mail.compose.sendError')));
             }
           },
           () => {
+            console.log('ComposeView: task result timeout');
             // タイムアウト
             cleanupTaskResultWatch();
             showError(new Error(t('mail.compose.sendTimeout')));
           }
         );
       } else {
+        console.error('ComposeView: UID not found');
         // UIDが取得できない場合、エラー
         showError(new Error(t('mail.compose.sendError') || 'ユーザー認証に失敗しました。'));
       }
     } else {
+      console.error('ComposeView: invalid response', { success: response.success, taskId: response.taskId });
       // タスクIDが返却されなかった場合、エラー
       showError(new Error(response.errorMessage || t('mail.compose.sendError') || 'メール送信に失敗しました。'));
     }

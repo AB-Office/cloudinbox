@@ -487,13 +487,16 @@ export const mailService = {
     onResult: (result: SendMailTaskResult) => void,
     onTimeout: () => void
   ): () => void {
+    console.log('watchTaskResult: starting', { uid, taskId });
     const taskResultRef = doc(db, 'users', uid, 'mailTaskResults', taskId);
+    console.log('watchTaskResult: taskResultRef created', taskResultRef);
     
     let timeoutId: NodeJS.Timeout | null = null;
     let unsubscribe: (() => void) | null = null;
 
     // クリーンアップ関数
     const cleanup = () => {
+      console.log('watchTaskResult: cleanup called');
       if (timeoutId) {
         clearTimeout(timeoutId);
         timeoutId = null;
@@ -506,40 +509,59 @@ export const mailService = {
 
     // タイムアウトタイマーを設定（30秒）
     timeoutId = setTimeout(() => {
+      console.log('watchTaskResult: timeout triggered');
       cleanup();
       onTimeout();
     }, 30000);
 
     // Firestoreのドキュメントを監視
-    unsubscribe = onSnapshot(
-      taskResultRef,
-      snapshot => {
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          const result: SendMailTaskResult = {
-            success: data.success ?? false,
-            messageId: data.messageId,
-            errorMessage: data.errorMessage,
-            taskId: data.taskId ?? taskId,
-            accountId: data.accountId ?? '',
-            subject: data.subject ?? '',
-            createdAt: data.createdAt,
-            completedAt: data.completedAt,
-          };
+    console.log('watchTaskResult: calling onSnapshot', { taskResultRef, taskId });
+    try {
+      unsubscribe = onSnapshot(
+        taskResultRef,
+        snapshot => {
+          console.log('watchTaskResult: snapshot received', {
+            exists: snapshot.exists(),
+            taskId,
+            hasData: snapshot.exists() ? 'yes' : 'no',
+          });
+          if (snapshot.exists()) {
+            const data = snapshot.data();
+            console.log('watchTaskResult: task result data', data);
+            const result: SendMailTaskResult = {
+              success: data.success ?? false,
+              messageId: data.messageId,
+              errorMessage: data.errorMessage,
+              taskId: data.taskId ?? taskId,
+              accountId: data.accountId ?? '',
+              subject: data.subject ?? '',
+              createdAt: data.createdAt,
+              completedAt: data.completedAt,
+            };
 
-          // クリーンアップ
+            // クリーンアップ
+            cleanup();
+
+            // コールバック関数を呼び出す
+            console.log('watchTaskResult: calling onResult', result);
+            onResult(result);
+          } else {
+            console.log('watchTaskResult: snapshot does not exist yet');
+          }
+        },
+        error => {
+          // エラーが発生した場合、クリーンアップ
+          console.error('watchTaskResult: onSnapshot error', error);
           cleanup();
-
-          // コールバック関数を呼び出す
-          onResult(result);
+          console.error('Error watching task result:', error);
         }
-      },
-      error => {
-        // エラーが発生した場合、クリーンアップ
-        cleanup();
-        console.error('Error watching task result:', error);
-      }
-    );
+      );
+      console.log('watchTaskResult: onSnapshot called successfully', { unsubscribe: !!unsubscribe });
+    } catch (error) {
+      console.error('watchTaskResult: error calling onSnapshot', error);
+      cleanup();
+      throw error;
+    }
 
     // 監視を停止する関数を返す
     return cleanup;

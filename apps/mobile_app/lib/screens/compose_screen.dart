@@ -280,6 +280,16 @@ class _ComposeScreenState extends State<ComposeScreen> {
     }
   }
 
+  /// 送信ボタンを有効化するかどうかを判定
+  bool _canSendMail() {
+    if (_selectedAccountId == null) return false;
+    final selectedAccount = _accounts.firstWhere(
+      (account) => account.id == _selectedAccountId,
+      orElse: () => throw Exception('Account not found'),
+    );
+    return selectedAccount.smtpHost != null && selectedAccount.smtpUsername != null;
+  }
+
   Future<void> _onSendPressed() async {
     // 入力検証
     final locale = Localizations.localeOf(context);
@@ -736,7 +746,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
             )
           else
             TextButton(
-              onPressed: _onSendPressed,
+              onPressed: _canSendMail() ? _onSendPressed : null,
               child: Text(I18nService.translateSend(locale)),
             ),
         ],

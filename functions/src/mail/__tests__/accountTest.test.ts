@@ -9,22 +9,13 @@ import * as encryption from '../../encryption';
 // モック
 jest.mock('firebase-admin');
 jest.mock('../../encryption');
-jest.mock('firebase-functions', () => ({
-  region: jest.fn(() => ({
-    https: {
-      onCall: jest.fn((handler: any) => handler),
-    },
-  })),
-  logger: {
-    error: jest.fn(),
-  },
-  https: {
-    HttpsError: class HttpsError extends Error {
-      constructor(public code: string, public message: string) {
-        super(message);
-        this.name = 'HttpsError';
-      }
-    },
+jest.mock('firebase-functions/v2/https', () => ({
+  onCall: jest.fn((options: any, handler: any) => handler),
+  HttpsError: class HttpsError extends Error {
+    constructor(public code: string, public message: string) {
+      super(message);
+      this.name = 'HttpsError';
+    }
   },
 }));
 jest.mock('../pop3Client', () => ({
@@ -34,17 +25,19 @@ jest.mock('../smtpClient', () => ({
   testSmtpConnection: jest.fn(),
 }));
 
-import * as functions from 'firebase-functions';
 import { testPop3Connection } from '../pop3Client';
 import { testSmtpConnection } from '../smtpClient';
 
 describe('accountTest', () => {
   const mockUid = 'test-user-123';
-  const mockContext = {
+  
+  // Gen2のCallableRequest形式のモック
+  const createMockRequest = (data: any) => ({
+    data,
     auth: {
       uid: mockUid,
     },
-  } as functions.https.CallableContext;
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -63,7 +56,8 @@ describe('accountTest', () => {
         password: 'plaintext-password',
       };
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(result).toEqual({ success: true });
       expect(testPop3Connection).toHaveBeenCalledWith(
@@ -88,7 +82,8 @@ describe('accountTest', () => {
         password: 'plaintext-password',
       };
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(result).toEqual({ success: true });
       expect(testSmtpConnection).toHaveBeenCalledWith(
@@ -111,7 +106,8 @@ describe('accountTest', () => {
         password: 'plaintext-password',
       };
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(result).toEqual({
         success: false,
@@ -131,7 +127,8 @@ describe('accountTest', () => {
         password: 'plaintext-password',
       };
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(result).toEqual({
         success: false,
@@ -153,7 +150,8 @@ describe('accountTest', () => {
         password: 'plaintext-password',
       };
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(result).toEqual({ success: true });
     });
@@ -170,7 +168,8 @@ describe('accountTest', () => {
         password: 'plaintext-password',
       };
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(result).toEqual({ success: true });
     });
@@ -190,7 +189,8 @@ describe('accountTest', () => {
         password: 'wrong-password',
       };
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(result).toEqual({
         success: false,
@@ -213,7 +213,8 @@ describe('accountTest', () => {
         password: 'wrong-password',
       };
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(result).toEqual({
         success: false,
@@ -264,7 +265,8 @@ describe('accountTest', () => {
         userName: 'user@example.com',
       };
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(encryption.decryptPassword).toHaveBeenCalledWith(mockUid, mockPasswordEnc);
       expect(testPop3Connection).toHaveBeenCalledWith(
@@ -319,7 +321,8 @@ describe('accountTest', () => {
         userName: 'user@example.com',
       };
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(encryption.decryptPassword).toHaveBeenCalledWith(mockUid, mockPasswordEnc);
       expect(testSmtpConnection).toHaveBeenCalledWith(
@@ -364,7 +367,8 @@ describe('accountTest', () => {
         userName: 'user@example.com',
       };
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(result).toEqual({
         success: false,
@@ -401,7 +405,8 @@ describe('accountTest', () => {
         userName: 'user@example.com',
       };
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(result).toEqual({
         success: false,
@@ -412,10 +417,6 @@ describe('accountTest', () => {
 
   describe('認証チェック', () => {
     it('認証されていない場合はエラーを投げる', async () => {
-      const unauthenticatedContext = {
-        auth: undefined,
-      } as functions.https.CallableContext;
-
       const data = {
         protocol: 'pop3' as const,
         host: 'pop.example.com',
@@ -425,7 +426,8 @@ describe('accountTest', () => {
         password: 'password',
       };
 
-      await expect(accountTest(data, unauthenticatedContext)).rejects.toThrow();
+      const unauthenticatedRequest = { data, auth: undefined };
+      await expect(accountTest(unauthenticatedRequest)).rejects.toThrow();
     });
   });
 
@@ -440,7 +442,8 @@ describe('accountTest', () => {
         // protocolが不足
       } as any;
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(result).toEqual({
         success: false,
@@ -458,7 +461,8 @@ describe('accountTest', () => {
         password: 'password',
       };
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(result).toEqual({
         success: false,
@@ -473,7 +477,8 @@ describe('accountTest', () => {
         // port, useSsl, userName, passwordが不足
       } as any;
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(result).toEqual({
         success: false,
@@ -523,7 +528,8 @@ describe('accountTest', () => {
         // passwordは提供されていない
       };
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(encryption.decryptPassword).toHaveBeenCalledWith(mockUid, mockPasswordEnc);
       expect(testPop3Connection).toHaveBeenCalledWith(
@@ -546,7 +552,8 @@ describe('accountTest', () => {
         // passwordが不足
       } as any;
 
-      const result = await accountTest(data, mockContext);
+      const mockRequest = createMockRequest(data);
+      const result = await accountTest(mockRequest);
 
       expect(result).toEqual({
         success: false,

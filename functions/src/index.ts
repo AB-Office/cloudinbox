@@ -18,7 +18,7 @@ export { onUserCreate } from './users/onUserCreate';
 export { accountTest } from './mail/accountTest';
 
 // パスワード暗号化
-export { encryptPasswordFunction } from './mail/encryptPassword';
+export { encryptPasswordFunction as encryptPassword } from './mail/encryptPassword';
 
 // メール自動受信
 export { fetchMails } from './mail/fetchMails';

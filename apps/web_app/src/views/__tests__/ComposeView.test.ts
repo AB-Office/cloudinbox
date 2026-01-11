@@ -341,8 +341,8 @@ describe('ComposeView', () => {
         taskId: 'test-task-id',
       });
 
-      mockWatchTaskResult.mockImplementation((uid, taskId, onResult, onTimeout) => {
-        onResultCallback = onResult;
+      mockWatchTaskResult.mockImplementation((_uid: string, _taskId: string, onResult: any, _onTimeout: any) => {
+        onResultCallback = onResult as (result: any) => void;
         return vi.fn(); // cleanup function
       });
 
@@ -373,8 +373,8 @@ describe('ComposeView', () => {
         );
 
         // タスク結果が成功した場合
-        if (onResultCallback) {
-          onResultCallback({
+        if (onResultCallback && typeof onResultCallback === 'function') {
+          (onResultCallback as (result: any) => void)({
             success: true,
             messageId: 'test-message-id',
             taskId: 'test-task-id',
@@ -404,8 +404,8 @@ describe('ComposeView', () => {
         taskId: 'test-task-id',
       });
 
-      mockWatchTaskResult.mockImplementation((uid, taskId, onResult, onTimeout) => {
-        onResultCallback = onResult;
+      mockWatchTaskResult.mockImplementation((_uid: string, _taskId: string, onResult: any, _onTimeout: any) => {
+        onResultCallback = onResult as (result: any) => void;
         return vi.fn(); // cleanup function
       });
 
@@ -428,8 +428,8 @@ describe('ComposeView', () => {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         // タスク結果が失敗した場合
-        if (onResultCallback) {
-          onResultCallback({
+        if (onResultCallback && typeof onResultCallback === 'function') {
+          (onResultCallback as (result: any) => void)({
             success: false,
             errorMessage: 'SMTP connection failed',
             taskId: 'test-task-id',
@@ -463,8 +463,8 @@ describe('ComposeView', () => {
         taskId: 'test-task-id',
       });
 
-      mockWatchTaskResult.mockImplementation((uid, taskId, onResult, onTimeout) => {
-        onTimeoutCallback = onTimeout;
+      mockWatchTaskResult.mockImplementation((_uid: string, _taskId: string, _onResult: any, onTimeout: any) => {
+        onTimeoutCallback = onTimeout as () => void;
         return vi.fn(); // cleanup function
       });
 
@@ -487,8 +487,8 @@ describe('ComposeView', () => {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         // タイムアウトが発生した場合
-        if (onTimeoutCallback) {
-          onTimeoutCallback();
+        if (onTimeoutCallback && typeof onTimeoutCallback === 'function') {
+          (onTimeoutCallback as () => void)();
 
           await wrapper.vm.$nextTick();
           await new Promise(resolve => setTimeout(resolve, 100));

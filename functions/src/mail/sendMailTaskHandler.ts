@@ -62,6 +62,9 @@ export async function handleSendMailTaskHandler(payload: any): Promise<void> {
 
 /**
  * Cloud Tasksから呼び出されるメール送信タスクハンドラ
+ * 
+ * 注意: Direct VPC Egressの設定はコードではなく、デプロイ時にgcloudコマンドで行います
+ * 例: --vpc-egress=all-traffic --vpc-network=vpc-cloud-run --vpc-subnet=subnet-cloud-run
  */
 export const sendMailTaskHandler = onTaskDispatched(
   {
