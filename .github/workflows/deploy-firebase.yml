@@ -60,20 +60,6 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools@14.27.0
 
-      - name: Debug - Check build output
-        run: |
-          echo "Checking Web App build output:"
-          ls -la apps/web_app/dist/
-          echo "---"
-          echo "Checking dist/mail directory:"
-          ls -la apps/web_app/dist/mail/
-          echo "---"
-          echo "Checking dist/mail/assets directory:"
-          ls -la apps/web_app/dist/mail/assets/ | head -10
-          echo "---"
-          echo "Total files in dist/mail/assets:"
-          find apps/web_app/dist/mail/assets -type f | wc -l
-
       - name: Run Web Application Builld
         run: |
           cd apps/web_app
