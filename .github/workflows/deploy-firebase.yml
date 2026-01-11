@@ -82,6 +82,22 @@ jobs:
           echo "Total files in dist/mail/assets:"
           find apps/web_app/dist/mail/assets -type f | wc -l
 
+      - name: Run Web Application Builld
+        run: |
+          cd apps/web_app
+          npm run build
+        env:
+          MODE: production
+          VITE_FIREBASE_ENV: production
+
+      - name: Run Web Functions Builld
+        run: |
+          cd functions
+          npm run build
+        env:
+          MODE: production
+          VITE_FIREBASE_ENV: production
+
       - name: Set Firebase project
         run: firebase use cloudinbox
         env:
