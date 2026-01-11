@@ -89,6 +89,9 @@ class _FakeMailComposeRepository implements MailComposeRepository {
         pop3Host: 'pop.example.com',
         pop3Port: 995,
         pop3Username: 'user1',
+        smtpHost: 'smtp.example.com',
+        smtpPort: 587,
+        smtpUsername: 'user1',
       ),
     ];
   }
@@ -96,6 +99,12 @@ class _FakeMailComposeRepository implements MailComposeRepository {
   @override
   Future<SendMailResponse> sendMail(SendMailRequest request) async {
     return const SendMailResponse(success: true);
+  }
+
+  @override
+  Stream<SendMailTaskResult?> watchTaskResult(String uid, String taskId) {
+    // このテストでは使用しないため、空のストリームを返す
+    return Stream.value(null);
   }
 }
 

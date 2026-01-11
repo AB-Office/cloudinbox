@@ -112,7 +112,6 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Free'), findsOneWidget);
       // formatBytesを使った表示を確認（GB、MBなど）
       expect(find.textContaining('GB'), findsWidgets);
       // 利用率（％）が表示されることを確認

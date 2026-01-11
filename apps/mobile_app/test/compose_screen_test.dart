@@ -123,6 +123,9 @@ class _FakeAccountRepository implements AccountRepository {
         pop3Host: 'pop.example.com',
         pop3Port: 995,
         pop3Username: 'user1',
+        smtpHost: 'smtp.example.com',
+        smtpPort: 587,
+        smtpUsername: 'user1',
       ),
       const MailAccount(
         id: 'account2',
@@ -131,6 +134,9 @@ class _FakeAccountRepository implements AccountRepository {
         pop3Host: 'pop.example.com',
         pop3Port: 995,
         pop3Username: 'user2',
+        smtpHost: 'smtp.example.com',
+        smtpPort: 587,
+        smtpUsername: 'user2',
       ),
     ];
   }

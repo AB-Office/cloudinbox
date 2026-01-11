@@ -759,11 +759,12 @@ describe('ComposeView', () => {
       const vm = wrapper.vm as any;
       const accountItems = vm.accountItems;
 
-      // SMTP設定があるアクティブなアカウントのみが含まれる
+      // アクティブなアカウントがすべて含まれる（SMTP設定の有無は問わない）
       // accountItemsはcomputedプロパティなので、リアクティブに更新される
-      expect(accountItems.length).toBe(1);
+      expect(accountItems.length).toBe(2); // account1とaccount2
       if (accountItems.length > 0) {
         expect(accountItems[0].id).toBe('account1');
+        expect(accountItems[1].id).toBe('account2');
       }
     });
 

@@ -274,8 +274,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: ListView(
                   padding: const EdgeInsets.all(16.0),
                   children: [
-                    Text('${I18nService.translatePlan(locale)}: ${settingsData.planLabel}'),
-                    const SizedBox(height: 8),
                     Text(
                       '${I18nService.translateMaxStorage(locale)}: ${I18nService.formatBytes(settingsData.maxStorageBytes, context)}',
                     ),

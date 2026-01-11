@@ -221,7 +221,6 @@ void main() {
       await tester.pump(); // StreamBuilderがデータを受け取るのを待つ
       await tester.pump(); // 追加のpumpでStreamBuilderの更新を確実に処理
 
-      expect(find.textContaining('Free'), findsOneWidget);
       // formatBytesを使った表示を確認
       expect(find.textContaining('GB'), findsWidgets);
       // 利用率（％）が表示されることを確認
