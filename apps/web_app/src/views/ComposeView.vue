@@ -12,7 +12,7 @@
               <v-btn
                 color="primary"
                 :loading="mailStore.isSending"
-                :disabled="mailStore.isSending"
+                :disabled="mailStore.isSending || !selectedAccountHasSmtp"
                 @click="handleSend"
               >
                 {{ t('mail.compose.send') }}
@@ -166,7 +166,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useMailStore } from '@/stores/mail';
@@ -175,6 +175,8 @@ import type { ComposeAttachment, SendMailRequest, MailMessage } from '@/types/ma
 import { formatFileSize } from '@/plugins/i18n';
 import { useSnackbar } from '@/composables/useSnackbar';
 import { mailService } from '@/services/mail';
+import { getAuth } from 'firebase/auth';
+import { firebaseApp } from '@/services/firebase';
 
 const route = useRoute();
 const router = useRouter();
@@ -197,6 +199,17 @@ const bodyTextareaRef = ref<{ $el: HTMLTextAreaElement } | null>(null);
 const cancelDialog = ref<boolean>(false);
 const originalThreadId = ref<string | undefined>(undefined);
 const originalMessageId = ref<string | undefined>(undefined);
+let taskResultUnwatch: (() => void) | null = null;
+
+/**
+ * タスク結果監視のクリーンアップ
+ */
+function cleanupTaskResultWatch() {
+  if (taskResultUnwatch) {
+    taskResultUnwatch();
+    taskResultUnwatch = null;
+  }
+}
 
 // バリデーションルール
 const rules = {
@@ -218,15 +231,22 @@ const rules = {
   },
 };
 
-// SMTP設定があるアクティブなアカウントのみをフィルタリング
+// アクティブなアカウントのみをフィルタリング（SMTP設定の有無に関係なく）
 const accountItems = computed(() => {
   return accountStore.accounts
-    .filter(account => account.status === 'active' && account.smtp)
+    .filter(account => account.status === 'active')
     .map(account => ({
       id: account.id || '',
       label: account.label || account.email,
       email: account.email,
     }));
+});
+
+// 選択されたアカウントがSMTP設定を持っているかどうか
+const selectedAccountHasSmtp = computed(() => {
+  if (!selectedAccountId.value) return false;
+  const account = accountStore.accounts.find(acc => acc.id === selectedAccountId.value);
+  return account?.smtp != null;
 });
 
 /**
@@ -422,6 +442,11 @@ async function initializeCompose() {
 /**
  * 初期化処理
  */
+// コンポーネントのアンマウント時に監視をクリーンアップ
+onBeforeUnmount(() => {
+  cleanupTaskResultWatch();
+});
+
 onMounted(async () => {
   // アカウント一覧を取得
   if (accountStore.accounts.length === 0) {
@@ -434,6 +459,11 @@ onMounted(async () => {
 
   // 返信・転送モードの初期化
   await initializeCompose();
+});
+
+// コンポーネントのアンマウント時に監視をクリーンアップ
+onBeforeUnmount(() => {
+  cleanupTaskResultWatch();
 });
 
 /**
@@ -572,18 +602,63 @@ async function handleSend() {
       inReplyToMessageId: originalMessageId.value,
     };
 
-    // メール送信
-    await mailStore.sendMail(request);
+    // メール送信（タスク投入）
+    const response = await mailStore.sendMail(request);
+    console.log('ComposeView: sendMail response', response);
 
-    // 送信成功
-    showSuccess(t('mail.compose.sendSuccess'));
+    // タスクIDが返却された場合、タスク結果を監視
+    if (response.success && response.taskId) {
+      console.log('ComposeView: starting task result watch', response.taskId);
+      const auth = getAuth(firebaseApp);
+      const uid = auth.currentUser?.uid;
+      
+      if (uid) {
+        // 既存の監視をクリーンアップ
+        cleanupTaskResultWatch();
 
-    // メール一覧画面に戻る
-    router.push('/');
+        // タスク結果を監視
+        taskResultUnwatch = mailService.watchTaskResult(
+          uid,
+          response.taskId,
+          result => {
+            console.log('ComposeView: task result received', result);
+            // タスク結果が保存された
+            cleanupTaskResultWatch();
+            
+            if (result.success) {
+              console.log('ComposeView: task succeeded, showing success snackbar');
+              showSuccess(t('mail.compose.sendSuccess'));
+              // メール一覧画面に戻る
+              router.push('/');
+            } else {
+              console.log('ComposeView: task failed, showing error snackbar', result.errorMessage);
+              showError(new Error(result.errorMessage || t('mail.compose.sendError')));
+            }
+          },
+          () => {
+            console.log('ComposeView: task result timeout');
+            // タイムアウト
+            cleanupTaskResultWatch();
+            showError(new Error(t('mail.compose.sendTimeout')));
+          }
+        );
+      } else {
+        console.error('ComposeView: UID not found');
+        // UIDが取得できない場合、エラー
+        showError(new Error(t('mail.compose.sendError') || 'ユーザー認証に失敗しました。'));
+      }
+    } else {
+      console.error('ComposeView: invalid response', { success: response.success, taskId: response.taskId });
+      // タスクIDが返却されなかった場合、エラー
+      showError(new Error(response.errorMessage || t('mail.compose.sendError') || 'メール送信に失敗しました。'));
+    }
   } catch (error) {
     // エラーはmailStore.sendMailで既にmailStore.sendErrorに設定されている
     // スナックバーでエラーを表示
     showError(error);
+    
+    // 監視をクリーンアップ
+    cleanupTaskResultWatch();
   }
 }
 </script>

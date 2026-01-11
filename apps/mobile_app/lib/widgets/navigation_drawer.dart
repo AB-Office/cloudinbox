@@ -104,8 +104,6 @@ class _NavigationDrawerState extends State<NavigationDrawer> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${I18nService.translatePlan(locale)}: ${settingsData.planLabel}'),
-                      const SizedBox(height: 4),
                       Text(
                         '${I18nService.translateUsed(locale)}: ${I18nService.formatBytes(settingsData.usedStorageBytes, context)} / ${I18nService.formatBytes(settingsData.maxStorageBytes, context)} (${(settingsData.usedStorageBytes / settingsData.maxStorageBytes * 100).toStringAsFixed(1)}%)',
                       ),

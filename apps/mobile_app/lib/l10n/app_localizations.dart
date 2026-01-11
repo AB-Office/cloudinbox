@@ -623,6 +623,18 @@ abstract class AppLocalizations {
   /// **'Failed to send mail'**
   String get errorFailedToSendMail;
 
+  /// Mail sent successfully message
+  ///
+  /// In en, this message translates to:
+  /// **'Mail sent successfully'**
+  String get mailSent;
+
+  /// Mail send timeout message
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to confirm mail send result. Please check the sent folder later.'**
+  String get mailSendTimeout;
+
   /// Generic error message
   ///
   /// In en, this message translates to:

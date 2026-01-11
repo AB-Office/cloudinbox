@@ -18,13 +18,16 @@ export { onUserCreate } from './users/onUserCreate';
 export { accountTest } from './mail/accountTest';
 
 // パスワード暗号化
-export { encryptPasswordFunction } from './mail/encryptPassword';
+export { encryptPasswordFunction as encryptPassword } from './mail/encryptPassword';
 
 // メール自動受信
 export { fetchMails } from './mail/fetchMails';
 
 // Cloud Tasksハンドラ（processAccount用）
 export { processAccountTaskHandler } from './mail/processAccountTaskHandler';
+
+// Cloud Tasksハンドラ（sendMail用）
+export { sendMailTaskHandler } from './mail/sendMailTaskHandler';
 
 // メール本文復号
 export { decryptMail } from './mail/decryptMail';

@@ -574,6 +574,18 @@ class I18nService {
     return localizations.errorFailedToSendMail;
   }
 
+  /// ロケールからメール送信成功メッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateMailSent(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.mailSent;
+  }
+
+  /// ロケールからメール送信タイムアウトメッセージを取得するユーティリティ（ARBファイルから取得）
+  static String translateMailSendTimeout(Locale locale) {
+    final localizations = _getLocalizations(locale);
+    return localizations.mailSendTimeout;
+  }
+
   /// ロケールから汎用エラーメッセージを取得するユーティリティ（ARBファイルから取得）
   static String translateErrorGeneric(Locale locale, String error) {
     final localizations = _getLocalizations(locale);

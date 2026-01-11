@@ -20,6 +20,14 @@ service cloud.firestore {
       match /mailMessages/{messageId} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
+      
+      // メール送信タスク結果サブコレクション: 認証ユーザーのみ読み取り可能、書き込みはCloud Functionsからのみ（クライアント側からの書き込みは不可）
+      match /mailTaskResults/{taskId} {
+        // 読み取り: 認証ユーザーが自分のuidに一致する場合のみ許可
+        allow read: if request.auth != null && request.auth.uid == uid;
+        // 書き込み: クライアント側からの書き込みは禁止（Cloud FunctionsのAdmin SDKはセキュリティルールをバイパスするため、実質的にCloud Functionsからのみ書き込み可能）
+        allow write: if false;
+      }
     }
     
     // collectionGroupクエリ用: mailMessagesコレクション全体を横断検索する場合

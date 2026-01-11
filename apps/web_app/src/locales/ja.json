@@ -59,6 +59,7 @@
       "sending": "送信中...",
       "sendSuccess": "メールを送信しました",
       "sendError": "メールの送信に失敗しました",
+      "sendTimeout": "メール送信結果の確認に失敗しました。しばらくしてから送信済みフォルダをご確認ください。",
       "cancel": "キャンセル",
       "cancelConfirm": "入力内容を破棄しますか？",
       "discard": "破棄",

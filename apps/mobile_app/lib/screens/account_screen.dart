@@ -51,6 +51,9 @@ class MailAccount {
     required this.pop3Username,
     this.status = 'active',
     this.deletedAt,
+    this.smtpHost,
+    this.smtpPort,
+    this.smtpUsername,
   });
 
   final String id;
@@ -61,6 +64,9 @@ class MailAccount {
   final String pop3Username;
   final String status; // 'active' or 'inactive'
   final DateTime? deletedAt; // 削除日時（論理削除の場合）
+  final String? smtpHost;
+  final int? smtpPort;
+  final String? smtpUsername;
   
   bool get isDeleted => status == 'inactive';
 }
@@ -128,6 +134,16 @@ class _AccountScreenState extends State<AccountScreen> {
       _pop3HostController.text = widget.account!.pop3Host;
       _pop3PortController.text = widget.account!.pop3Port.toString();
       _pop3UsernameController.text = widget.account!.pop3Username;
+      // SMTP設定があれば設定
+      if (widget.account!.smtpHost != null) {
+        _smtpHostController.text = widget.account!.smtpHost!;
+      }
+      if (widget.account!.smtpPort != null) {
+        _smtpPortController.text = widget.account!.smtpPort.toString();
+      }
+      if (widget.account!.smtpUsername != null) {
+        _smtpUsernameController.text = widget.account!.smtpUsername!;
+      }
       // パスワードは既存のものを取得できないため、空のまま
     } else if (widget.accountId != null) {
       // accountIdのみが指定されている場合、アカウントデータを取得
@@ -150,6 +166,16 @@ class _AccountScreenState extends State<AccountScreen> {
         _pop3HostController.text = account.pop3Host;
         _pop3PortController.text = account.pop3Port.toString();
         _pop3UsernameController.text = account.pop3Username;
+        // SMTP設定があれば設定
+        if (account.smtpHost != null) {
+          _smtpHostController.text = account.smtpHost!;
+        }
+        if (account.smtpPort != null) {
+          _smtpPortController.text = account.smtpPort.toString();
+        }
+        if (account.smtpUsername != null) {
+          _smtpUsernameController.text = account.smtpUsername!;
+        }
       }
     } catch (e) {
       debugPrint('Error loading account: $e');
@@ -328,16 +354,9 @@ class _AccountScreenState extends State<AccountScreen> {
       return false;
     }
     
-    // 編集モードの場合
+    // 編集モードの場合、POP3接続テストが成功していれば更新可能（SMTP設定の有無やエラーに関係なく）
     if (isEditMode) {
-      // SMTP設定が入力されている場合は、SMTP接続テストが成功している必要がある
-      final hasSmtpSettings = _smtpHostController.text.isNotEmpty && 
-                             _smtpUsernameController.text.isNotEmpty;
-      if (hasSmtpSettings) {
-        return _smtpTestSucceeded;
-      }
-      // SMTP設定がない場合は、既存アカウントなので更新可能
-      return true;
+      return _testSucceeded;
     }
     
     // 新規作成モードの場合、POP3接続テストが成功している必要がある
@@ -536,6 +555,43 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
                     obscureText: true,
                   ),
+                  const SizedBox(height: 16),
+                  // POP3接続テストボタン
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      key: const Key('button_test_connection'),
+                      onPressed: _isTesting ? null : _onTestConnectionPressed,
+                      child: _isTesting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(testConnectionText),
+                    ),
+                  ),
+                  if (_isTesting && !_testSucceeded)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  if (_testSucceeded && !_isTesting && !isCreating)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        successText,
+                        style: TextStyle(color: Colors.green.shade700),
+                      ),
+                    ),
+                  if (_errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
                   const SizedBox(height: 24),
                   // SMTP設定セクション
                   Text(
@@ -638,51 +694,22 @@ class _AccountScreenState extends State<AccountScreen> {
                       ),
                   ),
                   const SizedBox(height: 16),
-                  if (_isTesting && !_testSucceeded) const CircularProgressIndicator(),
-                  if (_testSucceeded && !_isTesting && !isCreating)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        successText,
-                        style: TextStyle(color: Colors.green.shade700),
-                      ),
+                  // アカウント作成/更新ボタン
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      key: const Key('button_create_account'),
+                      onPressed: _shouldEnableCreateButton() 
+                          ? _onCreateAccountPressed 
+                          : null,
+                      child: isCreating 
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(createAccountText),
                     ),
-                  if (_errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        _errorMessage!,
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          key: const Key('button_test_connection'),
-                          onPressed:
-                              _isTesting ? null : _onTestConnectionPressed,
-                          child: Text(testConnectionText),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton(
-                          key: const Key('button_create_account'),
-                          onPressed: _shouldEnableCreateButton() 
-                              ? _onCreateAccountPressed 
-                              : null,
-                          child: isCreating 
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : Text(createAccountText),
-                        ),
-                      ),
-                    ],
                   ),
                   if (isEditMode) ...[
                     const SizedBox(height: 16),

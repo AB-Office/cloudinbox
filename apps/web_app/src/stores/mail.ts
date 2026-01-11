@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
-import type { MailThread, MailMessage, AttachmentListItem, SendMailRequest } from '@/types/mail';
+import type { MailThread, MailMessage, AttachmentListItem, SendMailRequest, SendMailResponse } from '@/types/mail';
 import { mailService, calculateItemsPerPage } from '@/services/mail';
 import { parseError } from '@/utils/errorHandler';
 
@@ -239,12 +239,14 @@ export const useMailStore = defineStore('mail', () => {
   /**
    * メールを送信する
    * @param request メール送信リクエスト
+   * @returns メール送信レスポンス（taskIdを含む）
    */
-  async function sendMail(request: SendMailRequest): Promise<void> {
+  async function sendMail(request: SendMailRequest): Promise<SendMailResponse> {
     isSending.value = true;
     sendError.value = null;
     try {
-      await mailService.sendMail(request);
+      const response = await mailService.sendMail(request);
+      return response;
     } catch (e: unknown) {
       const { message } = parseError(e);
       sendError.value = message;

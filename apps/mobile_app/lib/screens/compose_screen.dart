@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
 import 'package:cloudinbox_mobile_app/services/i18n_service.dart';
@@ -6,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// メール送信リクエスト
 class SendMailRequest {
@@ -49,19 +51,58 @@ class AttachmentData {
 class SendMailResponse {
   const SendMailResponse({
     required this.success,
-    this.messageId,
+    this.taskId, // タスクID（非同期処理用）
+    this.messageId, // 後方互換性のため保持（非同期処理では使用されない）
     this.errorMessage,
+  });
+
+  final bool success;
+  final String? taskId; // タスクID（非同期処理用）
+  final String? messageId; // 後方互換性のため保持（非同期処理では使用されない）
+  final String? errorMessage;
+}
+
+/// メール送信タスク結果
+class SendMailTaskResult {
+  const SendMailTaskResult({
+    required this.success,
+    required this.taskId,
+    required this.accountId,
+    required this.subject,
+    this.messageId, // 成功時のメッセージID
+    this.errorMessage, // 失敗時のエラーメッセージ
+    this.createdAt,
+    this.completedAt,
   });
 
   final bool success;
   final String? messageId;
   final String? errorMessage;
+  final String taskId;
+  final String accountId;
+  final String subject;
+  final dynamic createdAt; // Firestore Timestamp
+  final dynamic completedAt; // Firestore Timestamp
+
+  factory SendMailTaskResult.fromFirestore(Map<String, dynamic> data, String taskId) {
+    return SendMailTaskResult(
+      success: data['success'] as bool? ?? false,
+      messageId: data['messageId'] as String?,
+      errorMessage: data['errorMessage'] as String?,
+      taskId: data['taskId'] as String? ?? taskId,
+      accountId: data['accountId'] as String? ?? '',
+      subject: data['subject'] as String? ?? '',
+      createdAt: data['createdAt'],
+      completedAt: data['completedAt'],
+    );
+  }
 }
 
 /// メール作成用のリポジトリ抽象
 abstract class MailComposeRepository {
   Future<List<MailAccount>> listAccounts();
   Future<SendMailResponse> sendMail(SendMailRequest request);
+  Stream<SendMailTaskResult?> watchTaskResult(String uid, String taskId);
 }
 
 /// 返信・転送用のデータ
@@ -131,6 +172,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
   String? _errorMessage;
   bool _showCcBcc = false;
   bool _initializedFromIntent = false;
+  StreamSubscription<SendMailTaskResult?>? _taskResultSubscription;
 
   @override
   void initState() {
@@ -238,6 +280,16 @@ class _ComposeScreenState extends State<ComposeScreen> {
     }
   }
 
+  /// 送信ボタンを有効化するかどうかを判定
+  bool _canSendMail() {
+    if (_selectedAccountId == null) return false;
+    final selectedAccount = _accounts.firstWhere(
+      (account) => account.id == _selectedAccountId,
+      orElse: () => throw Exception('Account not found'),
+    );
+    return selectedAccount.smtpHost != null && selectedAccount.smtpUsername != null;
+  }
+
   Future<void> _onSendPressed() async {
     // 入力検証
     final locale = Localizations.localeOf(context);
@@ -303,9 +355,100 @@ class _ComposeScreenState extends State<ComposeScreen> {
       final response = await widget.repository.sendMail(request);
 
       if (mounted) {
-        if (response.success) {
+        if (response.success && response.taskId != null) {
+          // タスクIDが返却された場合、タスク結果を監視
+          final currentUser = FirebaseAuth.instance.currentUser;
+          if (currentUser != null) {
+            // 既存の監視をクリーンアップ
+            _taskResultSubscription?.cancel();
+            _taskResultSubscription = null;
+
+            // タスク結果を監視
+            _taskResultSubscription = widget.repository
+                .watchTaskResult(currentUser.uid, response.taskId!)
+                .listen(
+              (result) {
+                if (!mounted) return;
+
+                final locale = Localizations.localeOf(context);
+                
+                if (result != null) {
+                  // タスク結果が保存された
+                  _taskResultSubscription?.cancel();
+                  _taskResultSubscription = null;
+
+                  if (result.success) {
+                    // 成功時: スナックバーで成功メッセージを表示
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(I18nService.translateMailSent(locale)),
+                        backgroundColor: Colors.green,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                    // メール一覧画面に戻る
+                    Navigator.of(context).pop();
+                  } else {
+                    // 失敗時: スナックバーでエラーメッセージを表示
+                    setState(() {
+                      _isSending = false;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(result.errorMessage ?? 
+                            I18nService.translateErrorFailedToSendMail(locale)),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 5),
+                      ),
+                    );
+                  }
+                } else {
+                  // タイムアウト時: スナックバーでタイムアウトメッセージを表示
+                  _taskResultSubscription?.cancel();
+                  _taskResultSubscription = null;
+                  setState(() {
+                    _isSending = false;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(I18nService.translateMailSendTimeout(locale)),
+                      backgroundColor: Colors.orange,
+                      duration: const Duration(seconds: 5),
+                    ),
+                  );
+                }
+              },
+              onError: (error) {
+                if (!mounted) return;
+
+                final locale = Localizations.localeOf(context);
+                _taskResultSubscription?.cancel();
+                _taskResultSubscription = null;
+                setState(() {
+                  _isSending = false;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(I18nService.translateErrorFailedToSendMail(locale)),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 5),
+                  ),
+                );
+              },
+            );
+          } else {
+            // UIDが取得できない場合、エラー
+            final locale = Localizations.localeOf(context);
+            setState(() {
+              _errorMessage = I18nService.translateErrorFailedToSendMail(locale);
+              _isSending = false;
+            });
+          }
+        } else if (response.success) {
+          // タスクIDが返却されなかったが、successがtrueの場合（後方互換性のため）
           Navigator.of(context).pop();
         } else {
+          // エラーレスポンス
           final locale = Localizations.localeOf(context);
           setState(() {
             _errorMessage = response.errorMessage ??
@@ -603,7 +746,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
             )
           else
             TextButton(
-              onPressed: _onSendPressed,
+              onPressed: _canSendMail() ? _onSendPressed : null,
               child: Text(I18nService.translateSend(locale)),
             ),
         ],
@@ -750,6 +893,10 @@ class _ComposeScreenState extends State<ComposeScreen> {
 
   @override
   void dispose() {
+    // ストリームのクリーンアップ
+    _taskResultSubscription?.cancel();
+    _taskResultSubscription = null;
+    // コントローラーのクリーンアップ
     _toController.dispose();
     _ccController.dispose();
     _bccController.dispose();

@@ -151,42 +151,68 @@ export const accountService = {
     // パスワードの暗号化はCloud Functionsで実行する
     // クライアント側ではプレーンテキストで送信し、Cloud Functionsで暗号化される
     const encryptPassword = httpsCallable(functions, 'encryptPassword');
-    let pop3PasswordEnc: string | null = null;
-    let smtpPasswordEnc: string | null = null;
+    let pop3PasswordEnc: { ciphertext: string; nonce: string; tag: string } | null = null;
+    let smtpPasswordEnc: { ciphertext: string; nonce: string; tag: string } | null = null;
 
     if (formData.pop3Password) {
       const pop3Result = await encryptPassword({ password: formData.pop3Password });
-      pop3PasswordEnc = (pop3Result.data as { encryptedPassword: string }).encryptedPassword;
+      const pop3Data = pop3Result.data as
+        | { passwordEnc: { ciphertext: string; nonce: string; tag: string } }
+        | null
+        | undefined;
+      if (pop3Data?.passwordEnc) {
+        pop3PasswordEnc = pop3Data.passwordEnc;
+      }
     }
 
     if (formData.smtpPassword && formData.smtpHost) {
       const smtpResult = await encryptPassword({ password: formData.smtpPassword });
-      smtpPasswordEnc = (smtpResult.data as { encryptedPassword: string }).encryptedPassword;
+      const smtpData = smtpResult.data as
+        | { passwordEnc: { ciphertext: string; nonce: string; tag: string } }
+        | null
+        | undefined;
+      if (smtpData?.passwordEnc) {
+        smtpPasswordEnc = smtpData.passwordEnc;
+      }
     }
 
-    const accountData = {
+    const pop3Data: Record<string, unknown> = {
+      host: formData.pop3Host,
+      port: formData.pop3Port,
+      useSsl: true,
+      userName: formData.pop3Username,
+    };
+
+    // passwordEncが存在する場合のみ追加
+    if (pop3PasswordEnc) {
+      pop3Data.passwordEnc = pop3PasswordEnc;
+    }
+
+    const accountData: Record<string, unknown> = {
       label: formData.label,
       email: formData.email,
-      pop3: {
-        host: formData.pop3Host,
-        port: formData.pop3Port,
-        useSsl: true,
-        userName: formData.pop3Username,
-        passwordEnc: pop3PasswordEnc,
-      },
-      smtp: formData.smtpHost
-        ? {
-            host: formData.smtpHost,
-            port: formData.smtpPort || 587,
-            useSsl: true,
-            userName: formData.smtpUsername || formData.pop3Username,
-            passwordEnc: smtpPasswordEnc,
-          }
-        : undefined,
+      pop3: pop3Data,
       status: 'active' as const,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     };
+
+    // SMTP設定が存在する場合のみ追加
+    if (formData.smtpHost) {
+      const smtpData: Record<string, unknown> = {
+        host: formData.smtpHost,
+        port: formData.smtpPort || 587,
+        useSsl: true,
+        userName: formData.smtpUsername || formData.pop3Username,
+      };
+
+      // passwordEncが存在する場合のみ追加
+      if (smtpPasswordEnc) {
+        smtpData.passwordEnc = smtpPasswordEnc;
+      }
+
+      accountData.smtp = smtpData;
+    }
 
     const docRef = await addDoc(collection(db, 'users', uid, 'mailAccounts'), accountData);
     return docRef.id;
@@ -219,9 +245,13 @@ export const accountService = {
     if (formData.pop3Password) {
       const encryptPassword = httpsCallable(functions, 'encryptPassword');
       const result = await encryptPassword({ password: formData.pop3Password });
-      (updateData.pop3 as Record<string, unknown>).passwordEnc = (
-        result.data as { encryptedPassword: string }
-      ).encryptedPassword;
+      const resultData = result.data as
+        | { passwordEnc: { ciphertext: string; nonce: string; tag: string } }
+        | null
+        | undefined;
+      if (resultData?.passwordEnc) {
+        (updateData.pop3 as Record<string, unknown>).passwordEnc = resultData.passwordEnc;
+      }
     }
 
     // SMTP設定
@@ -237,7 +267,13 @@ export const accountService = {
       if (formData.smtpPassword) {
         const encryptPassword = httpsCallable(functions, 'encryptPassword');
         const result = await encryptPassword({ password: formData.smtpPassword });
-        smtpData.passwordEnc = (result.data as { encryptedPassword: string }).encryptedPassword;
+        const resultData = result.data as
+          | { passwordEnc: { ciphertext: string; nonce: string; tag: string } }
+          | null
+          | undefined;
+        if (resultData?.passwordEnc) {
+          smtpData.passwordEnc = resultData.passwordEnc;
+        }
       }
 
       updateData.smtp = smtpData;
