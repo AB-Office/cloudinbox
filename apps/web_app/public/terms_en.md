@@ -113,6 +113,7 @@ Users may not, without the prior written consent of AB-Office, assign their stat
 1. Users are responsible for appropriately managing emails received through the Service.
 2. AB-Office shall not be liable for the content of emails.
 3. Users guarantee that emails sent and received through the Service do not infringe on the intellectual property rights of third parties.
+4. Regarding the email sending function (SMTP) in this Service, it may not be available due to IP restrictions on the mail server. Users are recommended to add the allowed IP to their mail server or use other email clients to send emails. AB-Office shall not be liable for any damage caused by the unavailability of the email sending function.
 
 ## Article 17 (Encryption and Security)
 
