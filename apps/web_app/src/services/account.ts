@@ -154,16 +154,20 @@ export const accountService = {
     let pop3PasswordEnc: { ciphertext: string; nonce: string; tag: string } | null = null;
     let smtpPasswordEnc: { ciphertext: string; nonce: string; tag: string } | null = null;
 
-    if (formData.pop3Password) {
-      const pop3Result = await encryptPassword({ password: formData.pop3Password });
-      const pop3Data = pop3Result.data as
-        | { passwordEnc: { ciphertext: string; nonce: string; tag: string } }
-        | null
-        | undefined;
-      if (pop3Data?.passwordEnc) {
-        pop3PasswordEnc = pop3Data.passwordEnc;
-      }
+    // POP3パスワードは必須
+    if (!formData.pop3Password) {
+      throw new Error('POP3 password is required');
     }
+
+    const pop3Result = await encryptPassword({ password: formData.pop3Password });
+    const pop3Data = pop3Result.data as
+      | { passwordEnc: { ciphertext: string; nonce: string; tag: string } }
+      | null
+      | undefined;
+    if (!pop3Data?.passwordEnc) {
+      throw new Error('Failed to encrypt POP3 password');
+    }
+    pop3PasswordEnc = pop3Data.passwordEnc;
 
     if (formData.smtpPassword && formData.smtpHost) {
       const smtpResult = await encryptPassword({ password: formData.smtpPassword });
@@ -176,22 +180,18 @@ export const accountService = {
       }
     }
 
-    const pop3Data: Record<string, unknown> = {
+    const pop3DataObj: Record<string, unknown> = {
       host: formData.pop3Host,
       port: formData.pop3Port,
       useSsl: true,
       userName: formData.pop3Username,
+      passwordEnc: pop3PasswordEnc,
     };
-
-    // passwordEncが存在する場合のみ追加
-    if (pop3PasswordEnc) {
-      pop3Data.passwordEnc = pop3PasswordEnc;
-    }
 
     const accountData: Record<string, unknown> = {
       label: formData.label,
       email: formData.email,
-      pop3: pop3Data,
+      pop3: pop3DataObj,
       status: 'active' as const,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
@@ -229,19 +229,27 @@ export const accountService = {
     if (!uid) throw new Error('User not authenticated');
 
     const accountRef = doc(db, 'users', uid, 'mailAccounts', accountId);
+    
+    // 既存のアカウントデータを取得（passwordEncを保持するため）
+    const accountSnap = await getDoc(accountRef);
+    const existingData = accountSnap.data();
+    const existingPop3PasswordEnc = existingData?.pop3?.passwordEnc;
+
     const updateData: Record<string, unknown> = {
       label: formData.label,
       email: formData.email,
-      pop3: {
-        host: formData.pop3Host,
-        port: formData.pop3Port,
-        useSsl: true,
-        userName: formData.pop3Username,
-      },
       updatedAt: Timestamp.now(),
     };
 
-    // POP3パスワードが入力されている場合のみ更新
+    // POP3設定を更新
+    const pop3Data: Record<string, unknown> = {
+      host: formData.pop3Host,
+      port: formData.pop3Port,
+      useSsl: true,
+      userName: formData.pop3Username,
+    };
+
+    // POP3パスワードが入力されている場合は暗号化して更新、そうでない場合は既存の値を保持
     if (formData.pop3Password) {
       const encryptPassword = httpsCallable(functions, 'encryptPassword');
       const result = await encryptPassword({ password: formData.pop3Password });
@@ -250,9 +258,19 @@ export const accountService = {
         | null
         | undefined;
       if (resultData?.passwordEnc) {
-        (updateData.pop3 as Record<string, unknown>).passwordEnc = resultData.passwordEnc;
+        pop3Data.passwordEnc = resultData.passwordEnc;
+      } else {
+        throw new Error('Failed to encrypt POP3 password');
       }
+    } else if (existingPop3PasswordEnc) {
+      // パスワードが入力されていない場合は既存のpasswordEncを保持
+      pop3Data.passwordEnc = existingPop3PasswordEnc;
+    } else {
+      // 既存のpasswordEncも存在しない場合はエラー
+      throw new Error('POP3 password is required');
     }
+
+    updateData.pop3 = pop3Data;
 
     // SMTP設定
     if (formData.smtpHost) {
