@@ -30,14 +30,35 @@ export async function processAccount(
 ): Promise<void> {
   const pop3Config = accountData.pop3;
 
+  // pop3Configの存在チェック
+  if (!pop3Config) {
+    throw new Error('POP3 configuration not found in account data');
+  }
+
   // useSsl必須チェック
   if (!pop3Config.useSsl) {
     throw new Error('SSL/TLS is required for POP3 connections');
   }
 
+  // passwordEncの存在と形式チェック
+  const passwordEnc = pop3Config.passwordEnc;
+  if (!passwordEnc) {
+    throw new Error('POP3 password not found in account');
+  }
+
+  // passwordEncが正しい形式（EncryptedData）であることを確認
+  if (
+    typeof passwordEnc !== 'object' ||
+    !passwordEnc.ciphertext ||
+    !passwordEnc.nonce ||
+    !passwordEnc.tag
+  ) {
+    throw new Error('Invalid passwordEnc format: expected {ciphertext, nonce, tag}');
+  }
+
   // パスワードを復号化
   const decryptStartTime = Date.now();
-  const password = await decryptPassword(uid, pop3Config.passwordEnc);
+  const password = await decryptPassword(uid, passwordEnc);
   const decryptTime = Date.now() - decryptStartTime;
   functions.logger.info(`Decrypted password for account: ${accountId} (took ${decryptTime}ms)`);
 
