@@ -360,7 +360,8 @@ async function initializeCompose() {
 
     if (mode === 'reply') {
       // 返信モード：送信者を宛先に、件名にRe:を追加
-      to.value = originalMessage.from;
+      // 表示名付きメールアドレスから純粋なメールアドレスのみを抽出（スマホアプリと同じ仕様）
+      to.value = extractEmailAddress(originalMessage.from);
       subject.value = addSubjectPrefix(originalMessage.subject, 'Re:');
       showCcBcc.value = false;
       // 本文を引用形式で追加
@@ -372,13 +373,18 @@ async function initializeCompose() {
       setCursorToStart();
     } else if (mode === 'replyAll') {
       // 全員に返信モード：送信者とCc受信者を宛先に、件名にRe:を追加
-      const recipients = [originalMessage.from];
-      if (originalMessage.cc && originalMessage.cc.length > 0) {
-        recipients.push(...originalMessage.cc);
-      }
+      // 表示名付きメールアドレスから純粋なメールアドレスのみを抽出（スマホアプリと同じ仕様）
+      const recipients = [
+        extractEmailAddress(originalMessage.from),
+        ...(originalMessage.cc && originalMessage.cc.length > 0
+          ? originalMessage.cc.map(addr => extractEmailAddress(addr))
+          : []),
+      ];
       to.value = formatEmailList(recipients);
       if (originalMessage.cc && originalMessage.cc.length > 0) {
-        cc.value = formatEmailList(originalMessage.cc);
+        cc.value = formatEmailList(
+          originalMessage.cc.map(addr => extractEmailAddress(addr))
+        );
         showCcBcc.value = true;
       } else {
         showCcBcc.value = false;
