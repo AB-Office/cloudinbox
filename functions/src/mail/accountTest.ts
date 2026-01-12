@@ -62,6 +62,19 @@ export const accountTest: any = onCall(
     const uid = request.auth.uid;
     const data = request.data;
 
+    // デバッグ: 受信したリクエストデータをログ出力
+    functions.logger.info('accountTest: received request data', {
+      protocol: data.protocol,
+      host: data.host,
+      port: data.port,
+      useSsl: data.useSsl,
+      userName: data.userName,
+      hasPassword: !!data.password,
+      passwordLength: data.password ? data.password.length : 0,
+      accountId: data.accountId,
+      dataKeys: Object.keys(data),
+    });
+
     // パラメータ検証
     const isValidProtocol = data.protocol === 'pop3' || data.protocol === 'smtp';
     const isValidPort = Number.isInteger(data.port) && data.port > 0 && data.port <= 65535;
@@ -87,8 +100,11 @@ export const accountTest: any = onCall(
 
     let password: string;
 
-    // 既存アカウントの接続テスト
-    if (data.accountId) {
+    // パスワードが送信されている場合はそれを使用（新規アカウント作成前、または既存アカウントでパスワードが入力されている場合）
+    if (data.password) {
+      password = data.password;
+    } else if (data.accountId) {
+      // パスワードが送信されていない場合で、accountIdが指定されている場合はFirestoreから取得
       const db = admin.firestore();
       const accountRef = db
         .collection('users')
@@ -116,6 +132,16 @@ export const accountTest: any = onCall(
         hasPop3PasswordEnc: !!accountData?.pop3?.passwordEnc,
         hasSmtpPasswordEnc: !!accountData?.smtp?.passwordEnc,
         protocol: data.protocol,
+        // Web側から送信されたデータとFirestoreのデータを比較
+        requestHost: data.host,
+        requestPort: data.port,
+        requestUserName: data.userName,
+        pop3Host: accountData?.pop3?.host,
+        pop3Port: accountData?.pop3?.port,
+        pop3UserName: accountData?.pop3?.userName,
+        smtpHost: accountData?.smtp?.host,
+        smtpPort: accountData?.smtp?.port,
+        smtpUserName: accountData?.smtp?.userName,
       });
       
       // プロトコルに応じてパスワードフィールドを選択
@@ -128,16 +154,49 @@ export const accountTest: any = onCall(
 
       if (!passwordEnc) {
         const protocolName = data.protocol.toUpperCase();
+        const hasPop3 = !!accountData?.pop3;
+        const hasSmtp = !!accountData?.smtp;
+        const pop3Keys = accountData?.pop3 ? Object.keys(accountData.pop3) : [];
+        const smtpKeys = accountData?.smtp ? Object.keys(accountData.smtp) : [];
+        
         functions.logger.warn(`accountTest: ${protocolName} password not found`, {
           protocol: data.protocol,
           accountId: data.accountId,
-          hasPop3: !!accountData?.pop3,
-          hasSmtp: !!accountData?.smtp,
+          hasPop3,
+          hasSmtp,
+          pop3Keys,
+          smtpKeys,
+          hasPop3PasswordEnc: !!accountData?.pop3?.passwordEnc,
+          hasSmtpPasswordEnc: !!accountData?.smtp?.passwordEnc,
         });
-        return {
-          success: false,
-          errorMessage: `${protocolName} password not found in account`,
-        };
+        
+        // より詳細なエラーメッセージを返す
+        if (data.protocol === 'pop3' && !hasPop3) {
+          return {
+            success: false,
+            errorMessage: 'POP3 configuration not found in account. Please update the account settings.',
+          };
+        } else if (data.protocol === 'pop3' && hasPop3 && !accountData?.pop3?.passwordEnc) {
+          return {
+            success: false,
+            errorMessage: 'POP3 password not found in account. Please update the account with a password.',
+          };
+        } else if (data.protocol === 'smtp' && !hasSmtp) {
+          return {
+            success: false,
+            errorMessage: 'SMTP configuration not found in account. Please update the account settings.',
+          };
+        } else if (data.protocol === 'smtp' && hasSmtp && !accountData?.smtp?.passwordEnc) {
+          return {
+            success: false,
+            errorMessage: 'SMTP password not found in account. Please update the account with a password.',
+          };
+        } else {
+          return {
+            success: false,
+            errorMessage: `${protocolName} password not found in account. Please update the account settings.`,
+          };
+        }
       }
 
       // passwordEncが正しい形式（EncryptedData）であることを確認
@@ -173,14 +232,11 @@ export const accountTest: any = onCall(
         };
       }
     } else {
-      // アカウント作成前の接続テスト（平文パスワード）
-      if (!data.password) {
-        return {
-          success: false,
-          errorMessage: 'Password is required for new account test',
-        };
-      }
-      password = data.password;
+      // パスワードもaccountIdも指定されていない場合はエラー
+      return {
+        success: false,
+        errorMessage: 'Password is required for new account test',
+      };
     }
 
     // プロトコルに応じて接続テストを実行

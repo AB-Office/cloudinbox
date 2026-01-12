@@ -113,20 +113,38 @@ export const accountService = {
     accountId?: string
   ): Promise<AccountTestResult> {
     const accountTest = httpsCallable(functions, 'accountTest');
-    const result = await accountTest({
+    
+    // デバッグ: 送信するデータを確認
+    const password = accountId && !(protocol === 'pop3' ? formData.pop3Password : formData.smtpPassword)
+      ? undefined
+      : protocol === 'pop3'
+        ? formData.pop3Password
+        : formData.smtpPassword;
+    
+    const requestData = {
       protocol,
       host: protocol === 'pop3' ? formData.pop3Host : formData.smtpHost,
       port: protocol === 'pop3' ? formData.pop3Port : formData.smtpPort,
       useSsl: true,
       userName: protocol === 'pop3' ? formData.pop3Username : formData.smtpUsername,
-      password:
-        accountId && !(protocol === 'pop3' ? formData.pop3Password : formData.smtpPassword)
-          ? undefined
-          : protocol === 'pop3'
-            ? formData.pop3Password
-            : formData.smtpPassword,
+      password,
       accountId,
+    };
+    
+    // デバッグログ（パスワードの長さのみ表示）
+    console.log('accountService.testConnection: sending request', {
+      protocol,
+      host: requestData.host,
+      port: requestData.port,
+      userName: requestData.userName,
+      hasPassword: !!requestData.password,
+      passwordLength: requestData.password ? requestData.password.length : 0,
+      accountId: requestData.accountId,
+      formDataPop3Password: formData.pop3Password ? `[${formData.pop3Password.length} chars]` : 'empty',
+      formDataSmtpPassword: formData.smtpPassword ? `[${formData.smtpPassword.length} chars]` : 'empty',
     });
+    
+    const result = await accountTest(requestData);
 
     const data = result.data as { success: boolean; errorMessage?: string };
     return {
