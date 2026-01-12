@@ -5,6 +5,7 @@
  */
 
 import { onCall, CallableRequest, HttpsError } from 'firebase-functions/v2/https';
+import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { decryptPassword } from '../encryption';
 import { testPop3Connection } from './pop3Client';
@@ -106,6 +107,17 @@ export const accountTest: any = onCall(
 
       const accountData = accountDoc.data();
       
+      // デバッグ: アカウントデータの構造をログ出力
+      functions.logger.info('accountTest: account data structure', {
+        hasPop3: !!accountData?.pop3,
+        hasSmtp: !!accountData?.smtp,
+        pop3Keys: accountData?.pop3 ? Object.keys(accountData.pop3) : [],
+        smtpKeys: accountData?.smtp ? Object.keys(accountData.smtp) : [],
+        hasPop3PasswordEnc: !!accountData?.pop3?.passwordEnc,
+        hasSmtpPasswordEnc: !!accountData?.smtp?.passwordEnc,
+        protocol: data.protocol,
+      });
+      
       // プロトコルに応じてパスワードフィールドを選択
       let passwordEnc: any;
       if (data.protocol === 'pop3') {
@@ -116,9 +128,38 @@ export const accountTest: any = onCall(
 
       if (!passwordEnc) {
         const protocolName = data.protocol.toUpperCase();
+        functions.logger.warn(`accountTest: ${protocolName} password not found`, {
+          protocol: data.protocol,
+          accountId: data.accountId,
+          hasPop3: !!accountData?.pop3,
+          hasSmtp: !!accountData?.smtp,
+        });
         return {
           success: false,
           errorMessage: `${protocolName} password not found in account`,
+        };
+      }
+
+      // passwordEncが正しい形式（EncryptedData）であることを確認
+      if (
+        typeof passwordEnc !== 'object' ||
+        !passwordEnc.ciphertext ||
+        !passwordEnc.nonce ||
+        !passwordEnc.tag
+      ) {
+        const protocolName = data.protocol.toUpperCase();
+        functions.logger.warn(`accountTest: Invalid ${protocolName} passwordEnc format`, {
+          protocol: data.protocol,
+          accountId: data.accountId,
+          passwordEncType: typeof passwordEnc,
+          passwordEncKeys: passwordEnc && typeof passwordEnc === 'object' ? Object.keys(passwordEnc) : null,
+          hasCiphertext: !!passwordEnc?.ciphertext,
+          hasNonce: !!passwordEnc?.nonce,
+          hasTag: !!passwordEnc?.tag,
+        });
+        return {
+          success: false,
+          errorMessage: `Invalid ${protocolName} passwordEnc format: expected {ciphertext, nonce, tag}`,
         };
       }
 
