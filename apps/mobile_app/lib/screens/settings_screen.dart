@@ -1,9 +1,9 @@
 import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
+import 'package:cloudinbox_mobile_app/screens/legal_document_screen.dart';
 import 'package:cloudinbox_mobile_app/services/ad_service.dart';
 import 'package:cloudinbox_mobile_app/services/i18n_service.dart';
 import 'package:cloudinbox_mobile_app/widgets/navigation_drawer.dart' as app_drawer;
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// 設定画面で表示するプラン・使用量情報
 class SettingsData {
@@ -187,45 +187,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  String _getPrivacyPolicyUrl(Locale locale) {
-    return locale.languageCode == 'ja'
-        ? 'https://cloudinbox.cloud/privacy.html'
-        : 'https://cloudinbox.cloud/privacy_en.html';
-  }
-
-  String _getTermsOfServiceUrl(Locale locale) {
-    return locale.languageCode == 'ja'
-        ? 'https://cloudinbox.cloud/terms.html'
-        : 'https://cloudinbox.cloud/terms_en.html';
-  }
-
-  String _getCommercialTransactionUrl(Locale locale) {
-    return locale.languageCode == 'ja'
-        ? 'https://cloudinbox.cloud/commercial.html'
-        : 'https://cloudinbox.cloud/pricing_en.html';
-  }
-
-  Future<void> _openLink(Locale locale, String url) async {
-    try {
-      final uri = Uri.parse(url);
-      // Android 11以降ではcanLaunchUrlがfalseを返す場合があるため、
-      // 直接launchUrlを試みる
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        // canLaunchUrlがfalseでも、直接launchUrlを試みる
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      debugPrint('Failed to launch URL: $url, error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(I18nService.translateErrorOperationFailed(locale)),
-          backgroundColor: Colors.red,
+  /// 法的文書画面を開く
+  /// [documentType] ドキュメントタイプ (terms, privacy, commercial, pricing)
+  /// [locale] ロケール
+  Future<void> _openLegalDocument(String documentType, Locale locale) async {
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => LegalDocumentScreen(
+          documentType: documentType,
+          locale: locale,
         ),
-      );
-    }
+      ),
+    );
   }
 
   @override
@@ -349,21 +323,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ListTile(
                       title: Text(I18nService.translatePrivacyPolicy(locale)),
                       leading: const Icon(Icons.privacy_tip),
-                      trailing: const Icon(Icons.open_in_new),
-                      onTap: () => _openLink(locale, _getPrivacyPolicyUrl(locale)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _openLegalDocument('privacy', locale),
                     ),
                     ListTile(
                       title: Text(I18nService.translateTermsOfService(locale)),
                       leading: const Icon(Icons.description),
-                      trailing: const Icon(Icons.open_in_new),
-                      onTap: () => _openLink(locale, _getTermsOfServiceUrl(locale)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _openLegalDocument('terms', locale),
                     ),
-                    ListTile(
-                      title: Text(I18nService.translatePricingBilling(locale)),
-                      leading: const Icon(Icons.attach_money),
-                      trailing: const Icon(Icons.open_in_new),
-                      onTap: () => _openLink(locale, _getCommercialTransactionUrl(locale)),
-                    ),
+                    if (locale.languageCode == 'ja')
+                      ListTile(
+                        title: Text(I18nService.translatePricingBilling(locale)),
+                        leading: const Icon(Icons.attach_money),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _openLegalDocument('commercial', locale),
+                      )
+                    else
+                      ListTile(
+                        title: Text(I18nService.translatePricingBilling(locale)),
+                        leading: const Icon(Icons.attach_money),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _openLegalDocument('pricing', locale),
+                      ),
                     const Divider(),
                     ListTile(
                       title: Text(logoutLabel),

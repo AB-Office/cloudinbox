@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/settings_screen.dart';
+import 'package:cloudinbox_mobile_app/screens/legal_document_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -314,6 +315,222 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(_signOutCalled, isTrue);
+      
+      repo.dispose();
+    });
+
+    testWidgets('プライバシーポリシーリンクタップ時にLegalDocumentScreenへ遷移する', (tester) async {
+      final repo = _FakeSettingsRepository(
+        const SettingsData(
+          planLabel: 'Free',
+          maxStorageBytes: 2147483648,
+          usedStorageBytes: 0,
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('ja', ''),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ja', ''),
+            Locale('en', ''),
+          ],
+          home: SettingsScreen(
+            repository: repo,
+            accountRepository: _FakeAccountRepository(),
+            onLogout: () async {},
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // プライバシーポリシーリンクをタップ
+      final privacyLink = find.text('プライバシーポリシー');
+      await tester.tap(privacyLink);
+      await tester.pumpAndSettle();
+
+      // LegalDocumentScreenに遷移することを確認
+      expect(find.byType(LegalDocumentScreen), findsOneWidget);
+      
+      repo.dispose();
+    });
+
+    testWidgets('利用規約リンクタップ時にLegalDocumentScreenへ遷移する', (tester) async {
+      final repo = _FakeSettingsRepository(
+        const SettingsData(
+          planLabel: 'Free',
+          maxStorageBytes: 2147483648,
+          usedStorageBytes: 0,
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('ja', ''),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ja', ''),
+            Locale('en', ''),
+          ],
+          home: SettingsScreen(
+            repository: repo,
+            accountRepository: _FakeAccountRepository(),
+            onLogout: () async {},
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // 利用規約リンクをタップ
+      final termsLink = find.text('利用規約');
+      await tester.tap(termsLink);
+      await tester.pumpAndSettle();
+
+      // LegalDocumentScreenに遷移することを確認
+      expect(find.byType(LegalDocumentScreen), findsOneWidget);
+      
+      repo.dispose();
+    });
+
+    testWidgets('日本語環境で特定商取引法リンクが表示され、タップ時にLegalDocumentScreenへ遷移する', (tester) async {
+      final repo = _FakeSettingsRepository(
+        const SettingsData(
+          planLabel: 'Free',
+          maxStorageBytes: 2147483648,
+          usedStorageBytes: 0,
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('ja', ''),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ja', ''),
+            Locale('en', ''),
+          ],
+          home: SettingsScreen(
+            repository: repo,
+            accountRepository: _FakeAccountRepository(),
+            onLogout: () async {},
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // 特定商取引法リンクが表示されることを確認（pricingBillingは日本語では「特定商取引法に基づく表記」を返す）
+      final commercialLink = find.text('特定商取引法に基づく表記');
+      expect(commercialLink, findsOneWidget);
+
+      // リンクをタップ
+      await tester.tap(commercialLink);
+      await tester.pumpAndSettle();
+
+      // LegalDocumentScreenに遷移することを確認
+      expect(find.byType(LegalDocumentScreen), findsOneWidget);
+      
+      repo.dispose();
+    });
+
+    testWidgets('英語環境でPricing/Billingリンクが表示され、タップ時にLegalDocumentScreenへ遷移する', (tester) async {
+      final repo = _FakeSettingsRepository(
+        const SettingsData(
+          planLabel: 'Free',
+          maxStorageBytes: 2147483648,
+          usedStorageBytes: 0,
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en', ''),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ja', ''),
+            Locale('en', ''),
+          ],
+          home: SettingsScreen(
+            repository: repo,
+            accountRepository: _FakeAccountRepository(),
+            onLogout: () async {},
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Pricing/Billingリンクが表示されることを確認
+      final pricingLink = find.text('Pricing / Billing');
+      expect(pricingLink, findsOneWidget);
+
+      // リンクをタップ
+      await tester.tap(pricingLink);
+      await tester.pumpAndSettle();
+
+      // LegalDocumentScreenに遷移することを確認
+      expect(find.byType(LegalDocumentScreen), findsOneWidget);
+      
+      repo.dispose();
+    });
+
+    testWidgets('外部URLを開かない（url_launcherを使用しない）', (tester) async {
+      final repo = _FakeSettingsRepository(
+        const SettingsData(
+          planLabel: 'Free',
+          maxStorageBytes: 2147483648,
+          usedStorageBytes: 0,
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('ja', ''),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ja', ''),
+            Locale('en', ''),
+          ],
+          home: SettingsScreen(
+            repository: repo,
+            accountRepository: _FakeAccountRepository(),
+            onLogout: () async {},
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // プライバシーポリシーリンクをタップ
+      final privacyLink = find.text('プライバシーポリシー');
+      await tester.tap(privacyLink);
+      await tester.pumpAndSettle();
+
+      // LegalDocumentScreenに遷移することを確認（外部URLは開かない）
+      expect(find.byType(LegalDocumentScreen), findsOneWidget);
       
       repo.dispose();
     });

@@ -64,19 +64,27 @@
               <v-list-item
                 :title="t('settings.privacyPolicy')"
                 prepend-icon="mdi-shield-lock-outline"
-                @click="openLink(getPrivacyPolicyUrl())"
+                @click="openLegalDocument('privacy', locale.value as 'ja' | 'en')"
                 class="cursor-pointer"
               />
               <v-list-item
                 :title="t('settings.termsOfService')"
                 prepend-icon="mdi-file-document-outline"
-                @click="openLink(getTermsOfServiceUrl())"
+                @click="openLegalDocument('terms', locale.value as 'ja' | 'en')"
                 class="cursor-pointer"
               />
               <v-list-item
-                :title="locale === 'ja' ? t('settings.commercialTransaction') : t('settings.pricingBilling')"
+                v-if="locale === 'ja'"
+                :title="t('settings.commercialTransaction')"
                 prepend-icon="mdi-currency-usd"
-                @click="openLink(getCommercialTransactionUrl())"
+                @click="openLegalDocument('commercial', 'ja')"
+                class="cursor-pointer"
+              />
+              <v-list-item
+                v-else
+                :title="t('settings.pricingBilling')"
+                prepend-icon="mdi-currency-usd"
+                @click="openLegalDocument('pricing', 'en')"
                 class="cursor-pointer"
               />
             </v-list>
@@ -84,19 +92,33 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- LegalDocumentViewer -->
+    <LegalDocumentViewer
+      v-model="legalDocumentDialog"
+      :document-type="selectedDocumentType"
+      :locale="selectedLocale"
+    />
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useSettingsStore } from '@/stores/settings';
 import { formatFileSize } from '@/plugins/i18n';
+import LegalDocumentViewer from '@/components/LegalDocumentViewer.vue';
+import type { DocumentType, Locale } from '@/services/legalDocument';
 
 const router = useRouter();
 const { t, locale } = useI18n();
 const settingsStore = useSettingsStore();
+
+// LegalDocumentViewerの状態管理
+const legalDocumentDialog = ref(false);
+const selectedDocumentType = ref<DocumentType>('terms');
+const selectedLocale = ref<Locale>('ja');
 
 // 容量情報のフォーマット済み表示
 const formattedStorageInfo = computed(() => {
@@ -120,26 +142,15 @@ function navigateToAccounts() {
   router.push({ name: 'account-list' });
 }
 
-function getPrivacyPolicyUrl(): string {
-  return locale.value === 'ja' 
-    ? 'https://cloudinbox.cloud/privacy.html'
-    : 'https://cloudinbox.cloud/privacy_en.html';
-}
-
-function getTermsOfServiceUrl(): string {
-  return locale.value === 'ja'
-    ? 'https://cloudinbox.cloud/terms.html'
-    : 'https://cloudinbox.cloud/terms_en.html';
-}
-
-function getCommercialTransactionUrl(): string {
-  return locale.value === 'ja'
-    ? 'https://cloudinbox.cloud/commercial.html'
-    : 'https://cloudinbox.cloud/pricing_en.html';
-}
-
-function openLink(url: string) {
-  window.open(url, '_blank', 'noopener,noreferrer');
+/**
+ * 法的文書を開く
+ * @param documentType ドキュメントタイプ
+ * @param docLocale ロケール
+ */
+function openLegalDocument(documentType: DocumentType, docLocale: Locale): void {
+  selectedDocumentType.value = documentType;
+  selectedLocale.value = docLocale;
+  legalDocumentDialog.value = true;
 }
 
 onMounted(() => {

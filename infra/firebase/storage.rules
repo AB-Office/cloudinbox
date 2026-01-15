@@ -14,6 +14,17 @@ service firebase.storage {
       // 削除: 認証ユーザーが自分のuidに一致する場合のみ
       allow delete: if request.auth != null && request.auth.uid == uid;
     }
+
+    // legal-docs/** パスのアクセス制御
+    // 認証ユーザーは全員読み取り可能、書き込みは管理者のみ（Firebase Admin SDK経由）
+    match /legal-docs/{allPaths=**} {
+      // 読み取り: 認証ユーザーであれば誰でも読み取り可能
+      allow read: if request.auth != null;
+      
+      // 書き込み・削除: クライアントからの直接アクセスは禁止（管理者のみFirebase Admin SDK経由で実行）
+      allow write: if false;
+      allow delete: if false;
+    }
   }
 }
 

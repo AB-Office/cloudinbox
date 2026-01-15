@@ -22,6 +22,7 @@ dependencies:
   share_plus: ^7.2.1
   file_picker: ^8.0.0
   url_launcher: ^6.2.5
+  flutter_markdown: ^0.6.18
 
 # 注意:
 # - iOS: Info.plist に必要な用途説明(NSPhotoLibraryAddUsageDescription等)を追加

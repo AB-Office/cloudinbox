@@ -1,0 +1,20 @@
+{
+  "name": "cloudinbox-scripts",
+  "version": "1.0.0",
+  "description": "CloudInbox utility scripts",
+  "private": true,
+  "scripts": {
+    "upload-legal-docs": "ts-node upload-legal-docs.ts",
+    "verify-legal-docs": "ts-node verify-legal-docs.ts",
+    "test-storage-rules": "ts-node test-storage-rules.ts"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
+  }
+}
+
