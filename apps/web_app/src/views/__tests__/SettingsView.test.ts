@@ -85,7 +85,7 @@ describe('SettingsView', () => {
   });
 
   const createWrapper = async (locale: 'ja' | 'en' = 'ja') => {
-    i18n.global.locale.value = locale;
+    (i18n.global.locale as any).value = locale;
     await router.push({ path: '/settings' });
     wrapper = mount(SettingsView, {
       global: {

@@ -4,14 +4,20 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getDocument } from '../legalDocument';
-import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, getBytes } from 'firebase/storage';
+import { getAuth } from 'firebase/auth';
 import { firebaseApp } from '@/services/firebase';
 
 // Firebase Storageのモック
 vi.mock('firebase/storage', () => ({
   getStorage: vi.fn(),
   ref: vi.fn(),
-  getDownloadURL: vi.fn(),
+  getBytes: vi.fn(),
+}));
+
+// Firebase Authのモック
+vi.mock('firebase/auth', () => ({
+  getAuth: vi.fn(),
 }));
 
 vi.mock('@/services/firebase', () => ({
@@ -26,35 +32,36 @@ describe('LegalDocumentService', () => {
   it('should get document from Firebase Storage', async () => {
     const mockStorage = {};
     const mockRef = {};
-    const mockUrl = 'https://example.com/legal-docs/terms_ja.md';
     const mockContent = '# 利用規約\n\n本文...';
+    const mockBytes = new TextEncoder().encode(mockContent);
 
     vi.mocked(getStorage).mockReturnValue(mockStorage as any);
     vi.mocked(ref).mockReturnValue(mockRef as any);
-    vi.mocked(getDownloadURL).mockResolvedValue(mockUrl);
-
-    // fetchのモック
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      text: async () => mockContent,
-    });
+    vi.mocked(getBytes).mockResolvedValue(mockBytes as any);
+    vi.mocked(getAuth).mockReturnValue({
+      currentUser: { uid: 'test-user' },
+    } as any);
 
     const result = await getDocument('terms', 'ja');
 
     expect(getStorage).toHaveBeenCalledWith(firebaseApp);
     expect(ref).toHaveBeenCalledWith(mockStorage, 'legal-docs/terms_ja.md');
-    expect(getDownloadURL).toHaveBeenCalledWith(mockRef);
-    expect(global.fetch).toHaveBeenCalledWith(mockUrl);
+    expect(getBytes).toHaveBeenCalledWith(mockRef);
     expect(result).toBe(mockContent);
   });
 
   it('should handle file not found error', async () => {
     const mockStorage = {};
     const mockRef = {};
+    const error = new Error('storage/object-not-found');
+    (error as any).code = 'storage/object-not-found';
 
     vi.mocked(getStorage).mockReturnValue(mockStorage as any);
     vi.mocked(ref).mockReturnValue(mockRef as any);
-    vi.mocked(getDownloadURL).mockRejectedValue(new Error('storage/object-not-found'));
+    vi.mocked(getBytes).mockRejectedValue(error);
+    vi.mocked(getAuth).mockReturnValue({
+      currentUser: { uid: 'test-user' },
+    } as any);
 
     await expect(getDocument('terms', 'ja')).rejects.toThrow(
       'Document not found: legal-docs/terms_ja.md'
@@ -64,10 +71,15 @@ describe('LegalDocumentService', () => {
   it('should handle authentication error', async () => {
     const mockStorage = {};
     const mockRef = {};
+    const error = new Error('storage/unauthorized');
+    (error as any).code = 'storage/unauthorized';
 
     vi.mocked(getStorage).mockReturnValue(mockStorage as any);
     vi.mocked(ref).mockReturnValue(mockRef as any);
-    vi.mocked(getDownloadURL).mockRejectedValue(new Error('storage/unauthorized'));
+    vi.mocked(getBytes).mockRejectedValue(error);
+    vi.mocked(getAuth).mockReturnValue({
+      currentUser: { uid: 'test-user' },
+    } as any);
 
     await expect(getDocument('privacy', 'en')).rejects.toThrow();
   });
@@ -75,34 +87,29 @@ describe('LegalDocumentService', () => {
   it('should handle network error', async () => {
     const mockStorage = {};
     const mockRef = {};
-    const mockUrl = 'https://example.com/legal-docs/privacy_en.md';
 
     vi.mocked(getStorage).mockReturnValue(mockStorage as any);
     vi.mocked(ref).mockReturnValue(mockRef as any);
-    vi.mocked(getDownloadURL).mockResolvedValue(mockUrl);
-
-    global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+    vi.mocked(getBytes).mockRejectedValue(new Error('Network error'));
+    vi.mocked(getAuth).mockReturnValue({
+      currentUser: { uid: 'test-user' },
+    } as any);
 
     await expect(getDocument('privacy', 'en')).rejects.toThrow('Network error');
   });
 
-  it('should handle HTTP error response', async () => {
+  it('should handle general error', async () => {
     const mockStorage = {};
     const mockRef = {};
-    const mockUrl = 'https://example.com/legal-docs/commercial_ja.md';
 
     vi.mocked(getStorage).mockReturnValue(mockStorage as any);
     vi.mocked(ref).mockReturnValue(mockRef as any);
-    vi.mocked(getDownloadURL).mockResolvedValue(mockUrl);
+    vi.mocked(getBytes).mockRejectedValue(new Error('General error'));
+    vi.mocked(getAuth).mockReturnValue({
+      currentUser: { uid: 'test-user' },
+    } as any);
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      statusText: 'Not Found',
-    });
-
-    await expect(getDocument('commercial', 'ja')).rejects.toThrow(
-      'Failed to fetch document: Not Found'
-    );
+    await expect(getDocument('commercial', 'ja')).rejects.toThrow('General error');
   });
 
   it('should generate correct storage path for different document types', async () => {
@@ -119,16 +126,14 @@ describe('LegalDocumentService', () => {
     for (const testCase of testCases) {
       vi.clearAllMocks();
       const mockRef = {};
-      const mockUrl = `https://example.com/${testCase.expectedPath}`;
+      const mockBytes = new TextEncoder().encode('content');
 
       vi.mocked(getStorage).mockReturnValue(mockStorage as any);
       vi.mocked(ref).mockReturnValue(mockRef as any);
-      vi.mocked(getDownloadURL).mockResolvedValue(mockUrl);
-
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        text: async () => 'content',
-      });
+      vi.mocked(getBytes).mockResolvedValue(mockBytes as any);
+      vi.mocked(getAuth).mockReturnValue({
+        currentUser: { uid: 'test-user' },
+      } as any);
 
       await getDocument(testCase.type as any, testCase.locale as any);
 
@@ -142,46 +147,40 @@ describe('LegalDocumentService', () => {
 
     vi.mocked(getStorage).mockReturnValue(mockStorage as any);
     vi.mocked(ref).mockReturnValue(mockRef as any);
-    vi.mocked(getDownloadURL).mockRejectedValue('String error');
+    vi.mocked(getBytes).mockRejectedValue('String error');
+    vi.mocked(getAuth).mockReturnValue({
+      currentUser: { uid: 'test-user' },
+    } as any);
 
     await expect(getDocument('terms', 'ja')).rejects.toThrow(
       'Failed to fetch document: String error'
     );
   });
 
-  it('should handle fetch response with non-ok status', async () => {
+  it('should handle unauthorized user', async () => {
     const mockStorage = {};
     const mockRef = {};
-    const mockUrl = 'https://example.com/legal-docs/pricing_en.md';
 
     vi.mocked(getStorage).mockReturnValue(mockStorage as any);
     vi.mocked(ref).mockReturnValue(mockRef as any);
-    vi.mocked(getDownloadURL).mockResolvedValue(mockUrl);
+    vi.mocked(getAuth).mockReturnValue({
+      currentUser: null,
+    } as any);
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 403,
-      statusText: 'Forbidden',
-    });
-
-    await expect(getDocument('pricing', 'en')).rejects.toThrow(
-      'Failed to fetch document: Forbidden'
-    );
+    await expect(getDocument('pricing', 'en')).rejects.toThrow('User not authenticated');
   });
 
-  it('should handle empty response text', async () => {
+  it('should handle empty content', async () => {
     const mockStorage = {};
     const mockRef = {};
-    const mockUrl = 'https://example.com/legal-docs/commercial_ja.md';
+    const mockBytes = new TextEncoder().encode('');
 
     vi.mocked(getStorage).mockReturnValue(mockStorage as any);
     vi.mocked(ref).mockReturnValue(mockRef as any);
-    vi.mocked(getDownloadURL).mockResolvedValue(mockUrl);
-
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      text: async () => '',
-    });
+    vi.mocked(getBytes).mockResolvedValue(mockBytes as any);
+    vi.mocked(getAuth).mockReturnValue({
+      currentUser: { uid: 'test-user' },
+    } as any);
 
     const result = await getDocument('commercial', 'ja');
     expect(result).toBe('');

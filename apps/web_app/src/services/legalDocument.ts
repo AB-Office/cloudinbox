@@ -4,7 +4,7 @@
  * Service for fetching legal documents (terms, privacy policy, etc.) from Firebase Storage
  */
 
-import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, getBytes } from 'firebase/storage';
 import { firebaseApp } from './firebase';
 
 export type DocumentType = 'terms' | 'privacy' | 'commercial' | 'pricing';
@@ -23,23 +23,39 @@ export async function getDocument(documentType: DocumentType, locale: Locale): P
   const storageRef = ref(storage, path);
 
   try {
-    const url = await getDownloadURL(storageRef);
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch document: ${response.statusText}`);
+    // 認証状態を確認（デバッグ用）
+    const { getAuth } = await import('firebase/auth');
+    const auth = getAuth(firebaseApp);
+    if (!auth.currentUser) {
+      throw new Error('User not authenticated. Please sign in to view legal documents.');
     }
 
-    return await response.text();
+    // getBytesを使用して直接バイトデータを取得（CORS問題を回避）
+    const bytes = await getBytes(storageRef);
+
+    // UTF-8でデコード
+    const decoder = new TextDecoder('utf-8');
+    return decoder.decode(bytes);
   } catch (error) {
     if (error instanceof Error) {
-      // Firebase Storageのエラーを再スロー
-      if (error.message.includes('storage/object-not-found')) {
+      // Firebase Storageのエラーを処理
+      const errorCode = (error as any).code;
+      if (
+        error.message.includes('storage/object-not-found') ||
+        errorCode === 'storage/object-not-found'
+      ) {
         throw new Error(`Document not found: ${path}`);
       }
-      // ネットワークエラーやその他のエラーを再スロー
-      throw error;
+      if (error.message.includes('storage/unauthorized') || errorCode === 'storage/unauthorized') {
+        throw new Error(`Unauthorized: Authentication required to access ${path}`);
+      }
+      // 既に詳細なエラーメッセージが設定されている場合はそのまま再スロー
+      if (error.message.includes('Failed to fetch document')) {
+        throw error;
+      }
+      // その他のエラー
+      throw new Error(`Failed to fetch document: ${error.message}. Path: ${path}`);
     }
-    throw new Error(`Failed to fetch document: ${String(error)}`);
+    throw new Error(`Failed to fetch document: ${String(error)}. Path: ${path}`);
   }
 }

@@ -65,11 +65,21 @@ async function verifyFile(file: ExpectedFile): Promise<VerificationResult> {
     // メタデータの取得
     const [metadata] = await fileRef.getMetadata();
     
+    // sizeはstring | number | undefinedの可能性があるため、適切に変換
+    let size = 0;
+    if (metadata.size !== undefined) {
+      if (typeof metadata.size === 'number') {
+        size = metadata.size;
+      } else {
+        size = parseInt(metadata.size, 10);
+      }
+    }
+    
     return {
       path: file.path,
       exists: true,
       contentType: metadata.contentType,
-      size: parseInt(metadata.size || '0', 10),
+      size: size,
     };
   } catch (error) {
     return {

@@ -6,7 +6,9 @@
   "scripts": {
     "upload-legal-docs": "ts-node upload-legal-docs.ts",
     "verify-legal-docs": "ts-node verify-legal-docs.ts",
-    "test-storage-rules": "ts-node test-storage-rules.ts"
+    "test-storage-rules": "ts-node test-storage-rules.ts",
+    "list-storage-files": "ts-node list-storage-files.ts",
+    "setup-storage-cors": "ts-node setup-storage-cors.ts"
   },
   "dependencies": {
     "firebase-admin": "^12.0.0"

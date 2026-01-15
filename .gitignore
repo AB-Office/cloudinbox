@@ -26,3 +26,5 @@ build/
 .DS_Store
 Thumbs.db
 
+# Secrets
+*-firebase-adminsdk-*.json

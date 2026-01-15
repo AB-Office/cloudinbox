@@ -52,7 +52,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const emit = defineEmits<{
+defineEmits<{
   'update:modelValue': [value: boolean];
 }>();
 
@@ -76,7 +76,7 @@ const title = computed(() => {
  */
 function convertMarkdownToHtml(markdown: string): string {
   // markedでMarkdownをHTMLに変換
-  const html = marked(markdown);
+  const html = marked.parse(markdown) as string;
 
   // DOMPurifyでサニタイズ（XSS対策）
   const sanitized = DOMPurify.sanitize(html, {

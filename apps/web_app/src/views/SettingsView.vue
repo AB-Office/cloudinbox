@@ -64,17 +64,17 @@
               <v-list-item
                 :title="t('settings.privacyPolicy')"
                 prepend-icon="mdi-shield-lock-outline"
-                @click="openLegalDocument('privacy', locale.value as 'ja' | 'en')"
+                @click="openLegalDocument('privacy', (currentLocale || 'ja') as 'ja' | 'en')"
                 class="cursor-pointer"
               />
               <v-list-item
                 :title="t('settings.termsOfService')"
                 prepend-icon="mdi-file-document-outline"
-                @click="openLegalDocument('terms', locale.value as 'ja' | 'en')"
+                @click="openLegalDocument('terms', (currentLocale || 'ja') as 'ja' | 'en')"
                 class="cursor-pointer"
               />
               <v-list-item
-                v-if="locale === 'ja'"
+                v-if="currentLocale === 'ja'"
                 :title="t('settings.commercialTransaction')"
                 prepend-icon="mdi-currency-usd"
                 @click="openLegalDocument('commercial', 'ja')"
@@ -114,6 +114,12 @@ import type { DocumentType, Locale } from '@/services/legalDocument';
 const router = useRouter();
 const { t, locale } = useI18n();
 const settingsStore = useSettingsStore();
+
+// localeをcomputedでラップして確実に文字列として取得
+const currentLocale = computed(() => {
+  // vue-i18nのlocaleはRef<string>型なので、.valueでアクセス
+  return locale.value || 'ja';
+});
 
 // LegalDocumentViewerの状態管理
 const legalDocumentDialog = ref(false);

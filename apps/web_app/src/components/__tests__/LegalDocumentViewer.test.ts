@@ -150,7 +150,7 @@ describe('LegalDocumentViewer', () => {
   });
 
   it('should call getDocument with correct parameters for different document types', async () => {
-    const testCases = [
+    const testCases: Array<{ documentType: 'terms' | 'privacy' | 'commercial' | 'pricing'; locale: 'ja' | 'en' }> = [
       { documentType: 'terms', locale: 'ja' },
       { documentType: 'privacy', locale: 'en' },
       { documentType: 'commercial', locale: 'ja' },
