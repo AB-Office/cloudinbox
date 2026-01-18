@@ -1,9 +1,9 @@
 {
-  "feature_name": "20260115_legal-docs-storage-display",
-  "created_at": "2026-01-15T12:12:39.000Z",
-  "updated_at": "2026-01-15T12:24:43.000Z",
+  "feature_name": "20260117_legal-docs-consent-enforcement",
+  "created_at": "2026-01-17T17:08:16.000Z",
+  "updated_at": "2026-01-18T22:09:11.000Z",
   "language": "ja",
-  "phase": "tasks-generated",
+  "phase": "implementation-completed",
   "approvals": {
     "requirements": {
       "generated": true,

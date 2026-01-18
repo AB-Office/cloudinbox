@@ -6,6 +6,8 @@ import 'package:cloudinbox_mobile_app/screens/settings_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/detail_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/compose_screen.dart';
+import 'package:cloudinbox_mobile_app/screens/legal_consent_screen.dart';
+import 'package:cloudinbox_mobile_app/services/consent_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -43,11 +45,33 @@ class _MyAppState extends State<MyApp> {
   late final FirebaseAuthRepository _authRepository;
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   String _currentRoute = '/inbox'; // Track current route for drawer highlighting
+  final ConsentService _consentService = ConsentService();
 
   @override
   void initState() {
     super.initState();
     _authRepository = FirebaseAuthRepository();
+  }
+
+  /// 同意が必要かどうかを確認
+  Future<bool> _checkConsentRequired() async {
+    try {
+      return await _consentService.isConsentRequired();
+    } catch (e) {
+      debugPrint('Error checking consent required: $e');
+      // エラー時は同意が必要とみなす（安全側に倒す）
+      return true;
+    }
+  }
+
+  /// ユーザーの同意情報を取得
+  Future<LegalConsents?> _getConsents() async {
+    try {
+      return await _consentService.getConsents();
+    } catch (e) {
+      debugPrint('Error getting consents: $e');
+      return null;
+    }
   }
 
   Widget _buildScreenForRoute(String route, BuildContext context) {
@@ -216,8 +240,47 @@ class _MyAppState extends State<MyApp> {
 
         final currentUser = snapshot.data;
         final initialScreen = currentUser != null
-            ? Builder(
-                builder: (context) => _buildScreenForRoute(_currentRoute, context),
+            ? FutureBuilder<bool>(
+                future: _checkConsentRequired(),
+                builder: (context, consentSnapshot) {
+                  // 同意チェック中はローディング表示
+                  if (consentSnapshot.connectionState == ConnectionState.waiting) {
+                    return const Scaffold(
+                      body: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+
+                  // 同意チェックエラー時はメイン画面を表示（既存の同意を尊重）
+                  if (consentSnapshot.hasError) {
+                    debugPrint('Error checking consent: ${consentSnapshot.error}');
+                    return Builder(
+                      builder: (context) => _buildScreenForRoute(_currentRoute, context),
+                    );
+                  }
+
+                  // 同意が必要な場合は同意チェック画面を表示
+                  final consentRequired = consentSnapshot.data ?? true;
+                  if (consentRequired) {
+                    // 既存の同意があるかどうかを確認して、再確認かどうかを判定
+                    return FutureBuilder<LegalConsents?>(
+                      future: _getConsents(),
+                      builder: (context, consentsSnapshot) {
+                        final consents = consentsSnapshot.data;
+                        final isReconsent = consents != null &&
+                            consents.terms != null &&
+                            consents.privacy != null;
+                        return LegalConsentScreen(isReconsent: isReconsent);
+                      },
+                    );
+                  }
+
+                  // 同意済みの場合はメイン画面を表示
+                  return Builder(
+                    builder: (context) => _buildScreenForRoute(_currentRoute, context),
+                  );
+                },
               )
             : AuthScreen(
                 key: const ValueKey('auth'),

@@ -45,5 +45,47 @@ class LegalDocumentService {
       throw Exception('Failed to fetch document: $e');
     }
   }
+
+  /// Get legal document metadata from Firebase Storage
+  ///
+  /// [documentType] Type of document (terms, privacy)
+  /// [locale] Language locale (ja, en)
+  /// Returns the document version (ISO 8601 string)
+  /// Throws [Exception] if metadata cannot be fetched (file not found, network error, etc.)
+  Future<String> getDocumentMetadata(String documentType, String locale) async {
+    final storage = FirebaseStorage.instance;
+    final path = 'legal-docs/${documentType}_${locale}.md';
+    final ref = storage.ref(path);
+
+    try {
+      final metadata = await ref.getMetadata();
+
+      // updated または timeCreated を使用（updatedが優先）
+      final updatedTime = metadata.updated ?? metadata.timeCreated;
+      if (updatedTime == null) {
+        throw Exception('Metadata does not contain timestamp: $path');
+      }
+
+      // ISO 8601形式の文字列として返す
+      return updatedTime.toIso8601String();
+    } on FirebaseException catch (e) {
+      // Firebase Storageのエラーを処理
+      if (e.code == 'object-not-found') {
+        throw Exception('Document not found: $path');
+      } else if (e.code == 'unauthorized') {
+        throw Exception('Unauthorized: Authentication required');
+      } else if (e.code == 'canceled') {
+        throw Exception('Request canceled');
+      } else {
+        throw Exception('Failed to fetch metadata: ${e.message}');
+      }
+    } catch (e) {
+      // その他のエラー（ネットワークエラーなど）
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Failed to fetch metadata: $e');
+    }
+  }
 }
 

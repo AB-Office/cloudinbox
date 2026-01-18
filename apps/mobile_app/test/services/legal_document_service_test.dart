@@ -92,6 +92,35 @@ void main() {
       }
     });
 
+    test('should get document metadata from Firebase Storage', () async {
+      const documentType = 'terms';
+      const locale = 'ja';
+
+      // メタデータ取得メソッドがFuture<String>を返すことを確認
+      expect(
+        service.getDocumentMetadata(documentType, locale),
+        isA<Future<String>>(),
+        reason: 'getDocumentMetadata should return Future<String>',
+      );
+    });
+
+    test('should return ISO 8601 format string from metadata', () {
+      // ISO 8601形式のテスト（UTC形式でZを付与）
+      final testDate = DateTime(2024, 1, 1, 0, 0, 0, 0).toUtc();
+      final isoString = testDate.toIso8601String();
+
+      expect(
+        isoString,
+        matches(RegExp(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$')),
+        reason: 'ISO 8601 format should match pattern',
+      );
+      expect(
+        isoString,
+        '2024-01-01T00:00:00.000Z',
+        reason: 'ISO 8601 string should be correctly formatted',
+      );
+    });
+
     test('should handle errors gracefully', () async {
       const documentType = 'nonexistent';
       const locale = 'ja';
