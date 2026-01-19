@@ -11,6 +11,8 @@ import 'package:cloudinbox_mobile_app/screens/legal_document_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
 import 'package:cloudinbox_mobile_app/services/i18n_service.dart';
 import 'package:cloudinbox_mobile_app/services/ad_service.dart';
+import 'package:cloudinbox_mobile_app/services/legal_document_service.dart';
+import 'package:cloudinbox_mobile_app/l10n/app_localizations.dart';
 
 // SettingsRepositoryのモック
 class _FakeSettingsRepository implements SettingsRepository {
@@ -65,6 +67,39 @@ class _FakeAccountRepository implements AccountRepository {
 
 // AdServiceは実際のクラスを使用（constコンストラクタがあるため）
 
+// LegalDocumentServiceのモック
+class _FakeLegalDocumentService extends LegalDocumentService {
+  final String? mockContent;
+  final Exception? mockError;
+  bool getDocumentCalled = false;
+  String? lastDocumentType;
+  String? lastLocale;
+
+  _FakeLegalDocumentService({this.mockContent, this.mockError});
+
+  @override
+  Future<String> getDocument(String documentType, String locale) async {
+    getDocumentCalled = true;
+    lastDocumentType = documentType;
+    lastLocale = locale;
+
+    if (mockError != null) {
+      throw mockError!;
+    }
+
+    if (mockContent != null) {
+      return mockContent!;
+    }
+
+    return '# Test Document\n\nContent...';
+  }
+
+  @override
+  Future<String> getDocumentMetadata(String documentType, String locale) async {
+    return '2024-01-01T00:00:00.000Z';
+  }
+}
+
 void main() {
   group('Legal Documents Integration Tests', () {
     testWidgets('should navigate to LegalDocumentScreen when privacy policy link is tapped', (tester) async {
@@ -76,10 +111,14 @@ void main() {
       final settingsRepo = _FakeSettingsRepository(settingsData);
       final accountRepo = _FakeAccountRepository();
       const adService = AdService();
+      final legalDocumentService = _FakeLegalDocumentService(
+        mockContent: '# Test Document\n\nContent...',
+      );
 
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: const [
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -95,6 +134,7 @@ void main() {
             onLogout: () async {},
             adService: adService,
             planId: 'free',
+            legalDocumentService: legalDocumentService,
           ),
         ),
       );
@@ -124,10 +164,14 @@ void main() {
       final settingsRepo = _FakeSettingsRepository(settingsData);
       final accountRepo = _FakeAccountRepository();
       const adService = AdService();
+      final legalDocumentService = _FakeLegalDocumentService(
+        mockContent: '# Test Document\n\nContent...',
+      );
 
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: const [
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -143,6 +187,7 @@ void main() {
             onLogout: () async {},
             adService: adService,
             planId: 'free',
+            legalDocumentService: legalDocumentService,
           ),
         ),
       );
@@ -172,10 +217,14 @@ void main() {
       final settingsRepo = _FakeSettingsRepository(settingsData);
       final accountRepo = _FakeAccountRepository();
       const adService = AdService();
+      final legalDocumentService = _FakeLegalDocumentService(
+        mockContent: '# Test Document\n\nContent...',
+      );
 
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: const [
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -191,6 +240,7 @@ void main() {
             onLogout: () async {},
             adService: adService,
             planId: 'free',
+            legalDocumentService: legalDocumentService,
           ),
         ),
       );
@@ -220,10 +270,14 @@ void main() {
       final settingsRepo = _FakeSettingsRepository(settingsData);
       final accountRepo = _FakeAccountRepository();
       const adService = AdService();
+      final legalDocumentService = _FakeLegalDocumentService(
+        mockContent: '# Test Document\n\nContent...',
+      );
 
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: const [
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -239,6 +293,7 @@ void main() {
             onLogout: () async {},
             adService: adService,
             planId: 'free',
+            legalDocumentService: legalDocumentService,
           ),
         ),
       );
@@ -268,10 +323,14 @@ void main() {
       final settingsRepo = _FakeSettingsRepository(settingsData);
       final accountRepo = _FakeAccountRepository();
       const adService = AdService();
+      final legalDocumentService = _FakeLegalDocumentService(
+        mockContent: '# Test Document\n\nContent...',
+      );
 
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: const [
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -287,6 +346,7 @@ void main() {
             onLogout: () async {},
             adService: adService,
             planId: 'free',
+            legalDocumentService: legalDocumentService,
           ),
         ),
       );
@@ -312,10 +372,14 @@ void main() {
       final settingsRepo = _FakeSettingsRepository(settingsData);
       final accountRepo = _FakeAccountRepository();
       const adService = AdService();
+      final legalDocumentService = _FakeLegalDocumentService(
+        mockContent: '# Test Document\n\nContent...',
+      );
 
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: const [
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -331,6 +395,7 @@ void main() {
             onLogout: () async {},
             adService: adService,
             planId: 'free',
+            legalDocumentService: legalDocumentService,
           ),
         ),
       );
@@ -357,10 +422,14 @@ void main() {
       final settingsRepo = _FakeSettingsRepository(settingsData);
       final accountRepo = _FakeAccountRepository();
       const adService = AdService();
+      final legalDocumentService = _FakeLegalDocumentService(
+        mockContent: '# Test Document\n\nContent...',
+      );
 
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: const [
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -376,6 +445,7 @@ void main() {
             onLogout: () async {},
             adService: adService,
             planId: 'free',
+            legalDocumentService: legalDocumentService,
           ),
         ),
       );
@@ -402,10 +472,14 @@ void main() {
       final settingsRepo = _FakeSettingsRepository(settingsData);
       final accountRepo = _FakeAccountRepository();
       const adService = AdService();
+      final legalDocumentService = _FakeLegalDocumentService(
+        mockContent: '# Test Document\n\nContent...',
+      );
 
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: const [
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -421,6 +495,7 @@ void main() {
             onLogout: () async {},
             adService: adService,
             planId: 'free',
+            legalDocumentService: legalDocumentService,
           ),
         ),
       );
@@ -452,6 +527,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: const [
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -467,6 +543,9 @@ void main() {
             onLogout: () async {},
             adService: adService,
             planId: 'free',
+            legalDocumentService: _FakeLegalDocumentService(
+              mockContent: '# Test Document\n\nContent...',
+            ),
           ),
         ),
       );
@@ -487,11 +566,15 @@ void main() {
       final settingsRepo = _FakeSettingsRepository(settingsData);
       final accountRepo = _FakeAccountRepository();
       const adService = AdService();
+      final legalDocumentService = _FakeLegalDocumentService(
+        mockContent: '# Test Document\n\nContent...',
+      );
 
       // 英語環境
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: const [
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -507,6 +590,7 @@ void main() {
             onLogout: () async {},
             adService: adService,
             planId: 'free',
+            legalDocumentService: legalDocumentService,
           ),
         ),
       );

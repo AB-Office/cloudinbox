@@ -2,6 +2,7 @@ import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/legal_document_screen.dart';
 import 'package:cloudinbox_mobile_app/services/ad_service.dart';
 import 'package:cloudinbox_mobile_app/services/i18n_service.dart';
+import 'package:cloudinbox_mobile_app/services/legal_document_service.dart';
 import 'package:cloudinbox_mobile_app/widgets/navigation_drawer.dart' as app_drawer;
 import 'package:flutter/material.dart';
 
@@ -35,6 +36,7 @@ class SettingsScreen extends StatefulWidget {
     this.planId,
     this.currentRoute = '/settings',
     this.onNavigate,
+    this.legalDocumentService,
   });
 
   final SettingsRepository repository;
@@ -44,6 +46,7 @@ class SettingsScreen extends StatefulWidget {
   final String? planId;
   final String currentRoute;
   final void Function(String route)? onNavigate;
+  final LegalDocumentService? legalDocumentService;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -197,6 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (context) => LegalDocumentScreen(
           documentType: documentType,
           locale: locale,
+          service: widget.legalDocumentService,
         ),
       ),
     );

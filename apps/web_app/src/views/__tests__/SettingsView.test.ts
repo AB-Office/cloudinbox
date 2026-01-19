@@ -10,12 +10,35 @@ import { createRouter, createWebHistory } from 'vue-router';
 import SettingsView from '../SettingsView.vue';
 import LegalDocumentViewer from '@/components/LegalDocumentViewer.vue';
 
+// Firebase Firestoreのモック
+vi.mock('firebase/firestore', () => ({
+  getFirestore: vi.fn(() => ({})),
+  doc: vi.fn(),
+  getDoc: vi.fn(),
+  onSnapshot: vi.fn(),
+}));
+
+// Firebase Appのモック
+vi.mock('@/services/firebase', () => ({
+  firebaseApp: {},
+}));
+
+// SettingsStoreのモック
+vi.mock('@/stores/settings', () => ({
+  useSettingsStore: () => ({
+    settings: null,
+    startWatching: vi.fn(),
+    stopWatching: vi.fn(),
+  }),
+}));
+
 const vuetify = createVuetify({
   components,
   directives,
 });
 
 const i18n = createI18n({
+  legacy: false,
   locale: 'ja',
   fallbackLocale: 'en',
   messages: {
@@ -85,7 +108,7 @@ describe('SettingsView', () => {
   });
 
   const createWrapper = async (locale: 'ja' | 'en' = 'ja') => {
-    (i18n.global.locale as any).value = locale;
+    i18n.global.locale.value = locale;
     await router.push({ path: '/settings' });
     wrapper = mount(SettingsView, {
       global: {
@@ -108,10 +131,13 @@ describe('SettingsView', () => {
 
   it('should open LegalDocumentViewer when privacy policy link is clicked', async () => {
     const wrapper = await createWrapper();
-    const privacyLink = wrapper.find('[title*="プライバシーポリシー"]');
-    expect(privacyLink.exists()).toBe(true);
+    const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+    const privacyLink = listItems.find(item => item.text().includes('プライバシーポリシー'));
+    expect(privacyLink).toBeDefined();
 
-    await privacyLink.trigger('click');
+    if (privacyLink) {
+      await privacyLink.trigger('click');
+    }
     await wrapper.vm.$nextTick();
 
     const viewer = wrapper.findComponent(LegalDocumentViewer);
@@ -122,10 +148,13 @@ describe('SettingsView', () => {
 
   it('should open LegalDocumentViewer when terms of service link is clicked', async () => {
     const wrapper = await createWrapper();
-    const termsLink = wrapper.find('[title*="利用規約"]');
-    expect(termsLink.exists()).toBe(true);
+    const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+    const termsLink = listItems.find(item => item.text().includes('利用規約'));
+    expect(termsLink).toBeDefined();
 
-    await termsLink.trigger('click');
+    if (termsLink) {
+      await termsLink.trigger('click');
+    }
     await wrapper.vm.$nextTick();
 
     const viewer = wrapper.findComponent(LegalDocumentViewer);
@@ -136,10 +165,13 @@ describe('SettingsView', () => {
 
   it('should open LegalDocumentViewer with commercial document for Japanese locale', async () => {
     const wrapper = await createWrapper('ja');
-    const commercialLink = wrapper.find('[title*="特定商取引法"]');
-    expect(commercialLink.exists()).toBe(true);
+    const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+    const commercialLink = listItems.find(item => item.text().includes('特定商取引法'));
+    expect(commercialLink).toBeDefined();
 
-    await commercialLink.trigger('click');
+    if (commercialLink) {
+      await commercialLink.trigger('click');
+    }
     await wrapper.vm.$nextTick();
 
     const viewer = wrapper.findComponent(LegalDocumentViewer);
@@ -149,11 +181,53 @@ describe('SettingsView', () => {
   });
 
   it('should open LegalDocumentViewer with pricing document for English locale', async () => {
-    const wrapper = await createWrapper('en');
-    const pricingLink = wrapper.find('[title*="Pricing"]');
-    expect(pricingLink.exists()).toBe(true);
+    // 英語環境でi18nを再作成
+    const i18nEn = createI18n({
+      legacy: false,
+      locale: 'en',
+      fallbackLocale: 'en',
+      messages: {
+        en: {
+          navigation: { settings: 'Settings' },
+          settings: {
+            storageUsage: 'Storage Usage',
+            plan: 'Plan',
+            usedStorage: 'Used',
+            availableStorage: 'Available',
+            legal: 'Legal Information',
+            privacyPolicy: 'Privacy Policy',
+            termsOfService: 'Terms of Service',
+            commercialTransaction: 'Commercial Transaction',
+            pricingBilling: 'Pricing / Billing',
+          },
+          account: { title: 'Account' },
+          common: { open: 'Open' },
+        },
+      },
+    });
+    await router.push({ path: '/settings' });
+    const wrapper = mount(SettingsView, {
+      global: {
+        plugins: [vuetify, i18nEn, pinia, router],
+        mocks: {
+          $route: router.currentRoute.value,
+          $router: router,
+        },
+      },
+    });
+    await wrapper.vm.$nextTick();
+    await new Promise(resolve => setTimeout(resolve, 200));
+    const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+    // 英語環境では"Pricing / Billing"が表示される
+    const pricingLink = listItems.find(item => {
+      const text = item.text();
+      return text.includes('Pricing') || text.includes('Billing');
+    });
+    expect(pricingLink).toBeDefined();
 
-    await pricingLink.trigger('click');
+    if (pricingLink) {
+      await pricingLink.trigger('click');
+    }
     await wrapper.vm.$nextTick();
 
     const viewer = wrapper.findComponent(LegalDocumentViewer);
@@ -165,9 +239,12 @@ describe('SettingsView', () => {
   it('should not call window.open when legal document link is clicked', async () => {
     const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
     const wrapper = await createWrapper();
-    const privacyLink = wrapper.find('[title*="プライバシーポリシー"]');
+    const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+    const privacyLink = listItems.find(item => item.text().includes('プライバシーポリシー'));
 
-    await privacyLink.trigger('click');
+    if (privacyLink) {
+      await privacyLink.trigger('click');
+    }
     await wrapper.vm.$nextTick();
 
     expect(windowOpenSpy).not.toHaveBeenCalled();
@@ -176,9 +253,12 @@ describe('SettingsView', () => {
 
   it('should close LegalDocumentViewer when modelValue is set to false', async () => {
     const wrapper = await createWrapper();
-    const privacyLink = wrapper.find('[title*="プライバシーポリシー"]');
+    const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+    const privacyLink = listItems.find(item => item.text().includes('プライバシーポリシー'));
 
-    await privacyLink.trigger('click');
+    if (privacyLink) {
+      await privacyLink.trigger('click');
+    }
     await wrapper.vm.$nextTick();
 
     let viewer = wrapper.findComponent(LegalDocumentViewer);

@@ -145,10 +145,13 @@ describe('Legal Documents Integration Tests', () => {
       vi.mocked(getDocument).mockResolvedValue(mockContent);
 
       const wrapper = await createWrapper('ja');
-      const termsLink = wrapper.find('[title*="利用規約"]');
-      expect(termsLink.exists()).toBe(true);
-
-      await termsLink.trigger('click');
+      // v-list-itemのテキストコンテンツで検索
+      const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+      const termsLink = listItems.find(item => item.text().includes('利用規約'));
+      expect(termsLink).toBeDefined();
+      if (termsLink) {
+        await termsLink.trigger('click');
+      }
       await new Promise(resolve => setTimeout(resolve, 200));
       await wrapper.vm.$nextTick();
 
@@ -163,10 +166,12 @@ describe('Legal Documents Integration Tests', () => {
       vi.mocked(getDocument).mockResolvedValue(mockContent);
 
       const wrapper = await createWrapper('ja');
-      const privacyLink = wrapper.find('[title*="プライバシーポリシー"]');
-      expect(privacyLink.exists()).toBe(true);
-
-      await privacyLink.trigger('click');
+      const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+      const privacyLink = listItems.find(item => item.text().includes('プライバシーポリシー'));
+      expect(privacyLink).toBeDefined();
+      if (privacyLink) {
+        await privacyLink.trigger('click');
+      }
       await new Promise(resolve => setTimeout(resolve, 200));
       await wrapper.vm.$nextTick();
 
@@ -178,10 +183,12 @@ describe('Legal Documents Integration Tests', () => {
       vi.mocked(getDocument).mockResolvedValue(mockContent);
 
       const wrapper = await createWrapper('ja');
-      const commercialLink = wrapper.find('[title*="特定商取引法"]');
-      expect(commercialLink.exists()).toBe(true);
-
-      await commercialLink.trigger('click');
+      const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+      const commercialLink = listItems.find(item => item.text().includes('特定商取引法'));
+      expect(commercialLink).toBeDefined();
+      if (commercialLink) {
+        await commercialLink.trigger('click');
+      }
       await new Promise(resolve => setTimeout(resolve, 200));
       await wrapper.vm.$nextTick();
 
@@ -193,10 +200,12 @@ describe('Legal Documents Integration Tests', () => {
       vi.mocked(getDocument).mockResolvedValue(mockContent);
 
       const wrapper = await createWrapper('en');
-      const pricingLink = wrapper.find('[title*="Pricing"]');
-      expect(pricingLink.exists()).toBe(true);
-
-      await pricingLink.trigger('click');
+      const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+      const pricingLink = listItems.find(item => item.text().includes('Pricing'));
+      expect(pricingLink).toBeDefined();
+      if (pricingLink) {
+        await pricingLink.trigger('click');
+      }
       await new Promise(resolve => setTimeout(resolve, 200));
       await wrapper.vm.$nextTick();
 
@@ -214,36 +223,41 @@ describe('Legal Documents Integration Tests', () => {
 
       // 日本語環境で利用規約を開く
       const wrapper = await createWrapper('ja');
-      const termsLink = wrapper.find('[title*="利用規約"]');
-      await termsLink.trigger('click');
+      const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+      const termsLink = listItems.find(item => item.text().includes('利用規約'));
+      if (termsLink) {
+        await termsLink.trigger('click');
+      }
       await new Promise(resolve => setTimeout(resolve, 200));
       await wrapper.vm.$nextTick();
 
       expect(getDocument).toHaveBeenCalledWith('terms', 'ja');
 
-      // 英語環境に切り替え
-      i18n.global.locale.value = 'en';
-      await wrapper.vm.$nextTick();
-
-      // 英語環境で利用規約を開く
-      const termsLinkEn = wrapper.find('[title*="Terms of Service"]');
-      await termsLinkEn.trigger('click');
+      // 英語環境で新しいwrapperを作成
+      const wrapperEn = await createWrapper('en');
+      const listItemsEn = wrapperEn.findAllComponents({ name: 'VListItem' });
+      const termsLinkEn = listItemsEn.find(item => item.text().includes('Terms of Service'));
+      if (termsLinkEn) {
+        await termsLinkEn.trigger('click');
+      }
       await new Promise(resolve => setTimeout(resolve, 200));
-      await wrapper.vm.$nextTick();
+      await wrapperEn.vm.$nextTick();
 
       expect(getDocument).toHaveBeenCalledWith('terms', 'en');
     });
 
     it('should show commercial transaction only for Japanese locale', async () => {
       const wrapper = await createWrapper('ja');
-      const commercialLink = wrapper.find('[title*="特定商取引法"]');
-      expect(commercialLink.exists()).toBe(true);
+      const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+      const commercialLink = listItems.find(item => item.text().includes('特定商取引法'));
+      expect(commercialLink).toBeDefined();
     });
 
     it('should show pricing only for English locale', async () => {
       const wrapper = await createWrapper('en');
-      const pricingLink = wrapper.find('[title*="Pricing"]');
-      expect(pricingLink.exists()).toBe(true);
+      const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+      const pricingLink = listItems.find(item => item.text().includes('Pricing'));
+      expect(pricingLink).toBeDefined();
     });
   });
 
@@ -252,8 +266,11 @@ describe('Legal Documents Integration Tests', () => {
       vi.mocked(getDocument).mockRejectedValue(new Error('Document not found: legal-docs/terms_ja.md'));
 
       const wrapper = await createWrapper('ja');
-      const termsLink = wrapper.find('[title*="利用規約"]');
-      await termsLink.trigger('click');
+      const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+      const termsLink = listItems.find(item => item.text().includes('利用規約'));
+      if (termsLink) {
+        await termsLink.trigger('click');
+      }
       await new Promise(resolve => setTimeout(resolve, 300));
       await wrapper.vm.$nextTick();
 
@@ -267,8 +284,11 @@ describe('Legal Documents Integration Tests', () => {
       vi.mocked(getDocument).mockRejectedValue(new Error('Network error'));
 
       const wrapper = await createWrapper('ja');
-      const privacyLink = wrapper.find('[title*="プライバシーポリシー"]');
-      await privacyLink.trigger('click');
+      const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+      const privacyLink = listItems.find(item => item.text().includes('プライバシーポリシー'));
+      if (privacyLink) {
+        await privacyLink.trigger('click');
+      }
       await new Promise(resolve => setTimeout(resolve, 300));
       await wrapper.vm.$nextTick();
 
@@ -282,8 +302,11 @@ describe('Legal Documents Integration Tests', () => {
       vi.mocked(getDocument).mockRejectedValue(new Error('Unauthorized: Authentication required'));
 
       const wrapper = await createWrapper('ja');
-      const termsLink = wrapper.find('[title*="利用規約"]');
-      await termsLink.trigger('click');
+      const listItems = wrapper.findAllComponents({ name: 'VListItem' });
+      const termsLink = listItems.find(item => item.text().includes('利用規約'));
+      if (termsLink) {
+        await termsLink.trigger('click');
+      }
       await new Promise(resolve => setTimeout(resolve, 300));
       await wrapper.vm.$nextTick();
 

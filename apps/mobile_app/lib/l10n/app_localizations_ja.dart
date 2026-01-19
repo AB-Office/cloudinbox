@@ -353,4 +353,45 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get pricingBilling => '特定商取引法に基づく表記';
+
+  @override
+  String get legalConsentTitle => '利用規約・プライバシーポリシーへの同意';
+
+  @override
+  String get legalConsentReconsentMessage => '法的文書が更新されました。最新版に同意してください。';
+
+  @override
+  String get legalConsentDescription => 'CloudInboxをご利用いただくには、利用規約とプライバシーポリシーへの同意が必要です。以下のチェックボックスにチェックを入れて同意してください。';
+
+  @override
+  String get legalConsentAgreeTerms => '利用規約に同意する';
+
+  @override
+  String get legalConsentAgreePrivacy => 'プライバシーポリシーに同意する';
+
+  @override
+  String get legalConsentView => '表示';
+
+  @override
+  String get legalConsentViewAgain => '再表示';
+
+  @override
+  String get legalConsentReadFullText => '（全文を読んでください）';
+
+  @override
+  String get legalConsentSubmit => '同意する';
+
+  @override
+  String legalConsentSaveError(String error) {
+    return '同意の保存に失敗しました: $error';
+  }
+
+  @override
+  String get legalDocumentReadComplete => '全文を読んだ';
+
+  @override
+  String get retry => '再試行';
+
+  @override
+  String get noContentAvailable => 'コンテンツが利用できません';
 }

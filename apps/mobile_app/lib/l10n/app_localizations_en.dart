@@ -353,4 +353,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pricingBilling => 'Pricing / Billing';
+
+  @override
+  String get legalConsentTitle => 'Terms of Service and Privacy Policy Consent';
+
+  @override
+  String get legalConsentReconsentMessage => 'Legal documents have been updated. Please agree to the latest version.';
+
+  @override
+  String get legalConsentDescription => 'To use CloudInbox, you must agree to the Terms of Service and Privacy Policy. Please check the boxes below to agree.';
+
+  @override
+  String get legalConsentAgreeTerms => 'I agree to the Terms of Service';
+
+  @override
+  String get legalConsentAgreePrivacy => 'I agree to the Privacy Policy';
+
+  @override
+  String get legalConsentView => 'View';
+
+  @override
+  String get legalConsentViewAgain => 'View Again';
+
+  @override
+  String get legalConsentReadFullText => '(Please read the full text)';
+
+  @override
+  String get legalConsentSubmit => 'Agree';
+
+  @override
+  String legalConsentSaveError(String error) {
+    return 'Failed to save consent: $error';
+  }
+
+  @override
+  String get legalDocumentReadComplete => 'I have read the full text';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get noContentAvailable => 'No content available';
 }

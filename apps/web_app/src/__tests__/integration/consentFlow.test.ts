@@ -82,6 +82,12 @@ vi.mock('@/services/firebase', () => ({
   firebaseApp: {},
 }));
 
+// Firebase Functionsのモック
+vi.mock('firebase/functions', () => ({
+  getFunctions: vi.fn(() => ({})),
+  httpsCallable: vi.fn(() => vi.fn()),
+}));
+
 // Auth Serviceのモック
 vi.mock('@/services/auth', () => ({
   authService: {

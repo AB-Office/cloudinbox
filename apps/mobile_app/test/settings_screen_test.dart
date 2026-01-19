@@ -3,9 +3,31 @@ import 'dart:async';
 import 'package:cloudinbox_mobile_app/screens/account_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/settings_screen.dart';
 import 'package:cloudinbox_mobile_app/screens/legal_document_screen.dart';
+import 'package:cloudinbox_mobile_app/services/legal_document_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+// LegalDocumentServiceのモック
+class _FakeLegalDocumentService extends LegalDocumentService {
+  final String? mockContent;
+  final Exception? mockError;
+
+  _FakeLegalDocumentService({this.mockContent, this.mockError});
+
+  @override
+  Future<String> getDocument(String documentType, String locale) async {
+    if (mockError != null) {
+      throw mockError!;
+    }
+    return mockContent ?? '# Test Document\n\nContent...';
+  }
+
+  @override
+  Future<String> getDocumentMetadata(String documentType, String locale) async {
+    return '2024-01-01T00:00:00.000Z';
+  }
+}
 
 class _FakeSettingsRepository implements SettingsRepository {
   _FakeSettingsRepository(this.data, {this.shouldThrow = false});
@@ -107,6 +129,7 @@ void main() {
             onLogout: () async {
               _signOutCalled = true;
             },
+            legalDocumentService: _FakeLegalDocumentService(),
           ),
         ),
       );
@@ -150,6 +173,7 @@ void main() {
             onLogout: () async {
               _signOutCalled = true;
             },
+            legalDocumentService: _FakeLegalDocumentService(),
           ),
         ),
       );
@@ -188,6 +212,7 @@ void main() {
             onLogout: () async {
               _signOutCalled = true;
             },
+            legalDocumentService: _FakeLegalDocumentService(),
           ),
         ),
       );
@@ -226,6 +251,7 @@ void main() {
             onLogout: () async {
               _signOutCalled = true;
             },
+            legalDocumentService: _FakeLegalDocumentService(),
           ),
         ),
       );
@@ -265,6 +291,7 @@ void main() {
             onLogout: () async {
               _signOutCalled = true;
             },
+            legalDocumentService: _FakeLegalDocumentService(),
           ),
         ),
       );
@@ -306,6 +333,7 @@ void main() {
             onLogout: () async {
               _signOutCalled = true;
             },
+            legalDocumentService: _FakeLegalDocumentService(),
           ),
         ),
       );
@@ -344,6 +372,7 @@ void main() {
             repository: repo,
             accountRepository: _FakeAccountRepository(),
             onLogout: () async {},
+            legalDocumentService: _FakeLegalDocumentService(),
           ),
         ),
       );
@@ -386,6 +415,7 @@ void main() {
             repository: repo,
             accountRepository: _FakeAccountRepository(),
             onLogout: () async {},
+            legalDocumentService: _FakeLegalDocumentService(),
           ),
         ),
       );
@@ -428,6 +458,7 @@ void main() {
             repository: repo,
             accountRepository: _FakeAccountRepository(),
             onLogout: () async {},
+            legalDocumentService: _FakeLegalDocumentService(),
           ),
         ),
       );
@@ -473,6 +504,7 @@ void main() {
             repository: repo,
             accountRepository: _FakeAccountRepository(),
             onLogout: () async {},
+            legalDocumentService: _FakeLegalDocumentService(),
           ),
         ),
       );
@@ -518,6 +550,7 @@ void main() {
             repository: repo,
             accountRepository: _FakeAccountRepository(),
             onLogout: () async {},
+            legalDocumentService: _FakeLegalDocumentService(),
           ),
         ),
       );

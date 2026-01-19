@@ -295,7 +295,11 @@ describe('accountService', () => {
       // パスワード暗号化のモック
       mockCallableFunction.mockResolvedValue({
         data: {
-          encryptedPassword: 'encrypted-password',
+          passwordEnc: {
+            ciphertext: 'encrypted-ciphertext',
+            nonce: 'encrypted-nonce',
+            tag: 'encrypted-tag',
+          },
         },
       });
 
@@ -355,7 +359,11 @@ describe('accountService', () => {
       // パスワード暗号化のモック
       mockCallableFunction.mockResolvedValue({
         data: {
-          encryptedPassword: 'encrypted-password',
+          passwordEnc: {
+            ciphertext: 'encrypted-ciphertext',
+            nonce: 'encrypted-nonce',
+            tag: 'encrypted-tag',
+          },
         },
       });
 
@@ -435,11 +443,28 @@ describe('accountService', () => {
       // パスワード暗号化のモック
       mockCallableFunction.mockResolvedValue({
         data: {
-          encryptedPassword: 'encrypted-password',
+          passwordEnc: {
+            ciphertext: 'encrypted-ciphertext',
+            nonce: 'encrypted-nonce',
+            tag: 'encrypted-tag',
+          },
         },
       });
 
-      vi.mocked(doc).mockReturnValue({} as any);
+      const mockAccountRef = {};
+      const mockAccountSnap = {
+        data: () => ({
+          pop3: {
+            passwordEnc: {
+              ciphertext: 'encrypted',
+              nonce: 'nonce',
+              tag: 'tag',
+            },
+          },
+        }),
+      };
+      vi.mocked(doc).mockReturnValue(mockAccountRef as any);
+      vi.mocked(getDoc).mockResolvedValue(mockAccountSnap as any);
       vi.mocked(updateDoc).mockResolvedValue(undefined);
 
       const formData = {
@@ -457,8 +482,30 @@ describe('accountService', () => {
     });
 
     it('should use default SMTP port 587 when smtpPort is not specified in updateAccount', async () => {
-      vi.mocked(doc).mockReturnValue({} as any);
+      const mockAccountRef = {};
+      const mockAccountSnap = {
+        data: () => ({
+          pop3: {
+            passwordEnc: {
+              ciphertext: 'encrypted',
+              nonce: 'nonce',
+              tag: 'tag',
+            },
+          },
+        }),
+      };
+      vi.mocked(doc).mockReturnValue(mockAccountRef as any);
+      vi.mocked(getDoc).mockResolvedValue(mockAccountSnap as any);
       vi.mocked(updateDoc).mockResolvedValue(undefined);
+      mockCallableFunction.mockResolvedValue({
+        data: {
+          passwordEnc: {
+            ciphertext: 'new-encrypted',
+            nonce: 'new-nonce',
+            tag: 'new-tag',
+          },
+        },
+      });
 
       const formData = {
         label: 'Updated Account',
@@ -481,7 +528,20 @@ describe('accountService', () => {
     });
 
     it('should not update password when password is empty', async () => {
-      vi.mocked(doc).mockReturnValue({} as any);
+      const mockAccountRef = {};
+      const mockAccountSnap = {
+        data: () => ({
+          pop3: {
+            passwordEnc: {
+              ciphertext: 'encrypted',
+              nonce: 'nonce',
+              tag: 'tag',
+            },
+          },
+        }),
+      };
+      vi.mocked(doc).mockReturnValue(mockAccountRef as any);
+      vi.mocked(getDoc).mockResolvedValue(mockAccountSnap as any);
       vi.mocked(updateDoc).mockResolvedValue(undefined);
 
       const formData = {

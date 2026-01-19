@@ -9,7 +9,12 @@
 
       <v-divider></v-divider>
 
-      <v-card-text class="pa-4">
+      <v-card-text 
+        ref="contentContainer" 
+        class="pa-4 legal-document-scroll-container"
+        style="max-height: 60vh; overflow-y: auto"
+        @scroll="handleScroll"
+      >
         <!-- ローディング状態 -->
         <div v-if="loading" class="text-center pa-8">
           <v-progress-circular indeterminate color="primary"></v-progress-circular>
@@ -32,14 +37,21 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" @click="$emit('update:modelValue', false)">Close</v-btn>
+        <v-btn 
+          color="primary" 
+          :disabled="!hasScrolledToBottom" 
+          @click="handleReadComplete"
+        >
+          全文を読んだ
+        </v-btn>
+        <v-btn color="primary" variant="text" @click="$emit('update:modelValue', false)">閉じる</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { getDocument, type DocumentType, type Locale } from '@/services/legalDocument';
@@ -52,14 +64,17 @@ interface Props {
 
 const props = defineProps<Props>();
 
-defineEmits<{
+const emit = defineEmits<{
   'update:modelValue': [value: boolean];
+  'read-complete': [documentType: DocumentType];
 }>();
 
 const loading = ref(false);
 const error = ref<string | null>(null);
 const markdownContent = ref<string | null>(null);
 const htmlContent = ref<string | null>(null);
+const contentContainer = ref<HTMLElement | null>(null);
+const hasScrolledToBottom = ref(false);
 
 const title = computed(() => {
   const titles: Record<string, Record<string, string>> = {
@@ -137,21 +152,124 @@ async function loadDocument(): Promise<void> {
   }
 }
 
+/**
+ * スクロール位置をチェックして、最後までスクロールしたかどうかを判定
+ */
+function checkScrollPosition(event?: Event): void {
+  // イベントから直接targetを取得するか、contentContainerから取得
+  let container: HTMLElement | null = null;
+  
+  if (event && event.target instanceof HTMLElement) {
+    // スクロールイベントから直接取得
+    container = event.target;
+  } else if (contentContainer.value) {
+    // v-card-textの実際のDOM要素を取得
+    if (contentContainer.value instanceof HTMLElement) {
+      container = contentContainer.value;
+    } else {
+      // Vuetifyコンポーネントの場合は、$elで取得
+      container = (contentContainer.value as any).$el || null;
+    }
+  }
+
+  // それでも取得できない場合は、クラス名で検索
+  if (!container) {
+    container = document.querySelector('.legal-document-scroll-container') as HTMLElement;
+  }
+
+  if (!container) {
+    hasScrolledToBottom.value = false;
+    return;
+  }
+
+  const scrollTop = container.scrollTop;
+  const scrollHeight = container.scrollHeight;
+  const clientHeight = container.clientHeight;
+  const threshold = 100; // 100pxの閾値（最後までスクロールしたとみなす）
+
+  // コンテンツが短くてスクロール不要な場合も有効化
+  if (scrollHeight <= clientHeight + 1) { // 1pxの誤差を許容
+    hasScrolledToBottom.value = true;
+    return;
+  }
+
+  // 最後までスクロールしたかどうかを判定
+  const isAtBottom = scrollTop + clientHeight >= scrollHeight - threshold;
+  hasScrolledToBottom.value = isAtBottom;
+}
+
+/**
+ * スクロールイベントハンドラー
+ */
+function handleScroll(event: Event): void {
+  checkScrollPosition(event);
+}
+
+/**
+ * 「全文を読んだ」ボタンをクリックしたときの処理
+ */
+function handleReadComplete(): void {
+  if (!hasScrolledToBottom.value) {
+    return; // 最後までスクロールしていない場合は何もしない
+  }
+  emit('read-complete', props.documentType);
+  emit('update:modelValue', false);
+}
+
 // ダイアログが開かれたときに文書を読み込む
 watch(
   () => props.modelValue,
   newValue => {
     if (newValue) {
+      hasScrolledToBottom.value = false; // リセット
       loadDocument();
     }
   }
 );
 
+// スクロール位置をチェックする関数（初期状態のチェック用）
+function checkScrollPositionDelayed(): void {
+  nextTick(() => {
+    checkScrollPosition();
+  });
+}
+
+// コンテンツが読み込まれたときにスクロール位置をチェック
+watch(
+  () => htmlContent.value,
+  async () => {
+    if (htmlContent.value) {
+      // DOM更新を待つ
+      await nextTick();
+      
+      // 複数回チェックして確実に検出
+      setTimeout(() => {
+        checkScrollPositionDelayed();
+      }, 100);
+      
+      setTimeout(() => {
+        checkScrollPositionDelayed();
+      }, 300);
+      
+      setTimeout(() => {
+        checkScrollPositionDelayed();
+      }, 500);
+    }
+  },
+  { immediate: true }
+);
+
 // コンポーネントがマウントされたときに、既に開いている場合は読み込む
-onMounted(() => {
+onMounted(async () => {
   if (props.modelValue) {
-    loadDocument();
+    await loadDocument();
   }
+  
+  // マウント後にスクロール位置をチェック
+  await nextTick();
+  setTimeout(() => {
+    checkScrollPositionDelayed();
+  }, 100);
 });
 </script>
 

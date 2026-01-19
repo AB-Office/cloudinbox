@@ -742,6 +742,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pricing / Billing'**
   String get pricingBilling;
+
+  /// Legal consent screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service and Privacy Policy Consent'**
+  String get legalConsentTitle;
+
+  /// Reconsent message when documents are updated
+  ///
+  /// In en, this message translates to:
+  /// **'Legal documents have been updated. Please agree to the latest version.'**
+  String get legalConsentReconsentMessage;
+
+  /// Legal consent screen description
+  ///
+  /// In en, this message translates to:
+  /// **'To use CloudInbox, you must agree to the Terms of Service and Privacy Policy. Please check the boxes below to agree.'**
+  String get legalConsentDescription;
+
+  /// Terms of Service agreement checkbox label
+  ///
+  /// In en, this message translates to:
+  /// **'I agree to the Terms of Service'**
+  String get legalConsentAgreeTerms;
+
+  /// Privacy Policy agreement checkbox label
+  ///
+  /// In en, this message translates to:
+  /// **'I agree to the Privacy Policy'**
+  String get legalConsentAgreePrivacy;
+
+  /// View document button label
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get legalConsentView;
+
+  /// View document again button label
+  ///
+  /// In en, this message translates to:
+  /// **'View Again'**
+  String get legalConsentViewAgain;
+
+  /// Message prompting user to read full text
+  ///
+  /// In en, this message translates to:
+  /// **'(Please read the full text)'**
+  String get legalConsentReadFullText;
+
+  /// Submit consent button label
+  ///
+  /// In en, this message translates to:
+  /// **'Agree'**
+  String get legalConsentSubmit;
+
+  /// Consent save error message
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save consent: {error}'**
+  String legalConsentSaveError(String error);
+
+  /// Button label to confirm reading the full document
+  ///
+  /// In en, this message translates to:
+  /// **'I have read the full text'**
+  String get legalDocumentReadComplete;
+
+  /// Retry button label
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No content available message
+  ///
+  /// In en, this message translates to:
+  /// **'No content available'**
+  String get noContentAvailable;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

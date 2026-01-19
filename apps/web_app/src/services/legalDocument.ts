@@ -87,13 +87,37 @@ export async function getDocumentMetadata(
     const metadata = await getMetadata(storageRef);
 
     // updated または timeCreated を使用（updatedが優先）
-    const updatedTime = metadata.updated || metadata.timeCreated;
+    const updatedTime: unknown = metadata.updated || metadata.timeCreated;
     if (!updatedTime) {
       throw new Error(`Metadata does not contain timestamp: ${path}`);
     }
 
+    // Dateオブジェクトに変換
+    let date: Date;
+    if (updatedTime instanceof Date) {
+      date = updatedTime;
+    } else if (typeof updatedTime === 'string') {
+      // すでに文字列の場合は、Dateオブジェクトに変換
+      date = new Date(updatedTime);
+      if (isNaN(date.getTime())) {
+        throw new Error(`Invalid timestamp format: ${updatedTime}`);
+      }
+    } else if (typeof updatedTime === 'object' && updatedTime !== null && 'toDate' in updatedTime) {
+      // Firestore Timestampなどの場合は、toDate()メソッドを試す
+      date = (updatedTime as { toDate: () => Date }).toDate();
+      if (isNaN(date.getTime())) {
+        throw new Error(`Invalid timestamp format: ${String(updatedTime)}`);
+      }
+    } else {
+      // その他の形式の場合は、Dateコンストラクタで変換を試みる
+      date = new Date(updatedTime as string | number);
+      if (isNaN(date.getTime())) {
+        throw new Error(`Invalid timestamp format: ${String(updatedTime)}`);
+      }
+    }
+
     // ISO 8601形式の文字列として返す
-    return updatedTime.toISOString();
+    return date.toISOString();
   } catch (error) {
     if (error instanceof Error) {
       // Firebase Storageのエラーを処理

@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+# サイトマップの場所
+Sitemap: https://cloudinbox.cloud/sitemap.xml
+

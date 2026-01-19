@@ -489,6 +489,63 @@
   "pricingBilling": "特定商取引法に基づく表記",
   "@pricingBilling": {
     "description": "特定商取引法に基づく表記リンクのラベル"
+  },
+  "legalConsentTitle": "利用規約・プライバシーポリシーへの同意",
+  "@legalConsentTitle": {
+    "description": "法的同意画面のタイトル"
+  },
+  "legalConsentReconsentMessage": "法的文書が更新されました。最新版に同意してください。",
+  "@legalConsentReconsentMessage": {
+    "description": "文書が更新された場合の再確認メッセージ"
+  },
+  "legalConsentDescription": "CloudInboxをご利用いただくには、利用規約とプライバシーポリシーへの同意が必要です。以下のチェックボックスにチェックを入れて同意してください。",
+  "@legalConsentDescription": {
+    "description": "法的同意画面の説明文"
+  },
+  "legalConsentAgreeTerms": "利用規約に同意する",
+  "@legalConsentAgreeTerms": {
+    "description": "利用規約同意チェックボックスのラベル"
+  },
+  "legalConsentAgreePrivacy": "プライバシーポリシーに同意する",
+  "@legalConsentAgreePrivacy": {
+    "description": "プライバシーポリシー同意チェックボックスのラベル"
+  },
+  "legalConsentView": "表示",
+  "@legalConsentView": {
+    "description": "文書表示ボタンのラベル"
+  },
+  "legalConsentViewAgain": "再表示",
+  "@legalConsentViewAgain": {
+    "description": "文書再表示ボタンのラベル"
+  },
+  "legalConsentReadFullText": "（全文を読んでください）",
+  "@legalConsentReadFullText": {
+    "description": "全文を読むよう促すメッセージ"
+  },
+  "legalConsentSubmit": "同意する",
+  "@legalConsentSubmit": {
+    "description": "同意送信ボタンのラベル"
+  },
+  "legalConsentSaveError": "同意の保存に失敗しました: {error}",
+  "@legalConsentSaveError": {
+    "description": "同意保存エラーメッセージ",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "legalDocumentReadComplete": "全文を読んだ",
+  "@legalDocumentReadComplete": {
+    "description": "全文を読んだことを確認するボタンのラベル"
+  },
+  "retry": "再試行",
+  "@retry": {
+    "description": "再試行ボタンのラベル"
+  },
+  "noContentAvailable": "コンテンツが利用できません",
+  "@noContentAvailable": {
+    "description": "コンテンツが利用できない場合のメッセージ"
   }
 }
 

@@ -33,50 +33,51 @@
 
             <!-- チェックボックス -->
             <div class="mb-6">
-              <v-checkbox
-                v-model="termsChecked"
-                :label="t('legal.consent.agreeTerms', {}, { default: '利用規約に同意する' })"
-                density="comfortable"
-                hide-details
-                class="mb-2"
-              >
-                <template #label>
-                  <span>
-                    {{ t('legal.consent.agreeTerms', {}, { default: '利用規約に同意する' }) }}
-                    <v-btn
-                      variant="text"
-                      size="small"
-                      color="primary"
-                      class="ml-2"
-                      @click="openDocument('terms')"
-                    >
-                      {{ t('legal.consent.view', {}, { default: '表示' }) }}
-                    </v-btn>
-                  </span>
-                </template>
-              </v-checkbox>
+              <div class="d-flex align-center mb-2">
+                <v-checkbox
+                  v-model="termsChecked"
+                  :label="t('legal.consent.agreeTerms', {}, { default: '利用規約に同意する' })"
+                  :disabled="!termsRead"
+                  density="comfortable"
+                  hide-details
+                  class="flex-grow-1"
+                ></v-checkbox>
+                <v-btn
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  class="ml-2"
+                  @click.stop="openDocument('terms')"
+                >
+                  {{ termsRead ? t('legal.consent.view', {}, { default: '再表示' }) : t('legal.consent.view', {}, { default: '表示' }) }}
+                </v-btn>
+              </div>
+              <div v-if="!termsRead" class="text-caption text-grey ml-8 mb-2">
+                （全文を読んでください）
+              </div>
 
-              <v-checkbox
-                v-model="privacyChecked"
-                :label="t('legal.consent.agreePrivacy', {}, { default: 'プライバシーポリシーに同意する' })"
-                density="comfortable"
-                hide-details
-              >
-                <template #label>
-                  <span>
-                    {{ t('legal.consent.agreePrivacy', {}, { default: 'プライバシーポリシーに同意する' }) }}
-                    <v-btn
-                      variant="text"
-                      size="small"
-                      color="primary"
-                      class="ml-2"
-                      @click="openDocument('privacy')"
-                    >
-                      {{ t('legal.consent.view', {}, { default: '表示' }) }}
-                    </v-btn>
-                  </span>
-                </template>
-              </v-checkbox>
+              <div class="d-flex align-center">
+                <v-checkbox
+                  v-model="privacyChecked"
+                  :label="t('legal.consent.agreePrivacy', {}, { default: 'プライバシーポリシーに同意する' })"
+                  :disabled="!privacyRead"
+                  density="comfortable"
+                  hide-details
+                  class="flex-grow-1"
+                ></v-checkbox>
+                <v-btn
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  class="ml-2"
+                  @click.stop="openDocument('privacy')"
+                >
+                  {{ privacyRead ? t('legal.consent.view', {}, { default: '再表示' }) : t('legal.consent.view', {}, { default: '表示' }) }}
+                </v-btn>
+              </div>
+              <div v-if="!privacyRead" class="text-caption text-grey ml-8">
+                （全文を読んでください）
+              </div>
             </div>
           </v-card-text>
 
@@ -103,6 +104,7 @@
       v-model="documentDialog"
       :document-type="selectedDocumentType"
       :locale="currentLocale"
+      @read-complete="handleDocumentReadComplete"
     />
   </v-container>
 </template>
@@ -129,6 +131,10 @@ const currentLocale = computed<Locale>(() => {
 const termsChecked = ref(false);
 const privacyChecked = ref(false);
 
+// 文書を読んだかの状態（全文を読んだ場合のみチェック可能）
+const termsRead = ref(false);
+const privacyRead = ref(false);
+
 // ローディング状態とエラー状態
 const isLoading = computed(() => consentStore.isLoading);
 const error = ref<string | null>(null);
@@ -153,6 +159,18 @@ const selectedDocumentType = ref<'terms' | 'privacy'>('terms');
 function openDocument(type: 'terms' | 'privacy'): void {
   selectedDocumentType.value = type;
   documentDialog.value = true;
+}
+
+/**
+ * 法的文書を読み終えたときの処理
+ */
+function handleDocumentReadComplete(documentType: 'terms' | 'privacy' | 'commercial' | 'pricing'): void {
+  if (documentType === 'terms') {
+    termsRead.value = true;
+  } else if (documentType === 'privacy') {
+    privacyRead.value = true;
+  }
+  // commercial と pricing は無視（同意画面では使用しない）
 }
 
 /**

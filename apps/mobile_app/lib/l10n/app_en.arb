@@ -489,6 +489,63 @@
   "pricingBilling": "Pricing / Billing",
   "@pricingBilling": {
     "description": "Pricing / Billing link label"
+  },
+  "legalConsentTitle": "Terms of Service and Privacy Policy Consent",
+  "@legalConsentTitle": {
+    "description": "Legal consent screen title"
+  },
+  "legalConsentReconsentMessage": "Legal documents have been updated. Please agree to the latest version.",
+  "@legalConsentReconsentMessage": {
+    "description": "Reconsent message when documents are updated"
+  },
+  "legalConsentDescription": "To use CloudInbox, you must agree to the Terms of Service and Privacy Policy. Please check the boxes below to agree.",
+  "@legalConsentDescription": {
+    "description": "Legal consent screen description"
+  },
+  "legalConsentAgreeTerms": "I agree to the Terms of Service",
+  "@legalConsentAgreeTerms": {
+    "description": "Terms of Service agreement checkbox label"
+  },
+  "legalConsentAgreePrivacy": "I agree to the Privacy Policy",
+  "@legalConsentAgreePrivacy": {
+    "description": "Privacy Policy agreement checkbox label"
+  },
+  "legalConsentView": "View",
+  "@legalConsentView": {
+    "description": "View document button label"
+  },
+  "legalConsentViewAgain": "View Again",
+  "@legalConsentViewAgain": {
+    "description": "View document again button label"
+  },
+  "legalConsentReadFullText": "(Please read the full text)",
+  "@legalConsentReadFullText": {
+    "description": "Message prompting user to read full text"
+  },
+  "legalConsentSubmit": "Agree",
+  "@legalConsentSubmit": {
+    "description": "Submit consent button label"
+  },
+  "legalConsentSaveError": "Failed to save consent: {error}",
+  "@legalConsentSaveError": {
+    "description": "Consent save error message",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "legalDocumentReadComplete": "I have read the full text",
+  "@legalDocumentReadComplete": {
+    "description": "Button label to confirm reading the full document"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Retry button label"
+  },
+  "noContentAvailable": "No content available",
+  "@noContentAvailable": {
+    "description": "No content available message"
   }
 }
 

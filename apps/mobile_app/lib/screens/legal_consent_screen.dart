@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:cloudinbox_mobile_app/services/consent_service.dart';
 import 'package:cloudinbox_mobile_app/services/legal_document_service.dart';
 import 'package:cloudinbox_mobile_app/screens/legal_document_screen.dart';
+import 'package:cloudinbox_mobile_app/screens/mail_list_screen.dart';
+import 'package:cloudinbox_mobile_app/l10n/app_localizations.dart';
+import 'package:cloudinbox_mobile_app/services/i18n_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloudinbox_mobile_app/main.dart' show FirebaseInboxRepository, FirebaseSettingsRepository, FirebaseMailComposeRepository, FirebaseAccountRepository;
 
 /// Legal Consent Screen
 ///
@@ -21,6 +26,8 @@ class LegalConsentScreen extends StatefulWidget {
 class _LegalConsentScreenState extends State<LegalConsentScreen> {
   bool _termsChecked = false;
   bool _privacyChecked = false;
+  bool _termsRead = false; // 利用規約を読んだかどうか
+  bool _privacyRead = false; // プライバシーポリシーを読んだかどうか
   String? _termsVersion;
   String? _privacyVersion;
   bool _loading = false;
@@ -62,6 +69,16 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
         builder: (context) => LegalDocumentScreen(
           documentType: documentType,
           locale: locale,
+          onReadComplete: () {
+            // 文書を読み終えたときに呼ばれるコールバック
+            setState(() {
+              if (documentType == 'terms') {
+                _termsRead = true;
+              } else if (documentType == 'privacy') {
+                _privacyRead = true;
+              }
+            });
+          },
         ),
       ),
     );
@@ -91,14 +108,44 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
 
       // メイン画面（/inbox）に遷移
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/inbox');
+        // MaterialAppのNavigatorを使用して、MailListScreenに遷移
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          final inboxRepository = FirebaseInboxRepository(currentUser.uid, '/inbox');
+          final locale = Localizations.localeOf(context);
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => MailListScreen(
+                key: const ValueKey('mail_list_inbox'),
+                repository: inboxRepository,
+                title: I18nService.translateInbox(locale),
+                settingsRepository: FirebaseSettingsRepository(),
+                currentRoute: '/inbox',
+                onNavigate: (route) {
+                  // ナビゲーションは親のNavigatorで処理される
+                  // ここでは何もしない（必要に応じて実装）
+                },
+                composeRepository: FirebaseMailComposeRepository(),
+                accountRepository: FirebaseAccountRepository(),
+              ),
+            ),
+            (route) => false, // すべてのルートを削除
+          );
+        } else {
+          // ユーザーが認証されていない場合はエラー
+          setState(() {
+            _error = 'ユーザーが認証されていません';
+            _loading = false;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _error = '同意の保存に失敗しました: ${e.toString()}';
-          _loading = false;
-        });
+      final localizations = AppLocalizations.of(context);
+      setState(() {
+        _error = localizations?.legalConsentSaveError(e.toString()) ?? '同意の保存に失敗しました: ${e.toString()}';
+        _loading = false;
+      });
         // エラーメッセージをSnackBarで表示
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -118,9 +165,11 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('利用規約・プライバシーポリシーへの同意'),
+        title: Text(localizations?.legalConsentTitle ?? '利用規約・プライバシーポリシーへの同意'),
         automaticallyImplyLeading: false, // 戻るボタンを無効化（スキップできないようにする）
       ),
       body: SingleChildScrollView(
@@ -144,7 +193,7 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
                     const SizedBox(width: 8.0),
                     Expanded(
                       child: Text(
-                        '法的文書が更新されました。最新版に同意してください。',
+                        localizations?.legalConsentReconsentMessage ?? '法的文書が更新されました。最新版に同意してください。',
                         style: TextStyle(color: Colors.blue.shade900),
                       ),
                     ),
@@ -177,42 +226,82 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
               ),
 
             // 説明文
-            const Text(
-              'CloudInboxをご利用いただくには、利用規約とプライバシーポリシーへの同意が必要です。以下のチェックボックスにチェックを入れて同意してください。',
-              style: TextStyle(fontSize: 16.0, height: 1.6),
+            Text(
+              localizations?.legalConsentDescription ?? 'CloudInboxをご利用いただくには、利用規約とプライバシーポリシーへの同意が必要です。以下のチェックボックスにチェックを入れて同意してください。',
+              style: const TextStyle(fontSize: 16.0, height: 1.6),
             ),
             const SizedBox(height: 24.0),
 
             // チェックボックス
-            CheckboxListTile(
-              title: const Text('利用規約に同意する'),
-              subtitle: TextButton(
-                onPressed: () => _openDocument('terms'),
-                child: const Text('表示'),
-              ),
-              value: _termsChecked,
-              onChanged: (value) {
-                setState(() {
-                  _termsChecked = value ?? false;
-                });
-              },
-              controlAffinity: ListTileControlAffinity.leading,
+            Row(
+              children: [
+                Expanded(
+                  child: CheckboxListTile(
+                    title: Text(localizations?.legalConsentAgreeTerms ?? '利用規約に同意する'),
+                    value: _termsChecked,
+                    enabled: true, // 常に有効（表示ボタンを押せるようにする）
+                    onChanged: _termsRead
+                        ? (value) {
+                            setState(() {
+                              _termsChecked = value ?? false;
+                            });
+                          }
+                        : null, // 読んでいない場合はチェックできない
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => _openDocument('terms'),
+                  child: Text(_termsRead 
+                    ? (localizations?.legalConsentViewAgain ?? '再表示')
+                    : (localizations?.legalConsentView ?? '表示')),
+                ),
+              ],
             ),
+            if (!_termsRead)
+              Padding(
+                padding: const EdgeInsets.only(left: 48.0, bottom: 8.0),
+                child: Text(
+                  localizations?.legalConsentReadFullText ?? '（全文を読んでください）',
+                  style: const TextStyle(fontSize: 12.0, color: Colors.grey),
+                ),
+              ),
             const SizedBox(height: 8.0),
-            CheckboxListTile(
-              title: const Text('プライバシーポリシーに同意する'),
-              subtitle: TextButton(
-                onPressed: () => _openDocument('privacy'),
-                child: const Text('表示'),
-              ),
-              value: _privacyChecked,
-              onChanged: (value) {
-                setState(() {
-                  _privacyChecked = value ?? false;
-                });
-              },
-              controlAffinity: ListTileControlAffinity.leading,
+            Row(
+              children: [
+                Expanded(
+                  child: CheckboxListTile(
+                    title: Text(localizations?.legalConsentAgreePrivacy ?? 'プライバシーポリシーに同意する'),
+                    value: _privacyChecked,
+                    enabled: true, // 常に有効（表示ボタンを押せるようにする）
+                    onChanged: _privacyRead
+                        ? (value) {
+                            setState(() {
+                              _privacyChecked = value ?? false;
+                            });
+                          }
+                        : null, // 読んでいない場合はチェックできない
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => _openDocument('privacy'),
+                  child: Text(_privacyRead 
+                    ? (localizations?.legalConsentViewAgain ?? '再表示')
+                    : (localizations?.legalConsentView ?? '表示')),
+                ),
+              ],
             ),
+            if (!_privacyRead)
+              Padding(
+                padding: const EdgeInsets.only(left: 48.0),
+                child: Text(
+                  localizations?.legalConsentReadFullText ?? '（全文を読んでください）',
+                  style: const TextStyle(fontSize: 12.0, color: Colors.grey),
+                ),
+              ),
 
             const SizedBox(height: 32.0),
 
@@ -233,9 +322,9 @@ class _LegalConsentScreenState extends State<LegalConsentScreen> {
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Text(
-                        '同意する',
-                        style: TextStyle(fontSize: 16.0),
+                    : Text(
+                        localizations?.legalConsentSubmit ?? '同意する',
+                        style: const TextStyle(fontSize: 16.0),
                       ),
               ),
             ),

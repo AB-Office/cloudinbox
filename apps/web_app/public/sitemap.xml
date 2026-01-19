@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- 日本語トップページ -->
+  <url>
+    <loc>https://cloudinbox.cloud/</loc>
+    <lastmod>2025-01-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://cloudinbox.cloud/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://cloudinbox.cloud/index_en.html"/>
+  </url>
+  
+  <!-- 英語トップページ -->
+  <url>
+    <loc>https://cloudinbox.cloud/index_en.html</loc>
+    <lastmod>2025-01-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://cloudinbox.cloud/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://cloudinbox.cloud/index_en.html"/>
+  </url>
+  
+  <!-- 日本語お問い合わせページ -->
+  <url>
+    <loc>https://cloudinbox.cloud/contact.html</loc>
+    <lastmod>2025-01-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://cloudinbox.cloud/contact.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://cloudinbox.cloud/contact_en.html"/>
+  </url>
+  
+  <!-- 英語お問い合わせページ -->
+  <url>
+    <loc>https://cloudinbox.cloud/contact_en.html</loc>
+    <lastmod>2025-01-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://cloudinbox.cloud/contact.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://cloudinbox.cloud/contact_en.html"/>
+  </url>
+  
+  <!-- 日本語プライバシーポリシー -->
+  <url>
+    <loc>https://cloudinbox.cloud/privacy.html</loc>
+    <lastmod>2025-01-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://cloudinbox.cloud/privacy.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://cloudinbox.cloud/privacy_en.html"/>
+  </url>
+  
+  <!-- 英語プライバシーポリシー -->
+  <url>
+    <loc>https://cloudinbox.cloud/privacy_en.html</loc>
+    <lastmod>2025-01-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://cloudinbox.cloud/privacy.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://cloudinbox.cloud/privacy_en.html"/>
+  </url>
+  
+  <!-- 日本語利用規約 -->
+  <url>
+    <loc>https://cloudinbox.cloud/terms.html</loc>
+    <lastmod>2025-01-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://cloudinbox.cloud/terms.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://cloudinbox.cloud/terms_en.html"/>
+  </url>
+  
+  <!-- 英語利用規約 -->
+  <url>
+    <loc>https://cloudinbox.cloud/terms_en.html</loc>
+    <lastmod>2025-01-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://cloudinbox.cloud/terms.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://cloudinbox.cloud/terms_en.html"/>
+  </url>
+  
+  <!-- 日本語特定商取引法に基づく表記 -->
+  <url>
+    <loc>https://cloudinbox.cloud/commercial.html</loc>
+    <lastmod>2025-01-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://cloudinbox.cloud/commercial.html"/>
+  </url>
+  
+  <!-- 英語料金・支払い -->
+  <url>
+    <loc>https://cloudinbox.cloud/pricing_en.html</loc>
+    <lastmod>2025-01-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://cloudinbox.cloud/pricing_en.html"/>
+  </url>
+</urlset>
+
