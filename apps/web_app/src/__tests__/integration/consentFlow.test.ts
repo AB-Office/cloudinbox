@@ -14,12 +14,10 @@ import * as directives from 'vuetify/directives';
 import { createI18n } from 'vue-i18n';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createWebHistory } from 'vue-router';
-import { getFirestore, doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { getDocumentMetadata } from '@/services/legalDocument';
 import { useAuthStore } from '@/stores/auth';
 import { useConsentStore } from '@/stores/consent';
-import router from '@/router';
 import LegalConsentView from '@/views/LegalConsentView.vue';
 import MailListView from '@/views/MailListView.vue';
 
