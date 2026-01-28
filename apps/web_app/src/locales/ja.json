@@ -78,6 +78,10 @@
   "settings": {
     "accountDescription": "メールアカウントの追加、編集、削除を行います",
     "plan": "プラン",
+    "currentPlan": "現在のプラン",
+    "changePlan": "プランを変更",
+    "maxAccounts": "最大アカウント数",
+    "maxStorage": "最大ストレージ容量",
     "usedStorage": "使用済み容量",
     "availableStorage": "使用可能容量",
     "storageUsage": "容量使用状況",
@@ -85,6 +89,45 @@
     "privacyPolicy": "プライバシーポリシー",
     "termsOfService": "利用規約",
     "commercialTransaction": "特定商取引法に基づく表記"
+  },
+  "plan": {
+    "title": "プラン選択",
+    "free": "Free",
+    "standard": "Standard",
+    "currentPlan": "現在のプラン",
+    "changePlan": "このプランに変更",
+    "upgradeNow": "今すぐアップグレード",
+    "upgradeRequired": "プランのアップグレードが必要です",
+    "upgradeTo": "アップグレード後",
+    "upgradeMessage": "現在のプランでは上限に達しています。Standardプランにアップグレードしてください。",
+    "upgradeBanner": "現在のプランでは上限に達しています。Standardプランにアップグレードすると、より多くのアカウントとストレージ容量を利用できます。",
+    "currentLimit": "現在の上限: {accounts}アカウント、{storage}",
+    "upgradeLimit": "アップグレード後: {accounts}アカウント、{storage}",
+    "success": "プラン変更が完了しました",
+    "canceled": "プラン変更がキャンセルされました",
+    "processing": "プラン変更を処理中です...",
+    "back": "戻る",
+    "price": {
+      "free": "無料",
+      "standard": "¥500/月"
+    },
+    "storage": {
+      "free": "2GB",
+      "standard": "50GB"
+    },
+    "accounts": {
+      "free": "1アカウント",
+      "standard": "複数アカウント"
+    },
+    "feature": {
+      "basicStorage": "基本的なストレージ",
+      "singleAccount": "1アカウント",
+      "emailSupport": "メールサポート",
+      "largeStorage": "大容量ストレージ",
+      "multipleAccounts": "複数アカウント対応",
+      "prioritySupport": "優先サポート",
+      "advancedFeatures": "高度な機能"
+    }
   },
   "account": {
     "title": "アカウント設定",
@@ -162,7 +205,9 @@
       "saveFailed": "アカウントの保存に失敗しました",
       "deleteFailed": "アカウントの削除に失敗しました",
       "testFailed": "アカウントの接続テストに失敗しました",
-      "limitReached": "アカウント数の上限に達しています。プランをアップグレードしてください。"
+      "limitReached": "アカウント数の上限に達しています。プランをアップグレードしてください。",
+      "upgradeRequired": "アカウント数の上限に達しています。プランをアップグレードしてください。",
+      "upgradeButton": "プランをアップグレード"
     },
     "firestore": {
       "notFound": "リソースが見つかりません"

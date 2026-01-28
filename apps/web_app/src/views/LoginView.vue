@@ -58,8 +58,7 @@ async function handleSignIn() {
   errorMessage.value = null;
   try {
     await authStore.signInWithGoogle();
-    // 認証成功後、認証状態の変更が反映されるまで少し待つ
-    await new Promise(resolve => setTimeout(resolve, 200));
+    // 認証成功後、watchが自動的にリダイレクトするため、ここでのリダイレクトは不要
   } catch (error: unknown) {
     // ログインキャンセル時はエラーメッセージを表示しない
     if (error instanceof Error && error.message === 'Login cancelled') {

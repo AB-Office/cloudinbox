@@ -28,6 +28,7 @@ export async function loadSettings(): Promise<SettingsData> {
     planLabel: plan.label || 'Free',
     maxStorageBytes: plan.maxStorageBytes ?? 2147483648, // デフォルト2GB
     usedStorageBytes: usage.storageBytes ?? 0,
+    maxAccounts: plan.maxAccounts ?? 1, // デフォルト1アカウント
   };
 }
 
@@ -54,6 +55,7 @@ export function watchSettings(callback: (data: SettingsData) => void): () => voi
           planLabel: 'Free',
           maxStorageBytes: 2147483648, // デフォルト2GB
           usedStorageBytes: 0,
+          maxAccounts: 1, // デフォルト1アカウント
         });
         return;
       }
@@ -66,6 +68,7 @@ export function watchSettings(callback: (data: SettingsData) => void): () => voi
         planLabel: plan.label || 'Free',
         maxStorageBytes: plan.maxStorageBytes ?? 2147483648, // デフォルト2GB
         usedStorageBytes: usage.storageBytes ?? 0,
+        maxAccounts: plan.maxAccounts ?? 1, // デフォルト1アカウント
       });
     },
     error => {

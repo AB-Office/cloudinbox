@@ -5,5 +5,6 @@ export interface SettingsData {
   planLabel: string;
   maxStorageBytes: number;
   usedStorageBytes: number;
+  maxAccounts: number;
 }
 

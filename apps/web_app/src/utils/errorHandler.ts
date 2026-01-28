@@ -1,4 +1,5 @@
 import { FirebaseError } from 'firebase/app';
+import type { SettingsData } from '@/types/settings';
 
 /**
  * エラーの種類
@@ -20,15 +21,45 @@ export interface ErrorMessageKey {
 }
 
 /**
+ * アップグレードアクション
+ */
+export interface UpgradeAction {
+  type: 'navigate';
+  path: string;
+}
+
+/**
+ * プラン情報
+ */
+export interface PlanInfo {
+  label: string;
+  maxAccounts: number;
+  maxStorageBytes: number;
+}
+
+/**
+ * エラー解析結果
+ */
+export interface ParseErrorResult {
+  messageKey: ErrorMessageKey;
+  message: string;
+  upgradeAction?: UpgradeAction;
+  currentPlan?: PlanInfo;
+  upgradePlan?: PlanInfo;
+}
+
+/**
  * Firebaseエラーを解析してユーザー向けメッセージキーに変換する
  * @param error エラーオブジェクト
  * @param t 翻訳関数（オプション）
- * @returns エラーメッセージキーとメッセージ
+ * @param planInfo プラン情報（オプション、アップグレード促進用）
+ * @returns エラーメッセージキーとメッセージ、アップグレード情報
  */
 export function parseError(
   error: unknown,
-  t?: (key: string, values?: Record<string, unknown>) => string
-): { messageKey: ErrorMessageKey; message: string } {
+  t?: (key: string, values?: Record<string, unknown>) => string,
+  planInfo?: SettingsData
+): ParseErrorResult {
   // エラーオブジェクトがnull/undefinedの場合
   if (!error) {
     return {
@@ -39,12 +70,12 @@ export function parseError(
 
   // Firebaseエラーの場合
   if (error instanceof FirebaseError) {
-    return parseFirebaseError(error, t);
+    return parseFirebaseError(error, t, planInfo);
   }
 
   // Errorオブジェクトの場合
   if (error instanceof Error) {
-    return parseStandardError(error, t);
+    return parseStandardError(error, t, planInfo);
   }
 
   // 文字列の場合
@@ -67,8 +98,9 @@ export function parseError(
  */
 function parseFirebaseError(
   error: FirebaseError,
-  t?: (key: string, values?: Record<string, unknown>) => string
-): { messageKey: ErrorMessageKey; message: string } {
+  t?: (key: string, values?: Record<string, unknown>) => string,
+  planInfo?: SettingsData
+): ParseErrorResult {
   const code = error.code || '';
 
   // 認証エラー
@@ -98,7 +130,7 @@ function parseFirebaseError(
 
   // Cloud Functionsエラー
   if (code.startsWith('functions/')) {
-    return parseFunctionsError(error, t);
+    return parseFunctionsError(error, t, planInfo);
   }
 
   // その他のFirebaseエラー
@@ -113,8 +145,9 @@ function parseFirebaseError(
  */
 function parseAuthError(
   error: FirebaseError,
-  t?: (key: string, values?: Record<string, unknown>) => string
-): { messageKey: ErrorMessageKey; message: string } {
+  t?: (key: string, values?: Record<string, unknown>) => string,
+  _planInfo?: SettingsData
+): ParseErrorResult {
   const code = error.code || '';
 
   // ログインキャンセルは特別扱い（エラーメッセージを表示しない）
@@ -137,8 +170,9 @@ function parseAuthError(
  */
 function parseFunctionsError(
   error: FirebaseError,
-  t?: (key: string, values?: Record<string, unknown>) => string
-): { messageKey: ErrorMessageKey; message: string } {
+  t?: (key: string, values?: Record<string, unknown>) => string,
+  _planInfo?: SettingsData
+): ParseErrorResult {
   const code = error.code || '';
 
   if (code.includes('timeout') || code.includes('deadline-exceeded')) {
@@ -167,8 +201,9 @@ function parseFunctionsError(
  */
 function parseStandardError(
   error: Error,
-  t?: (key: string, values?: Record<string, unknown>) => string
-): { messageKey: ErrorMessageKey; message: string } {
+  t?: (key: string, values?: Record<string, unknown>) => string,
+  planInfo?: SettingsData
+): ParseErrorResult {
   const message = error.message || '';
 
   // ユーザー認証エラー
@@ -180,8 +215,9 @@ function parseStandardError(
   }
 
   // ネットワークエラー
+  const lowerMessage = message.toLowerCase();
   if (
-    message.includes('network') ||
+    lowerMessage.includes('network') ||
     message.includes('NetworkError') ||
     message.includes('Failed to fetch')
   ) {
@@ -193,10 +229,7 @@ function parseStandardError(
 
   // アカウント上限エラー
   if (message.includes('Account limit reached') || message.includes('上限')) {
-    return {
-      messageKey: { category: ErrorCategory.UNKNOWN, key: 'errors.account.limitReached' },
-      message: t ? t('errors.account.limitReached') : message,
-    };
+    return parseAccountLimitError(message, t, planInfo);
   }
 
   // その他のエラー（技術的詳細を隠す）
@@ -213,4 +246,56 @@ function parseStandardError(
     messageKey: { category: ErrorCategory.UNKNOWN, key: 'errors.generic' },
     message: message,
   };
+}
+
+/**
+ * アカウント上限エラーを解析し、アップグレード情報を含める
+ */
+function parseAccountLimitError(
+  message: string,
+  t?: (key: string, values?: Record<string, unknown>) => string,
+  planInfo?: SettingsData
+): ParseErrorResult {
+  const baseResult: ParseErrorResult = {
+    messageKey: { category: ErrorCategory.UNKNOWN, key: 'errors.account.upgradeRequired' },
+    message: t ? t('errors.account.upgradeRequired') : message,
+  };
+
+  // プラン情報が提供されている場合、アップグレード情報を含める
+  if (planInfo) {
+    const currentPlan: PlanInfo = {
+      label: planInfo.planLabel,
+      maxAccounts: planInfo.maxAccounts,
+      maxStorageBytes: planInfo.maxStorageBytes,
+    };
+
+    // Standardプランの情報
+    const upgradePlan: PlanInfo = {
+      label: 'Standard',
+      maxAccounts: 10,
+      maxStorageBytes: 53687091200, // 50GB
+    };
+
+    // エラーメッセージにプラン情報を含める
+    const messageValues = {
+      currentPlan: currentPlan.label,
+      currentMaxAccounts: currentPlan.maxAccounts,
+      upgradePlan: upgradePlan.label,
+      upgradeMaxAccounts: upgradePlan.maxAccounts,
+    };
+
+    baseResult.message = t
+      ? t('errors.account.upgradeRequired', messageValues)
+      : `Account limit reached. Current plan: ${currentPlan.label} (${currentPlan.maxAccounts} accounts). Upgrade to ${upgradePlan.label} (${upgradePlan.maxAccounts} accounts).`;
+
+    baseResult.upgradeAction = {
+      type: 'navigate',
+      path: '/settings/plan?upgrade=true',
+    };
+
+    baseResult.currentPlan = currentPlan;
+    baseResult.upgradePlan = upgradePlan;
+  }
+
+  return baseResult;
 }

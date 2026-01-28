@@ -29,6 +29,40 @@
       </v-col>
     </v-row>
 
+    <!-- プラン情報カード -->
+    <v-row v-if="settingsStore.settings">
+      <v-col cols="12" md="6" lg="4">
+        <v-card variant="outlined" data-testid="plan-info-card">
+          <v-card-title class="d-flex align-center">
+            <v-icon start color="primary">mdi-credit-card</v-icon>
+            {{ t('settings.plan') }}
+          </v-card-title>
+          <v-card-text>
+            <div class="text-body-2 mb-2">
+              <strong>{{ t('settings.currentPlan') }}:</strong> {{ settingsStore.settings.planLabel }}
+            </div>
+            <div class="text-body-2 mb-2">
+              <strong>{{ t('settings.maxStorage') }}:</strong> {{ formatFileSize(settingsStore.settings.maxStorageBytes, t) }}
+            </div>
+            <div class="text-body-2 mb-2">
+              <strong>{{ t('settings.maxAccounts') }}:</strong> {{ planMaxAccounts }}
+            </div>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn
+              variant="text"
+              color="primary"
+              @click="navigateToPlanSelection"
+              data-testid="change-plan-button"
+            >
+              {{ t('settings.changePlan') }}
+              <v-icon end>mdi-arrow-right</v-icon>
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <v-row>
       <v-col cols="12" md="6" lg="4">
         <v-card variant="outlined" class="settings-card" @click="navigateToAccounts">
@@ -144,8 +178,20 @@ const formattedStorageInfo = computed(() => {
   };
 });
 
+// プラン最大アカウント数
+const planMaxAccounts = computed(() => {
+  return settingsStore.settings?.maxAccounts ?? 1;
+});
+
 function navigateToAccounts() {
   router.push({ name: 'account-list' });
+}
+
+/**
+ * プラン選択画面に遷移する
+ */
+function navigateToPlanSelection() {
+  router.push('/settings/plan');
 }
 
 /**

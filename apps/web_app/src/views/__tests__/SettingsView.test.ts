@@ -24,12 +24,14 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 // SettingsStoreのモック
+const mockSettingsStore = {
+  settings: null as any,
+  startWatching: vi.fn(),
+  stopWatching: vi.fn(),
+};
+
 vi.mock('@/stores/settings', () => ({
-  useSettingsStore: () => ({
-    settings: null,
-    startWatching: vi.fn(),
-    stopWatching: vi.fn(),
-  }),
+  useSettingsStore: () => mockSettingsStore,
 }));
 
 const vuetify = createVuetify({
@@ -47,6 +49,9 @@ const i18n = createI18n({
       settings: {
         storageUsage: 'ストレージ使用量',
         plan: 'プラン',
+        currentPlan: '現在のプラン',
+        changePlan: 'プランを変更',
+        maxAccounts: '最大アカウント数',
         usedStorage: '使用量',
         availableStorage: '利用可能',
         legal: '法的情報',
@@ -63,6 +68,9 @@ const i18n = createI18n({
       settings: {
         storageUsage: 'Storage Usage',
         plan: 'Plan',
+        currentPlan: 'Current Plan',
+        changePlan: 'Change Plan',
+        maxAccounts: 'Max Accounts',
         usedStorage: 'Used',
         availableStorage: 'Available',
         legal: 'Legal Information',
@@ -96,12 +104,16 @@ describe('SettingsView', () => {
     pinia = createPinia();
     setActivePinia(pinia);
     vi.clearAllMocks();
+    mockSettingsStore.settings = null;
+    mockSettingsStore.startWatching.mockClear();
+    mockSettingsStore.stopWatching.mockClear();
 
     router = createRouter({
       history: createWebHistory(),
       routes: [
         { path: '/', name: 'home', component: { template: '<div>Home</div>' } },
         { path: '/settings', name: 'settings', component: SettingsView },
+        { path: '/settings/plan', name: 'plan-selection', component: { template: '<div>Plan Selection</div>' } },
         { path: '/account-list', name: 'account-list', component: { template: '<div>Account List</div>' } },
       ],
     });
@@ -273,6 +285,113 @@ describe('SettingsView', () => {
     if (viewer.exists()) {
       expect(viewer.props('modelValue')).toBe(false);
     }
+  });
+
+  describe('プラン情報カード', () => {
+    it('プラン情報カードが表示される', async () => {
+      mockSettingsStore.settings = {
+        planLabel: 'Free',
+        maxStorageBytes: 2147483648,
+        usedStorageBytes: 0,
+      };
+
+      const wrapper = await createWrapper();
+      expect(wrapper.text()).toContain('プラン');
+      expect(wrapper.text()).toContain('Free');
+    });
+
+    it('現在のプラン名が表示される', async () => {
+      mockSettingsStore.settings = {
+        planLabel: 'Standard',
+        maxStorageBytes: 53687091200,
+        usedStorageBytes: 0,
+      };
+
+      const wrapper = await createWrapper();
+      expect(wrapper.text()).toContain('Standard');
+    });
+
+    it('最大アカウント数が表示される', async () => {
+      mockSettingsStore.settings = {
+        planLabel: 'Free',
+        maxStorageBytes: 2147483648,
+        usedStorageBytes: 0,
+      };
+
+      const wrapper = await createWrapper();
+      expect(wrapper.text()).toContain('最大アカウント数');
+    });
+
+    it('「プランを変更」ボタンが表示される', async () => {
+      mockSettingsStore.settings = {
+        planLabel: 'Free',
+        maxStorageBytes: 2147483648,
+        usedStorageBytes: 0,
+      };
+
+      const wrapper = await createWrapper();
+      const changePlanButton = wrapper.find('[data-testid="change-plan-button"]');
+      expect(changePlanButton.exists()).toBe(true);
+      expect(changePlanButton.text()).toContain('プランを変更');
+    });
+
+    it('「プランを変更」ボタンをクリックするとプラン選択画面に遷移する', async () => {
+      mockSettingsStore.settings = {
+        planLabel: 'Free',
+        maxStorageBytes: 2147483648,
+        usedStorageBytes: 0,
+      };
+
+      const wrapper = await createWrapper();
+      const changePlanButton = wrapper.find('[data-testid="change-plan-button"]');
+      expect(changePlanButton.exists()).toBe(true);
+
+      const pushSpy = vi.spyOn(router, 'push').mockResolvedValue(undefined as any);
+      
+      // navigateToPlanSelectionを直接呼び出す
+      (wrapper.vm as any).navigateToPlanSelection();
+      
+      // 非同期処理を待つ
+      await wrapper.vm.$nextTick();
+
+      expect(pushSpy).toHaveBeenCalledWith('/settings/plan');
+      pushSpy.mockRestore();
+    });
+
+    it('プラン情報がない場合はプラン情報カードが表示されない', async () => {
+      mockSettingsStore.settings = null;
+
+      const wrapper = await createWrapper();
+      const planCard = wrapper.find('[data-testid="plan-info-card"]');
+      expect(planCard.exists()).toBe(false);
+    });
+
+    it('maxAccountsが未設定の場合はデフォルト値1が表示される', async () => {
+      mockSettingsStore.settings = {
+        planLabel: 'Free',
+        maxStorageBytes: 2147483648,
+        usedStorageBytes: 0,
+        // maxAccountsは未設定
+      };
+
+      const wrapper = await createWrapper();
+      expect(wrapper.text()).toContain('最大アカウント数');
+      // planMaxAccountsはデフォルト値1を返すため、1が表示される
+      expect(wrapper.text()).toContain('1');
+    });
+
+    it('maxAccountsが設定されている場合はその値が表示される', async () => {
+      mockSettingsStore.settings = {
+        planLabel: 'Standard',
+        maxStorageBytes: 53687091200,
+        usedStorageBytes: 0,
+        maxAccounts: 10,
+      };
+
+      const wrapper = await createWrapper();
+      expect(wrapper.text()).toContain('最大アカウント数');
+      expect(wrapper.text()).toContain('10');
+    });
   });
 });
 

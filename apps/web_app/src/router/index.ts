@@ -37,6 +37,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/settings/plan',
+      name: 'plan-selection',
+      component: () => import('@/views/PlanSelectionView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/settings/accounts',
       name: 'account-list',
       component: () => import('@/views/AccountListView.vue'),

@@ -78,6 +78,10 @@
   "settings": {
     "accountDescription": "Add, edit, or delete mail accounts",
     "plan": "Plan",
+    "currentPlan": "Current Plan",
+    "changePlan": "Change Plan",
+    "maxAccounts": "Max Accounts",
+    "maxStorage": "Max Storage",
     "usedStorage": "Used Storage",
     "availableStorage": "Available Storage",
     "storageUsage": "Storage Usage",
@@ -85,6 +89,45 @@
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
     "pricingBilling": "Pricing / Billing"
+  },
+  "plan": {
+    "title": "Plan Selection",
+    "free": "Free",
+    "standard": "Standard",
+    "currentPlan": "Current Plan",
+    "changePlan": "Change to this plan",
+    "upgradeNow": "Upgrade Now",
+    "upgradeRequired": "Plan upgrade required",
+    "upgradeTo": "After Upgrade",
+    "upgradeMessage": "You have reached the limit of your current plan. Please upgrade to Standard plan.",
+    "upgradeBanner": "You have reached the limit of your current plan. Upgrade to Standard plan to use more accounts and storage capacity.",
+    "currentLimit": "Current limit: {accounts} accounts, {storage}",
+    "upgradeLimit": "After upgrade: {accounts} accounts, {storage}",
+    "success": "Plan change completed",
+    "canceled": "Plan change canceled",
+    "processing": "Processing plan change...",
+    "back": "Back",
+    "price": {
+      "free": "Free",
+      "standard": "$5/month"
+    },
+    "storage": {
+      "free": "2GB",
+      "standard": "50GB"
+    },
+    "accounts": {
+      "free": "1 account",
+      "standard": "Multiple accounts"
+    },
+    "feature": {
+      "basicStorage": "Basic Storage",
+      "singleAccount": "Single Account",
+      "emailSupport": "Email Support",
+      "largeStorage": "Large Storage",
+      "multipleAccounts": "Multiple Accounts",
+      "prioritySupport": "Priority Support",
+      "advancedFeatures": "Advanced Features"
+    }
   },
   "account": {
     "title": "Account Settings",
@@ -162,7 +205,9 @@
       "saveFailed": "Failed to save account",
       "deleteFailed": "Failed to delete account",
       "testFailed": "Failed to test account connection",
-      "limitReached": "Account limit reached. Please upgrade your plan."
+      "limitReached": "Account limit reached. Please upgrade your plan.",
+      "upgradeRequired": "You have reached the account limit. Please upgrade your plan.",
+      "upgradeButton": "Upgrade Plan"
     }
   },
   "dateTime": {

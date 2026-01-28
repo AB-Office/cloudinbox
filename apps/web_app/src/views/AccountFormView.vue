@@ -16,7 +16,13 @@
 
           <v-card-text>
             <!-- エラーメッセージ -->
-            <v-alert v-if="accountStore.error" type="error" variant="tonal" class="mb-4" closable>
+            <v-alert
+              v-if="accountStore.error && !upgradeErrorDialog"
+              type="error"
+              variant="tonal"
+              class="mb-4"
+              closable
+            >
               {{ accountStore.error }}
             </v-alert>
 
@@ -213,6 +219,54 @@
         <v-btn variant="text" @click="snackbar = false">{{ t('common.close') }}</v-btn>
       </template>
     </v-snackbar>
+
+    <!-- アップグレードエラーダイアログ -->
+    <v-dialog
+      v-model="upgradeErrorDialog"
+      max-width="500"
+      persistent
+      data-testid="upgrade-error-dialog"
+    >
+      <v-card>
+        <v-card-title class="text-h6">
+          {{ t('errors.account.upgradeRequired') }}
+        </v-card-title>
+        <v-card-text>
+          <p>{{ upgradeErrorMessage }}</p>
+          <div v-if="upgradeErrorInfo" class="mt-4">
+            <div class="text-body-2 mb-2">
+              <strong>{{ t('settings.currentPlan') }}:</strong>
+              {{ upgradeErrorInfo.currentPlan?.label }}
+            </div>
+            <div class="text-body-2 mb-2">
+              <strong>{{ t('settings.maxAccounts') }}:</strong>
+              {{ upgradeErrorInfo.currentPlan?.maxAccounts }}
+            </div>
+            <div class="text-body-2 mb-4">
+              <strong>{{ t('plan.upgradeTo') }}:</strong>
+              {{ upgradeErrorInfo.upgradePlan?.label }}
+              <br />
+              <strong>{{ t('settings.maxAccounts') }}:</strong>
+              {{ upgradeErrorInfo.upgradePlan?.maxAccounts }}
+            </div>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="upgradeErrorDialog = false">
+            {{ t('common.close') }}
+          </v-btn>
+          <v-btn
+            data-testid="upgrade-button"
+            color="primary"
+            variant="flat"
+            @click="handleUpgrade"
+          >
+            {{ t('errors.account.upgradeButton') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -221,14 +275,22 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/stores/account';
+import { useSettingsStore } from '@/stores/settings';
 import type { AccountFormData, AccountTestResult } from '@/types/account';
 import { useSnackbar } from '@/composables/useSnackbar';
+import { parseError, type ParseErrorResult } from '@/utils/errorHandler';
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const accountStore = useAccountStore();
+const settingsStore = useSettingsStore();
 const { snackbar, snackbarText, snackbarColor, showError } = useSnackbar();
+
+// アップグレードエラーダイアログ
+const upgradeErrorDialog = ref(false);
+const upgradeErrorMessage = ref('');
+const upgradeErrorInfo = ref<Pick<ParseErrorResult, 'currentPlan' | 'upgradePlan'> | null>(null);
 
 const formRef = ref();
 const formValid = ref(false);
@@ -359,8 +421,30 @@ async function handleSave() {
     // 成功後、アカウント一覧に戻る
     router.push('/settings/accounts');
   } catch (error) {
+    // エラーを解析
+    const errorResult = parseError(error, t, settingsStore.settings || undefined);
+
+    // アップグレードが必要なエラーの場合
+    if (errorResult.upgradeAction) {
+      upgradeErrorMessage.value = errorResult.message;
+      upgradeErrorInfo.value = {
+        currentPlan: errorResult.currentPlan,
+        upgradePlan: errorResult.upgradePlan,
+      };
+      upgradeErrorDialog.value = true;
+    } else {
+      // 通常のエラーはスナックバーで表示
     showError(error);
   }
+  }
+}
+
+/**
+ * アップグレードボタンのクリック処理
+ */
+function handleUpgrade() {
+  upgradeErrorDialog.value = false;
+  router.push('/settings/plan?upgrade=true');
 }
 
 /**

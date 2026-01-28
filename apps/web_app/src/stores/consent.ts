@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { getFirestore, doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
 import { firebaseApp } from '@/services/firebase';
 import { getDocumentMetadata, type Locale } from '@/services/legalDocument';
+import { useAuthStore } from '@/stores/auth';
 
 const db = getFirestore(firebaseApp);
 
@@ -54,8 +54,8 @@ export const useConsentStore = defineStore('consent', () => {
    * ユーザードキュメントからlegalConsentsを取得し、Storageから法的文書のメタデータを取得して比較する
    */
   async function checkConsentStatus(): Promise<void> {
-    const auth = getAuth(firebaseApp);
-    const uid = auth.currentUser?.uid;
+    const authStore = useAuthStore();
+    const uid = authStore.user?.uid;
     if (!uid) {
       throw new Error('User not authenticated');
     }
@@ -67,7 +67,11 @@ export const useConsentStore = defineStore('consent', () => {
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
-        throw new Error('User document not found');
+        // ユーザードキュメントが存在しない場合は、同意が必要とみなす
+        // （新規ユーザーの場合、onUserCreateがまだ実行されていない可能性がある）
+        legalConsents.value = null;
+        needsReconsent.value = true;
+        return;
       }
 
       const userData = userSnap.data();
@@ -111,8 +115,8 @@ export const useConsentStore = defineStore('consent', () => {
    * @param privacyVersion プライバシーポリシーのバージョン（ISO 8601形式）
    */
   async function saveConsent(termsVersion: string, privacyVersion: string): Promise<void> {
-    const auth = getAuth(firebaseApp);
-    const uid = auth.currentUser?.uid;
+    const authStore = useAuthStore();
+    const uid = authStore.user?.uid;
     if (!uid) {
       throw new Error('User not authenticated');
     }
@@ -154,7 +158,14 @@ export const useConsentStore = defineStore('consent', () => {
     // 既にチェック済みでキャッシュされている場合はそれを使用
     // ただし、初回チェック時は必ず確認する
     if (legalConsents.value === null && !isLoading.value) {
+      try {
       await checkConsentStatus();
+      } catch (error) {
+        // エラーが発生した場合は、安全側に倒して同意が必要とみなす
+        console.error('Failed to check consent status:', error);
+        legalConsents.value = null;
+        needsReconsent.value = true;
+      }
     }
 
     // 再確認が必要な場合は常に同意が必要
@@ -190,4 +201,3 @@ export const useConsentStore = defineStore('consent', () => {
     reset,
   };
 });
-
