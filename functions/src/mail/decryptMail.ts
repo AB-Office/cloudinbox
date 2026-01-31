@@ -244,11 +244,16 @@ export async function executeDecryptMail(
  *
  * テストコードから直接呼び出しやすくするため、型はanyとしてエクスポートする
  */
-export const decryptMail: any = functions.region('asia-northeast1').https.onCall(
-  async (
-    data: DecryptMailRequest,
-    context: functions.https.CallableContext
-  ): Promise<DecryptMailResponse> => {
+export const decryptMail: any = functions
+  .region('asia-northeast1')
+  .runWith({
+    minInstances: 1, // コールドスタート回避のため、常に1インスタンスを起動状態に保つ
+  })
+  .https.onCall(
+    async (
+      data: DecryptMailRequest,
+      context: functions.https.CallableContext
+    ): Promise<DecryptMailResponse> => {
     // 認証チェック
     if (!context.auth) {
       throw new functions.https.HttpsError(
