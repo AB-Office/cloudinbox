@@ -248,6 +248,7 @@ export const decryptMail: any = functions
   .region('asia-northeast1')
   .runWith({
     minInstances: 1, // コールドスタート回避のため、常に1インスタンスを起動状態に保つ
+    maxInstances: 1000, // 最大インスタンス数（受け入れ可能なだけスケールアップ）
   })
   .https.onCall(
     async (
